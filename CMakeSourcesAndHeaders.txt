@@ -1,0 +1,10 @@
+include_directories(
+src
+)
+
+set( SOURCES
+src/main.c
+)
+
+set( HEADERS
+)
