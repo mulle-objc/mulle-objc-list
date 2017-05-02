@@ -532,7 +532,7 @@ int  main( int argc, char *argv[])
    {
       if( argv[ i][ 0] != '-')
          break;
-      
+
       switch( argv[ i][ 1])
       {
       case '-' :
@@ -545,27 +545,27 @@ int  main( int argc, char *argv[])
                     MULLE_OBJC_LIST_VERSION & 0xFF);
             return( 1);
          }
-         
+
       case 'v':
          verbose = 1;
          break;
-         
+
       case 'c':
          mode = dump_classes;
          break;
-         
+
       case 'm':
          mode = dump_methods;
          break;
-         
+
       default :
          usage();
       }
    }
-   
+
    if( i >= argc)
       usage();
-   
+
    for(; i < argc ; i++)
    {
       if( i == argc - 1)  // dump the last one

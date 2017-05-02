@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Define your project and the dependencies for homebrew
 # DEPENDENCIES will be evaled later!
@@ -5,8 +6,9 @@
 #   ./bin/release.sh --publisher mulle-nat --publisher-tap mulle-kybernetik/alpha/
 #
 
-PROJECT="MyProject"      # your project name, requires camel-case
-DESC="MyProject does this and that"
+PROJECT="MulleObjcList"      # your project name, requires camel-case
+DESC="mulle-objc-list list classes and categories or methods of a library"
+
 # DEPENDENCIES='${DEPENDENCY_TAP}mulle-concurrent
 # libz'
 LANGUAGE=c               # c,cpp, objc used for finding the version header file
@@ -69,11 +71,12 @@ fi
 DEPENDENCY_TAP="${DEPENDENCY_TAP:-${PUBLISHER_TAP}}"
 BOOTSTRAP_TAP="${DEPENDENCY_TAP:-mulle-kybernetik/software/}"
 HOMEBREW_PATH="${HOMEBREW_PATH:-..}"
-BRANCH="{BRANCH:-release}"
+BRANCH="${BRANCH:-release}"
 
 #
 # these can usually be deduced, if you follow the conventions
 #
+set -x
 if [ -z "${NAME}" ]
 then
    NAME="`get_name_from_project "${PROJECT}" "${LANGUAGE}"`"
@@ -94,10 +97,15 @@ then
    VERSION="`head -1 VERSION`"
 else
    VERSION="`get_project_version "${VERSIONFILE}" "${VERSIONNAME}"`"
+   if [ -z "${VERSION}" ]
+   then
+      VERSION="`get_project_version "src/version.h" "${VERSIONNAME}"`"
+   fi
 fi
 
-[ -z "${VERSION}" ] && fail "No version found"
+[ -z "${VERSION}" ] && fail "No version found for key \"${VERSIONNAME}\" in \"${VERSIONFILE}\" "
 
+set +x
 
 # --- HOMEBREW TAP ---
 # Specify to where and under what name to publish via your brew tap
