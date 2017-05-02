@@ -3,28 +3,58 @@
 This is a [mulle-objc](https://github.com/mulle-nat) project.
 
 This tool loads a shared library and prints a CSV list of all
-methods it finds. The shared library must have been compiled with
+class and categories or methods it finds. The shared library must have been
+compiled with
 **mulle-clang**.
+
+
+### Class/Category List
+
+For each class or category a line is printed. The format is:
+
+`classid;classname;categoryid;categoryname`
+
+Index | Column name  | Description
+------|--------------|---------------------------------
+1     | classid      |  the id of the class, 8 hex characters
+2     | classname    |  the name of the class
+3     | categoryid   |  optional: the id of the category
+4     | categoryname |  optional: the name of the category
+
+
+### Method List
 
 Each line represents one exported method. The format is:
 
-`owner;+/-;name;rvaltype;objtype;sel;params;variadic`
+`classid;classname;categoryid;categoryname;+/-;name;rvaltype;objtype;sel;params;variadic;bits`
 
-Index | Column name | Description
-------|-------------|---------------------------------
-1     | owner       |  either `Foo` or `Foo( A)`, no quotes
-2     | +/-         |  either `+` or `-`
-3     | name        |  methodname like `takeValue:forKey:`
-4     | rvaltype    |  return value C/ObjC type without parantheses
-5     | params      |  parameter C/ObjC types (if any) separated by comma
-6     | variadic    |  either `...` or empty
+Index | Column name  | Description
+------|--------------|---------------------------------
+1     | classid      |  the id of the class, 8 hex characters
+2     | classname    |  the name of the class
+3     | categoryid   |  optional: the id of the category
+4     | categoryname |  optional: the name of the category
+5     | +/-          |  either `+` or `-`
+6     | name         |  methodname like `takeValue:forKey:`
+7     | rvaltype     |  return value C/ObjC type without parantheses
+8     | params       |  parameter C/ObjC types (if any) separated by comma
+9     | variadic     |  either `...` or empty
+10    | bits         |  bits as hex value
 
 The intended use is to produce test skeleton code from this information.
+
 
 ## Usage
 
 ```
-mulle-objc-method-list <shared library>
+usage: mulle-objc-list [option] <libraries>
+
+   The last library is listed. The preceeding libraries are
+   loaded to satisfy the linker.
+
+Options:
+   -c : list classes and categories
+   -m : list methods (default)
 ```
 
 

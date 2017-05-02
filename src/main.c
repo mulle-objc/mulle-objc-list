@@ -13,8 +13,14 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 
+#include "version.h"
+
 
 #define STATIC_LINKED_FOUNDATION
+
+#define _stringify( x) #x
+#define stringify( x) _stringify( x)
+
 
 
 static int   verbose;
@@ -28,10 +34,10 @@ enum
 static void   log_printf( char *format, ...)
 {
    va_list   args;
- 
+
    if( ! verbose)
       return;
-   
+
    va_start( args, format);
    vfprintf( stderr, format, args);
    va_end( args);
@@ -39,7 +45,17 @@ static void   log_printf( char *format, ...)
 
 static void   usage( void)
 {
-   fprintf( stderr, "usage: mulle-objc-method-list <binary>\n");
+   fprintf( stderr,
+           "usage: mulle-objc-list [option] <libraries>\n"
+            "\n"
+            "   The last library is listed. The preceeding libraries are\n"
+            "   loaded to satisfy the linker.\n"
+            "\n"
+            "Options:\n"
+            "   -c : list classes and categories\n"
+            "   -m : list methods (default)\n"
+            "\n"
+            );
    exit( 1);
 }
 
@@ -112,7 +128,7 @@ static void   print_int( char *type, char *methodname)
    {
       while( *methodname == '_')
          ++methodname;
-      
+
       for( p_s = bool_verbs; *p_s; p_s++)
       {
          len = strlen( *p_s);
@@ -132,15 +148,15 @@ static int   has_suffix( char *s, char *suffix)
 {
    size_t   len;
    size_t   suffix_len;
-   
+
    len = s ? strlen( s): 0;
    if( ! len)
       return( 0);
-   
+
    suffix_len = suffix ? strlen( suffix) : 0;
    if( suffix_len > len)
       return( 0);
-   
+
    return( ! strcmp( &s[ len - suffix_len], suffix));
 }
 
@@ -149,7 +165,7 @@ static void   print_struct_or_union( char *type, char *methodname, char *prefix)
 {
    char                         *element;
    struct mulle_objc_typeinfo   typeinfo;
-   
+
    element = strchr( type, '=');
    if( ! element)
    {
@@ -160,7 +176,7 @@ static void   print_struct_or_union( char *type, char *methodname, char *prefix)
    if( *type == '?')
    {
       ++type;
-      
+
       if( has_suffix( methodname, "Zone:"))
       {
          printf( "NSZone");
@@ -194,7 +210,7 @@ static void   print_union( char *type, char *methodname)
 static void   print_pointer( char *type, char *methodname)
 {
    struct mulle_objc_typeinfo  typeinfo;
-   
+
    if( mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo))
       print_typeinfo( &typeinfo, methodname);
    printf( " *");  // hmm
@@ -204,7 +220,7 @@ static void   print_pointer( char *type, char *methodname)
 static void   print_array( char *type, char *methodname)
 {
    struct mulle_objc_typeinfo  typeinfo;
-   
+
    if( mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo))
       print_typeinfo( &typeinfo, methodname);
    printf( " []");  // hmm
@@ -222,7 +238,7 @@ static void   print_typeinfo( struct mulle_objc_typeinfo  *typeinfo, char *metho
 {
    char  *s;
    char  *end;
-   
+
    if( typeinfo->name)
    {
       s   = &typeinfo->name[ 1];
@@ -232,14 +248,14 @@ static void   print_typeinfo( struct mulle_objc_typeinfo  *typeinfo, char *metho
          printf( "**malformed named signature %s **", s);
          return;
       }
-      
+
       if( *s == '<')
          printf( "id %.*s", (int) (end - s), s);
       else
          printf( "%.*s *", (int) (end - s), s);
       return;
    }
-   
+
    s = simple_typename( typeinfo->type);
    if( s)
    {
@@ -265,7 +281,7 @@ static void   print_typeinfo( struct mulle_objc_typeinfo  *typeinfo, char *metho
 //
 // Export Format: no escaping, no quoting!
 //
-// classid;categoryid;owner;methodid;+/-;name;rvaltype;objtype;sel;params;variadic
+// classid;classname;categoryid;categorynane;methodid;+/-;name;rvaltype;objtype;sel;params;variadic
 //
 // owner    :  either Foo or Foo( A), no quotes
 // +/-      :  either + or -
@@ -282,23 +298,23 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
    char                         *types;
    struct mulle_objc_typeinfo   typeinfo;
    unsigned int                 i;
-   
+
    printf( ";%08x", method->descriptor.methodid);
    printf( ";%c", type);
    printf( ";%s", method->descriptor.name);
-   
+
    types = method->descriptor.signature;
    i     = 0;
    while( types = mulle_objc_signature_supply_next_typeinfo( types, &typeinfo))
    {
       putchar( (i <= first_param_index) ? ';' : ',');
-      
+
       switch( i++)
       {
       case object_index :
          printf( "%s *", classname);
          continue;
-         
+
       case sel_index    :
          printf( "SEL");
          continue;
@@ -306,7 +322,8 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
       print_typeinfo( &typeinfo, method->descriptor.name);
    }
    printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
-   
+   printf( ";0x%x", method->descriptor.bits);
+
    printf( "\n");
 }
 
@@ -318,8 +335,8 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
                                      struct _mulle_objc_loadinfo *info)
 {
    printf( "%08x", p->classid);
+   printf( ";%s",  p->classname);
    printf( ";");
-   printf( ";%s", p->classname);
    printf( ";");
 
    loadmethod_dump( method, type, p->classname);
@@ -332,11 +349,11 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         struct _mulle_objc_runtime *runtime,
                                         struct _mulle_objc_loadinfo *info)
 {
-   printf( "%08x", p->classid);
+   printf( "%08x",  p->classid);
+   printf( ";%s",   p->classname);
    printf( ";%08x", p->categoryid);
-   printf( ";%s", p->classname);
-   printf( ";%s", p->categoryname);
-   
+   printf( ";%s",   p->categoryname);
+
    loadmethod_dump( method, type, p->classname);
 }
 
@@ -352,7 +369,7 @@ static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
 
    if( ! list)
       return;
-   
+
    method = list->methods;
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
@@ -374,7 +391,7 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
 
    if( ! list)
       return;
-   
+
    method = list->methods;
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
@@ -390,18 +407,16 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                               struct _mulle_objc_loadinfo *info)
 {
    log_printf( "Dumping class %s ...\n", p->classname);
-   
+
    if( mode == dump_methods)
    {
       methodlist_loadclass_dump( p->classmethods, '+', p, runtime, info);
       methodlist_loadclass_dump( p->instancemethods, '-', p, runtime, info);
       return;
    }
-   
+
    printf( "%08x", p->classid);
-   printf( ";");
    printf( ";%s\n", p->classname);
-   printf( ";");
 }
 
 
@@ -410,17 +425,17 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
                                  struct _mulle_objc_loadinfo *info)
 {
    log_printf( "Dumping category %s( %s) ...\n", p->classname, p->categoryname);
-   
+
    if( mode == dump_methods)
    {
       methodlist_loadcategory_dump( p->classmethods, '+', p, runtime, info);
       methodlist_loadcategory_dump( p->instancemethods, '-', p, runtime, info);
       return;
    }
- 
+
    printf( "%08x", p->classid);
+   printf( ";%s", p->classname);
    printf( ";%08x", p->categoryid);
-   printf( ";%s\n", p->classname);
    printf( ";%s\n", p->categoryname);
 }
 
@@ -478,7 +493,7 @@ int  main( int argc, char *argv[])
 {
    void   *handle;
    int    i;
-   
+
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -512,29 +527,50 @@ int  main( int argc, char *argv[])
     * should be caught though.
     *
     */
-   
+
    for( i = 1; i < argc ; i++)
    {
-      if( argv[ i][ 0] == '-')
-      {
-         switch( argv[ i][ 1])
-         {
-         case 'v':
-            verbose = 1;
-            break;
-         
-         case 'c':
-            mode = dump_classes;
-            break;
-            
-         default :
-            usage();
-         }
-      }
+      if( argv[ i][ 0] != '-')
+         break;
       
+      switch( argv[ i][ 1])
+      {
+      case '-' :
+         switch( argv[ i][ 2])
+         {
+         case 'v' :
+            fprintf( stderr, "%u.%u.%u\n",
+                    (MULLE_OBJC_LIST_VERSION >> 20),
+                    ((MULLE_OBJC_LIST_VERSION >> 8) & 0xFFF),
+                    MULLE_OBJC_LIST_VERSION & 0xFF);
+            return( 1);
+         }
+         
+      case 'v':
+         verbose = 1;
+         break;
+         
+      case 'c':
+         mode = dump_classes;
+         break;
+         
+      case 'm':
+         mode = dump_methods;
+         break;
+         
+      default :
+         usage();
+      }
+   }
+   
+   if( i >= argc)
+      usage();
+   
+   for(; i < argc ; i++)
+   {
       if( i == argc - 1)  // dump the last one
          dump = 1;
-      
+
       handle = dlopen( argv[ i], RTLD_LAZY|RTLD_LOCAL);
       if( ! handle)
       {

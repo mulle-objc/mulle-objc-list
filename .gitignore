@@ -7,3 +7,5 @@
 build*.d/
 build/
 mulle-configuration/
+bin/mulle-homebrew
+mulle-configuration
