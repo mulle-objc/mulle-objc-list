@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.0)
 
-project( mulle-objc-method-list)
+project( mulle-objc-list)
 
 set( CMAKE_MODULE_PATH
 ${CMAKE_MODULE_PATH}
@@ -46,13 +46,13 @@ include( CMakeSourcesAndHeaders.txt)
 
 ###
 
-add_executable( "mulle-objc-method-list"
+add_executable( "mulle-objc-list"
 ${SOURCES}
 )
-target_link_libraries( "mulle-objc-method-list"
+target_link_libraries( "mulle-objc-list"
 ${BEGIN_ALL_LOAD}
 ${LIBRARIES}
 ${END_ALL_LOAD}
 )
 
-install( TARGETS "mulle-objc-method-list" DESTINATION "bin")
+install( TARGETS "mulle-objc-list" DESTINATION "bin")

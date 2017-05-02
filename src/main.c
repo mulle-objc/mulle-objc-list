@@ -18,6 +18,12 @@
 
 
 static int   verbose;
+static int   dump;
+enum
+{
+   dump_methods,
+   dump_classes
+} mode = dump_methods;
 
 static void   log_printf( char *format, ...)
 {
@@ -259,7 +265,7 @@ static void   print_typeinfo( struct mulle_objc_typeinfo  *typeinfo, char *metho
 //
 // Export Format: no escaping, no quoting!
 //
-// owner;+/-;name;rvaltype;objtype;sel;params;variadic
+// classid;categoryid;owner;methodid;+/-;name;rvaltype;objtype;sel;params;variadic
 //
 // owner    :  either Foo or Foo( A), no quotes
 // +/-      :  either + or -
@@ -277,6 +283,7 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
    struct mulle_objc_typeinfo   typeinfo;
    unsigned int                 i;
    
+   printf( ";%08x", method->descriptor.methodid);
    printf( ";%c", type);
    printf( ";%s", method->descriptor.name);
    
@@ -310,7 +317,11 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
                                      struct _mulle_objc_runtime *runtime,
                                      struct _mulle_objc_loadinfo *info)
 {
-   printf( "%s", p->classname);
+   printf( "%08x", p->classid);
+   printf( ";");
+   printf( ";%s", p->classname);
+   printf( ";");
+
    loadmethod_dump( method, type, p->classname);
 }
 
@@ -321,7 +332,11 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         struct _mulle_objc_runtime *runtime,
                                         struct _mulle_objc_loadinfo *info)
 {
-   printf( "%s( %s)", p->classname, p->categoryname);
+   printf( "%08x", p->classid);
+   printf( ";%08x", p->categoryid);
+   printf( ";%s", p->classname);
+   printf( ";%s", p->categoryname);
+   
    loadmethod_dump( method, type, p->classname);
 }
 
@@ -376,8 +391,17 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
 {
    log_printf( "Dumping class %s ...\n", p->classname);
    
-   methodlist_loadclass_dump( p->classmethods, '+', p, runtime, info);
-   methodlist_loadclass_dump( p->instancemethods, '-', p, runtime, info);
+   if( mode == dump_methods)
+   {
+      methodlist_loadclass_dump( p->classmethods, '+', p, runtime, info);
+      methodlist_loadclass_dump( p->instancemethods, '-', p, runtime, info);
+      return;
+   }
+   
+   printf( "%08x", p->classid);
+   printf( ";");
+   printf( ";%s\n", p->classname);
+   printf( ";");
 }
 
 
@@ -387,8 +411,17 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
 {
    log_printf( "Dumping category %s( %s) ...\n", p->classname, p->categoryname);
    
-   methodlist_loadcategory_dump( p->classmethods, '+', p, runtime, info);
-   methodlist_loadcategory_dump( p->instancemethods, '-', p, runtime, info);
+   if( mode == dump_methods)
+   {
+      methodlist_loadcategory_dump( p->classmethods, '+', p, runtime, info);
+      methodlist_loadcategory_dump( p->instancemethods, '-', p, runtime, info);
+      return;
+   }
+ 
+   printf( "%08x", p->classid);
+   printf( ";%08x", p->categoryid);
+   printf( ";%s\n", p->classname);
+   printf( ";%s\n", p->categoryname);
 }
 
 
@@ -428,12 +461,15 @@ static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
 }
 
 
+
 int  __mulle_objc_loadinfo_callback( struct _mulle_objc_runtime *runtime,
                                      struct _mulle_objc_loadinfo *info)
 {
-   loadclasslist_walk( info->loadclasslist, runtime, info);
-   loadcategorylist_walk( info->loadcategorylist, runtime, info);
-
+   if( dump)
+   {
+      loadclasslist_walk( info->loadclasslist, runtime, info);
+      loadcategorylist_walk( info->loadcategorylist, runtime, info);
+   }
    return( 0); // don't add to runtime
 }
 
@@ -441,7 +477,8 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_runtime *runtime,
 int  main( int argc, char *argv[])
 {
    void   *handle;
-
+   int    i;
+   
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -451,9 +488,7 @@ int  main( int argc, char *argv[])
    }
 #endif
 
-   verbose = getenv( "VERBOSE") != NULL;
-   
-   if( argc != 2)
+   if( argc < 2)
       usage();
 
    // this doesn't work
@@ -477,11 +512,36 @@ int  main( int argc, char *argv[])
     * should be caught though.
     *
     */
-   handle = dlopen( argv[ 1], RTLD_LAZY|RTLD_LOCAL);
-   if( ! handle)
+   
+   for( i = 1; i < argc ; i++)
    {
-      fprintf( stderr, "error: failed to open \"%s\" %s\n", argv[ 1], strerror( errno));
-      return( 1);
+      if( argv[ i][ 0] == '-')
+      {
+         switch( argv[ i][ 1])
+         {
+         case 'v':
+            verbose = 1;
+            break;
+         
+         case 'c':
+            mode = dump_classes;
+            break;
+            
+         default :
+            usage();
+         }
+      }
+      
+      if( i == argc - 1)  // dump the last one
+         dump = 1;
+      
+      handle = dlopen( argv[ i], RTLD_LAZY|RTLD_LOCAL);
+      if( ! handle)
+      {
+         fprintf( stderr, "error: failed to open \"%s\" %s\n",
+                     argv[ i], strerror( errno));
+         return( 1);
+      }
    }
    return( 0);
 }

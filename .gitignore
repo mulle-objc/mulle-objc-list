@@ -4,3 +4,6 @@
 /addictions
 /.bootstrap.repos
 /stashes
+build*.d/
+build/
+mulle-configuration/
