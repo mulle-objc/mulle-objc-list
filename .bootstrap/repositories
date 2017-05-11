@@ -1,1 +1,2 @@
-${MULLE_OBJC_REPOSITORIES}/MulleObjC;;${MULLE_OBJC_BRANCH:-release}
+${MULLE_OBJC_REPOSITORIES}/mulle-objc-runtime;;${MULLE_OBJC_RUNTIME_BRANCH:-release}
+${MULLE_REPOSITORIES:-https://github.com/mulle-nat}/mulle-homebrew;bin/mulle-homebrew;${MULLE_HOMEBREW_BRANCH:-release}

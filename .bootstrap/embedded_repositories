@@ -1,2 +1,1 @@
 ${MULLE_REPOSITORIES:-https://github.com/mulle-nat}/mulle-configuration;;${MULLE_CONFIGURATION_BRANCH:-release}
-${MULLE_REPOSITORIES:-https://github.com/mulle-nat}/mulle-homebrew;bin/mulle-homebrew;${MULLE_HOMEBREW_BRANCH:-release}

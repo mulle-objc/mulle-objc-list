@@ -25,10 +25,13 @@
 
 static int   verbose;
 static int   dump;
+static int   emit_sentinel;
+
 enum
 {
-   dump_methods,
-   dump_classes
+   dump_classes,
+   dump_dependencies,
+   dump_methods
 } mode = dump_methods;
 
 static void   log_printf( char *format, ...)
@@ -46,13 +49,18 @@ static void   log_printf( char *format, ...)
 static void   usage( void)
 {
    fprintf( stderr,
-           "usage: mulle-objc-list [option] <libraries>\n"
+           "usage: mulle-objc-list [options] [command] <libraries>\n"
             "\n"
             "   The last library is listed. The preceeding libraries are\n"
             "   loaded to satisfy the linker.\n"
             "\n"
             "Options:\n"
+            "   -e : emit dependencies sentinel field\n"
+            "   -v : verbose\n"
+            "\n"
+            "Commands:\n"
             "   -c : list classes and categories\n"
+            "   -d : list classes and categories as +dependencies\n"
             "   -m : list methods (default)\n"
             "\n"
             );
@@ -401,6 +409,7 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
    }
 }
 
+static char  *dep_seperator = "";
 
 static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                               struct _mulle_objc_runtime *runtime,
@@ -408,15 +417,23 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
 {
    log_printf( "Dumping class %s ...\n", p->classname);
 
-   if( mode == dump_methods)
+   switch( mode)
    {
+   case dump_methods :
       methodlist_loadclass_dump( p->classmethods, '+', p, runtime, info);
       methodlist_loadclass_dump( p->instancemethods, '-', p, runtime, info);
-      return;
-   }
+      break;
 
-   printf( "%08x", p->classid);
-   printf( ";%s\n", p->classname);
+   case dump_classes :
+      printf( "%08x;%s\n", p->classid, p->classname);
+      break;
+
+   case dump_dependencies :
+      printf( "%s      { @selector( %s), MULLE_OBJC_NO_CATEGORYID }",
+             dep_seperator,
+                p->classname);
+      dep_seperator = ",\n";
+   }
 }
 
 
@@ -426,17 +443,25 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
 {
    log_printf( "Dumping category %s( %s) ...\n", p->classname, p->categoryname);
 
-   if( mode == dump_methods)
+   switch( mode)
    {
+   case dump_methods :
       methodlist_loadcategory_dump( p->classmethods, '+', p, runtime, info);
       methodlist_loadcategory_dump( p->instancemethods, '-', p, runtime, info);
       return;
-   }
 
-   printf( "%08x", p->classid);
-   printf( ";%s", p->classname);
-   printf( ";%08x", p->categoryid);
-   printf( ";%s\n", p->categoryname);
+   case dump_classes :
+      printf( "%08x;%s;%08x;%s\n",
+               p->classid, p->classname, p->categoryid, p->categoryname);
+      return;
+
+   case dump_dependencies :
+      printf( "%s      { @selector( %s), @selector( %s) }",
+                dep_seperator,
+                p->classname,
+                p->categoryname);
+      dep_seperator = ",\n";
+   }
 }
 
 
@@ -476,7 +501,6 @@ static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
 }
 
 
-
 int  __mulle_objc_loadinfo_callback( struct _mulle_objc_runtime *runtime,
                                      struct _mulle_objc_loadinfo *info)
 {
@@ -493,7 +517,7 @@ int  main( int argc, char *argv[])
 {
    void   *handle;
    int    i;
-
+   
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -550,12 +574,20 @@ int  main( int argc, char *argv[])
          verbose = 1;
          break;
 
+      case 'e':
+         emit_sentinel = 1;
+         break;
+
       case 'c':
          mode = dump_classes;
          break;
 
       case 'm':
          mode = dump_methods;
+         break;
+
+      case 'd':
+         mode = dump_dependencies;
          break;
 
       default :
@@ -571,6 +603,9 @@ int  main( int argc, char *argv[])
       if( i == argc - 1)  // dump the last one
          dump = 1;
 
+      if( verbose)
+         fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
+
       handle = dlopen( argv[ i], RTLD_LAZY|RTLD_LOCAL);
       if( ! handle)
       {
@@ -578,7 +613,18 @@ int  main( int argc, char *argv[])
                      argv[ i], strerror( errno));
          return( 1);
       }
+
+      if( verbose)
+         fprintf( stderr, "Loaded \"%s\".\n", argv[ i]);
    }
+   
+   if( mode == dump_dependencies)
+   {
+      printf( "%s", dep_seperator);
+      if( emit_sentinel)
+         printf( "      { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }\n");
+   }
+   
    return( 0);
 }
 
