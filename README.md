@@ -4,8 +4,7 @@ This is a [mulle-objc](https://github.com/mulle-nat) project.
 
 This tool loads a shared library and prints a CSV list of all
 class and categories or methods it finds. The shared library must have been
-compiled with
-**mulle-clang**.
+compiled with **mulle-clang**.
 
 
 ### Class/Category List
@@ -26,7 +25,7 @@ Index | Column name  | Description
 
 Each line represents one exported method. The format is:
 
-`classid;classname;categoryid;categoryname;+/-;name;rvaltype;objtype;sel;params;variadic;bits`
+`classid;classname;categoryid;categoryname;methodid;+/-name;rvaltype;objtype;sel;params;variadic;bits`
 
 Index | Column name  | Description
 ------|--------------|---------------------------------
@@ -34,27 +33,56 @@ Index | Column name  | Description
 2     | classname    |  the name of the class
 3     | categoryid   |  optional: the id of the category
 4     | categoryname |  optional: the name of the category
-5     | +/-          |  either `+` or `-`
+5     | methodid     |  the id of the method
 6     | name         |  methodname like `takeValue:forKey:`
 7     | rvaltype     |  return value C/ObjC type without parantheses
-8     | params       |  parameter C/ObjC types (if any) separated by comma
-9     | variadic     |  either `...` or empty
-10    | bits         |  bits as hex value
+8     | objctype     |  "classname" as a pointer
+9     | sel          |  always ':', the selector
+10     | params       |  parameter C/ObjC types (if any) separated by comma
+11    | variadic     |  either `...` or empty
+12    | bits         |  bits as hex value
 
 The intended use is to produce test skeleton code from this information.
+
+
+### Terse Method List
+
+Each line represents one exported method. The format is:
+
+`;;classid;classname;categoryid;categoryname;methodid;+/-name`
+
+Index | Column name  | Description
+------|--------------|---------------------------------
+1     | empty        |
+2     | empty        |
+3     | classname    |  the name of the class
+4     | categoryid   |  optional: the id of the category
+5     | categoryname |  optional: the name of the category
+6     | methodid     |  the id of the method
+7     | name         |  methodname like `takeValue:forKey:` with +/- prefix
+
+
+This is, bar the first two columns, the same format as the runtime coverage
+output. Subtracting coverage from this list, shows unused methods.
 
 
 ## Usage
 
 ```
-usage: mulle-objc-list [option] <libraries>
+usage: mulle-objc-list [options] [command] <libraries>
 
    The last library is listed. The preceeding libraries are
    loaded to satisfy the linker.
 
 Options:
+   -e : emit dependencies sentinel field `{ 0, 0 }`
+   -v : verbose
+
+Commands:
    -c : list classes and categories
+   -d : list classes and categories as +dependencies
    -m : list methods (default)
+   -t : terse list methods (coverage like)
 ```
 
 

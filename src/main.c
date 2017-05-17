@@ -1,3 +1,38 @@
+//
+//  main.c
+//  mulle-objc-list
+//
+//  Created by Nat! on 29.04.17.
+//  Copyright © 2017 Mulle kybernetiK. All rights reserved.
+//  Copyright © 2017 Codeon GmbH. All rights reserved.
+//
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//  Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//
+//  Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation
+//  and/or other materials provided with the distribution.
+//
+//  Neither the name of Mulle kybernetiK nor the names of its contributors
+//  may be used to endorse or promote products derived from this software
+//  without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+//  POSSIBILITY OF SUCH DAMAGE.
+//
+
 // we don't really load any code, so this is
 // the minimal setup
 
@@ -31,7 +66,8 @@ enum
 {
    dump_classes,
    dump_dependencies,
-   dump_methods
+   dump_methods,
+   dump_coverage  // coverage style
 } mode = dump_methods;
 
 static void   log_printf( char *format, ...)
@@ -62,6 +98,7 @@ static void   usage( void)
             "   -c : list classes and categories\n"
             "   -d : list classes and categories as +dependencies\n"
             "   -m : list methods (default)\n"
+            "   -t : terse list methods (coverage like)\n"
             "\n"
             );
    exit( 1);
@@ -308,30 +345,32 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
    unsigned int                 i;
 
    printf( ";%08x", method->descriptor.methodid);
-   printf( ";%c", type);
-   printf( ";%s", method->descriptor.name);
+   printf( ";%c%s", type, method->descriptor.name);
 
-   types = method->descriptor.signature;
-   i     = 0;
-   while( types = mulle_objc_signature_supply_next_typeinfo( types, &typeinfo))
+   if( mode == dump_methods)
    {
-      putchar( (i <= first_param_index) ? ';' : ',');
-
-      switch( i++)
+      types = method->descriptor.signature;
+      i     = 0;
+      while( types = mulle_objc_signature_supply_next_typeinfo( types, &typeinfo))
       {
-      case object_index :
-         printf( "%s *", classname);
-         continue;
-
-      case sel_index    :
-         printf( "SEL");
-         continue;
+         putchar( (i <= first_param_index) ? ';' : ',');
+         
+         switch( i++)
+         {
+            case object_index :
+               printf( "%s *", classname);
+               continue;
+               
+            case sel_index    :
+               printf( "SEL");
+               continue;
+         }
+         print_typeinfo( &typeinfo, method->descriptor.name);
       }
-      print_typeinfo( &typeinfo, method->descriptor.name);
+      printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
+      printf( ";0x%x", method->descriptor.bits);
    }
-   printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
-   printf( ";0x%x", method->descriptor.bits);
-
+   
    printf( "\n");
 }
 
@@ -342,6 +381,9 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
                                      struct _mulle_objc_runtime *runtime,
                                      struct _mulle_objc_loadinfo *info)
 {
+   if( mode == dump_coverage)
+      printf( ";;");
+
    printf( "%08x", p->classid);
    printf( ";%s",  p->classname);
    printf( ";");
@@ -357,6 +399,9 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         struct _mulle_objc_runtime *runtime,
                                         struct _mulle_objc_loadinfo *info)
 {
+   if( mode == dump_coverage)
+      printf( ";;");
+
    printf( "%08x",  p->classid);
    printf( ";%s",   p->classname);
    printf( ";%08x", p->categoryid);
@@ -420,6 +465,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    switch( mode)
    {
    case dump_methods :
+   case dump_coverage :
       methodlist_loadclass_dump( p->classmethods, '+', p, runtime, info);
       methodlist_loadclass_dump( p->instancemethods, '-', p, runtime, info);
       break;
@@ -445,7 +491,8 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
 
    switch( mode)
    {
-   case dump_methods :
+   case dump_methods  :
+   case dump_coverage :
       methodlist_loadcategory_dump( p->classmethods, '+', p, runtime, info);
       methodlist_loadcategory_dump( p->instancemethods, '-', p, runtime, info);
       return;
@@ -517,7 +564,7 @@ int  main( int argc, char *argv[])
 {
    void   *handle;
    int    i;
-   
+
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -590,6 +637,10 @@ int  main( int argc, char *argv[])
          mode = dump_dependencies;
          break;
 
+      case 't':
+         mode = dump_coverage;
+         break;
+
       default :
          usage();
       }
@@ -617,14 +668,14 @@ int  main( int argc, char *argv[])
       if( verbose)
          fprintf( stderr, "Loaded \"%s\".\n", argv[ i]);
    }
-   
+
    if( mode == dump_dependencies)
    {
       printf( "%s", dep_seperator);
       if( emit_sentinel)
          printf( "      { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }\n");
    }
-   
+
    return( 0);
 }
 
