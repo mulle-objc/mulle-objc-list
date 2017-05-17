@@ -56,3 +56,4 @@ ${END_ALL_LOAD}
 )
 
 install( TARGETS "mulle-objc-list" DESTINATION "bin")
+install( FILES "mulle-objc-uncovered-methods" DESTINATION "bin")

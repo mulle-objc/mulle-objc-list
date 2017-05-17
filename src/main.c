@@ -40,6 +40,7 @@
 #define __MULLE_OBJC_NO_TRT__ 1
 
 #import <mulle_objc/mulle_objc.h>
+#import <mulle_objc/mulle_objc_csvdump.h>
 
 #include <ctype.h>
 #include <string.h>
@@ -67,8 +68,10 @@ enum
    dump_classes,
    dump_dependencies,
    dump_methods,
-   dump_coverage  // coverage style
+   dump_coverage,  // coverage style
+   dump_info
 } mode = dump_methods;
+
 
 static void   log_printf( char *format, ...)
 {
@@ -82,13 +85,15 @@ static void   log_printf( char *format, ...)
    va_end( args);
 }
 
+
 static void   usage( void)
 {
    fprintf( stderr,
-           "usage: mulle-objc-list [options] [command] <libraries>\n"
+           "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
             "\n"
-            "   The last library is listed. The preceeding libraries are\n"
-            "   loaded to satisfy the linker.\n"
+            "   The binary is listed. The preceeding libraries are\n"
+            "   explicitly loaded but their contents aren't listed.\n"
+            "   Implicitly loaded libraries by binary are listed.\n"
             "\n"
             "Options:\n"
             "   -e : emit dependencies sentinel field\n"
@@ -97,6 +102,7 @@ static void   usage( void)
             "Commands:\n"
             "   -c : list classes and categories\n"
             "   -d : list classes and categories as +dependencies\n"
+            "   -i : dump loadinfo version information\n"
             "   -m : list methods (default)\n"
             "   -t : terse list methods (coverage like)\n"
             "\n"
@@ -354,13 +360,13 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
       while( types = mulle_objc_signature_supply_next_typeinfo( types, &typeinfo))
       {
          putchar( (i <= first_param_index) ? ';' : ',');
-         
+
          switch( i++)
          {
             case object_index :
                printf( "%s *", classname);
                continue;
-               
+
             case sel_index    :
                printf( "SEL");
                continue;
@@ -370,7 +376,7 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
       printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
       printf( ";0x%x", method->descriptor.bits);
    }
-   
+
    printf( "\n");
 }
 
@@ -381,9 +387,6 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
                                      struct _mulle_objc_runtime *runtime,
                                      struct _mulle_objc_loadinfo *info)
 {
-   if( mode == dump_coverage)
-      printf( ";;");
-
    printf( "%08x", p->classid);
    printf( ";%s",  p->classname);
    printf( ";");
@@ -399,9 +402,6 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         struct _mulle_objc_runtime *runtime,
                                         struct _mulle_objc_loadinfo *info)
 {
-   if( mode == dump_coverage)
-      printf( ";;");
-
    printf( "%08x",  p->classid);
    printf( ";%s",   p->classname);
    printf( ";%08x", p->categoryid);
@@ -551,8 +551,38 @@ static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
 int  __mulle_objc_loadinfo_callback( struct _mulle_objc_runtime *runtime,
                                      struct _mulle_objc_loadinfo *info)
 {
+   static int   done;
+
+   if( verbose && ! done)
+   {
+      log_printf( "The loading runtime is %u.%u.%u",
+                     mulle_objc_version_get_major( runtime->version),
+                     mulle_objc_version_get_minor( runtime->version),
+                     mulle_objc_version_get_patch( runtime->version));
+      if( _mulle_objc_runtime_get_path( runtime))
+         log_printf( " (%s)", _mulle_objc_runtime_get_path( runtime));
+      log_printf( "\n");
+
+      done = 1;
+   }
+
    if( dump)
    {
+     // if empty, ignore
+      if((! info->loadclasslist    || ! info->loadclasslist->n_loadclasses) &&
+         (! info->loadcategorylist || ! info->loadcategorylist->n_loadcategories))
+      {
+         return(0);
+      }
+
+      log_printf( "Dumping loadinfo %s ...\n", mulle_objc_loadinfo_get_originator( info));
+
+      if( mode == dump_info)
+      {
+         mulle_objc_loadinfo_csvdump_terse( info, stdout);
+         return( 0);
+      }
+
       loadclasslist_walk( info->loadclasslist, runtime, info);
       loadcategorylist_walk( info->loadcategorylist, runtime, info);
    }
@@ -568,9 +598,9 @@ int  main( int argc, char *argv[])
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
-      extern void   mulle_objc_dotdump_to_tmp( void);
+      extern void   mulle_objc_dotdump( void);
 
-      mulle_objc_dotdump_to_tmp();
+      mulle_objc_dotdump();
    }
 #endif
 
@@ -617,6 +647,7 @@ int  main( int argc, char *argv[])
             return( 1);
          }
 
+      // options
       case 'v':
          verbose = 1;
          break;
@@ -625,16 +656,21 @@ int  main( int argc, char *argv[])
          emit_sentinel = 1;
          break;
 
+      // commands
       case 'c':
          mode = dump_classes;
          break;
 
-      case 'm':
-         mode = dump_methods;
-         break;
-
       case 'd':
          mode = dump_dependencies;
+         break;
+
+      case 'i':
+         mode = dump_info;
+         break;
+
+      case 'm':
+         mode = dump_methods;
          break;
 
       case 't':

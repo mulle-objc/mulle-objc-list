@@ -2,8 +2,8 @@
 
 This is a [mulle-objc](https://github.com/mulle-nat) project.
 
-This tool loads a shared library and prints a CSV list of all
-class and categories or methods it finds. The shared library must have been
+This tool loads a shared library or executable and prints a CSV list of all
+class and categories or methods it finds. The binary must have been
 compiled with **mulle-clang**.
 
 
@@ -38,7 +38,7 @@ Index | Column name  | Description
 7     | rvaltype     |  return value C/ObjC type without parantheses
 8     | objctype     |  "classname" as a pointer
 9     | sel          |  always ':', the selector
-10     | params       |  parameter C/ObjC types (if any) separated by comma
+10    | params       |  parameter C/ObjC types (if any) separated by comma
 11    | variadic     |  either `...` or empty
 12    | bits         |  bits as hex value
 
@@ -49,38 +49,59 @@ The intended use is to produce test skeleton code from this information.
 
 Each line represents one exported method. The format is:
 
-`;;classid;classname;categoryid;categoryname;methodid;+/-name`
+`classid;classname;categoryid;categoryname;methodid;+/-name`
 
 Index | Column name  | Description
 ------|--------------|---------------------------------
-1     | empty        |
-2     | empty        |
-3     | classname    |  the name of the class
-4     | categoryid   |  optional: the id of the category
-5     | categoryname |  optional: the name of the category
-6     | methodid     |  the id of the method
-7     | name         |  methodname like `takeValue:forKey:` with +/- prefix
+1     | classname    |  the name of the class
+2     | categoryid   |  optional: the id of the category
+3     | categoryname |  optional: the name of the category
+4     | methodid     |  the id of the method
+5     | name         |  methodname like `takeValue:forKey:` with +/- prefix
 
 
-This is, bar the first two columns, the same format as the runtime coverage
-output. Subtracting coverage from this list, shows unused methods.
+This is the same format as the runtime coverage output, if you remove the first
+two columns from the output. Then subtracting the modified coverage from this
+list, shows all unused methods.
+
+
+### Objects Info
+
+Each line represents a linked `-o` file with classes or categories.
+
+`path;runtime-version;foundation-version;user;optilevel;bits`
+
+
+Index | Column name  | Description
+------|--------------|---------------------------------
+1     | path         | source of compiled .o file
+2     | runtime      | version of the runtime the .o file was compiled
+3     | foundation   | version of the foundation the .o file was compiled
+4     | user         | user supplied version during compilation
+5     | optilevel    | optimization level of the compiled .o file
+6     | bits         | load info bits as hex
+
+
+Can be useful to find mixed in old .o files
 
 
 ## Usage
 
 ```
-usage: mulle-objc-list [options] [command] <libraries>
+usage: mulle-objc-list [options] [command] [libraries] <binary>
 
-   The last library is listed. The preceeding libraries are
-   loaded to satisfy the linker.
+   The binary is listed. The preceeding libraries are
+   explicitly loaded but their contents aren't listed.
+   Implicitly loaded libraries by binary are listed.
 
 Options:
-   -e : emit dependencies sentinel field `{ 0, 0 }`
+   -e : emit dependencies sentinel field
    -v : verbose
 
 Commands:
    -c : list classes and categories
    -d : list classes and categories as +dependencies
+   -i : dump loadinfo version information
    -m : list methods (default)
    -t : terse list methods (coverage like)
 ```
@@ -105,7 +126,6 @@ Get [homebrew](https://brew.sh) then
 brew install mulle-kybernetik/software/mulle-objc-developer
 mulle-bootstrap
 ```
-
 
 ### Use **make** to build project
 
