@@ -611,7 +611,7 @@ int  main( int argc, char *argv[])
    // the dylib comes usually with its own global runtime
    //
    // struct _mulle_objc_runtime   *runtime;
-   // runtime = __get_or_create_objc_runtime();
+   // runtime = __get_or_create_mulle_objc_runtime();
    // runtime->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
    // but
    /*
@@ -719,7 +719,7 @@ int  main( int argc, char *argv[])
 #ifdef STATIC_LINKED_FOUNDATION
 
 MULLE_C_CONST_RETURN  // always returns same value (in same thread)
-struct _mulle_objc_runtime  *__get_or_create_objc_runtime( void)
+struct _mulle_objc_runtime  *__get_or_create_mulle_objc_runtime( void)
 {
    struct _mulle_objc_runtime  *runtime;
 
