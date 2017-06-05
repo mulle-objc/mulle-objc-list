@@ -49,10 +49,13 @@ include( CMakeSourcesAndHeaders.txt)
 add_executable( "mulle-objc-list"
 ${SOURCES}
 )
+
+
 target_link_libraries( "mulle-objc-list"
 ${BEGIN_ALL_LOAD}
 ${LIBRARIES}
 ${END_ALL_LOAD}
+${OS_SPECIFIC_LIBRARIES}
 )
 
 install( TARGETS "mulle-objc-list" DESTINATION "bin")
