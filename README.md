@@ -82,7 +82,7 @@ Index | Column name  | Description
 6     | bits         | load info bits as hex
 
 
-Can be useful to find mixed in old .o files
+Can be useful to find mixed-in old .o files
 
 
 ## Usage
@@ -109,67 +109,11 @@ Commands:
 
 ## Install Prequisites
 
-Install
-[mulle-objc-developer](https://github.com/mulle-nat/mulle-objc-developer).
-
-This will give your the **mulle-clang** compiler and the **mulle-objc**
-libraries that are necessary to build this project as well as
-[mulle-bootstrap](https://github.com/mulle-nat/mulle-bootstrap)
-to manage the projects dependencies.
+Install [mulle-objc-developer](https://github.com/mulle-obj/mulle-objc-developer).
 
 
-### Install Prequisites on OS X:
-
-Get [homebrew](https://brew.sh) then
+### Use **mulle-build** to build the project
 
 ```
-brew install mulle-kybernetik/software/mulle-objc-developer
-mulle-bootstrap
+mulle-build --bootstrap
 ```
-
-### Use **make** to build project
-
-```
-mkdir build.d
-cd build.d
-cmake -G "Unix Makefiles" ..
-make
-```
-
-### Use Xcode to build project
-
-```
-mkdir build-xcode.d
-cd build-xcode.d
-cmake -G "Xcode" ..
-xcodebuild
-```
-
-### Use Visual Studio to build project
-
-```
-mkdir build-vs.d
-cd build-vs.d
-cmake -G "Visual Studio 12" ..
-msbuild
-```
-
-## Avoiding duplicate compiler installs
-
-If you already have the **mulle-clang** compiler installed, you should edit
-the file `.bootstrap/repositories` and change the line
-
-`${MULLE_OBJC_REPOSITORIES}/mulle-objc-developer;;${MULLE_OBJC_DEVELOPER_BRANCH:-release}`
-
-to
-
-`${MULLE_OBJC_REPOSITORIES}/MulleObjC;;${MULLE_OBJC_BRANCH:-release}`
-
-## Installing the compiler system-wide
-
-Check the [mulle-clang](https://github.com/codeon-gmbh/mulle-clang) homepage
-how to install **mulle-clang** on your system.
-
-> On OS X you can install the compiler system-wide with
-> `brew install codeon-gmbh/software/mulle-clang`
-
