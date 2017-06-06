@@ -1,6 +1,6 @@
-# mulle-objc-method-list
+# mulle-objc-list
 
-This is a [mulle-objc](https://github.com/mulle-nat) project.
+This is a [mulle-objc](https://github.com/mulle-objc) project.
 
 This tool loads a shared library or executable and prints a CSV list of all
 class and categories or methods it finds. The binary must have been
