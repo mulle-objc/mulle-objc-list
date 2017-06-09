@@ -6,6 +6,9 @@
 /stashes
 build*.d/
 build/
-mulle-configuration/
-bin/mulle-homebrew
 mulle-configuration
+.DS_Store
+*.bak
+bin/mulle-homebrew
+mulle-configurationbin/tap-info.sh
+tap-info.sh

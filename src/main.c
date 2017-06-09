@@ -39,8 +39,8 @@
 #define __MULLE_OBJC_NO_TPS__ 1
 #define __MULLE_OBJC_NO_TRT__ 1
 
-#import <mulle_objc/mulle_objc.h>
-#import <mulle_objc/mulle_objc_csvdump.h>
+#import <mulle_objc_runtime/mulle_objc_runtime.h>
+#import <mulle_objc_runtime/mulle_objc_csvdump.h>
 
 #include <ctype.h>
 #include <string.h>
@@ -384,7 +384,7 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
 static void   loadmethod_class_dump( struct _mulle_objc_method *method,
                                      int type,
                                      struct _mulle_objc_loadclass *p,
-                                     struct _mulle_objc_runtime *runtime,
+                                     struct _mulle_objc_universe *universe,
                                      struct _mulle_objc_loadinfo *info)
 {
    printf( "%08x", p->classid);
@@ -399,7 +399,7 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
 static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         int type,
                                         struct _mulle_objc_loadcategory *p,
-                                        struct _mulle_objc_runtime *runtime,
+                                        struct _mulle_objc_universe *universe,
                                         struct _mulle_objc_loadinfo *info)
 {
    printf( "%08x",  p->classid);
@@ -414,7 +414,7 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
 static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
                                          int type,
                                          struct _mulle_objc_loadclass *p,
-                                         struct _mulle_objc_runtime *runtime,
+                                         struct _mulle_objc_universe *universe,
                                          struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_method   *method;
@@ -427,7 +427,7 @@ static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
    {
-      loadmethod_class_dump( method, type, p, runtime, info);
+      loadmethod_class_dump( method, type, p, universe, info);
       ++method;
    }
 }
@@ -436,7 +436,7 @@ static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
 static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
                                             int type,
                                             struct _mulle_objc_loadcategory *p,
-                                            struct _mulle_objc_runtime *runtime,
+                                            struct _mulle_objc_universe *universe,
                                             struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_method   *method;
@@ -449,7 +449,7 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
    {
-      loadmethod_category_dump( method, type, p, runtime, info);
+      loadmethod_category_dump( method, type, p, universe, info);
       ++method;
    }
 }
@@ -457,7 +457,7 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
 static char  *dep_seperator = "";
 
 static void   loadclass_walk( struct _mulle_objc_loadclass *p,
-                              struct _mulle_objc_runtime *runtime,
+                              struct _mulle_objc_universe *universe,
                               struct _mulle_objc_loadinfo *info)
 {
    log_printf( "Dumping class %s ...\n", p->classname);
@@ -466,8 +466,8 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    {
    case dump_methods :
    case dump_coverage :
-      methodlist_loadclass_dump( p->classmethods, '+', p, runtime, info);
-      methodlist_loadclass_dump( p->instancemethods, '-', p, runtime, info);
+      methodlist_loadclass_dump( p->classmethods, '+', p, universe, info);
+      methodlist_loadclass_dump( p->instancemethods, '-', p, universe, info);
       break;
 
    case dump_classes :
@@ -484,7 +484,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
 
 
 static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
-                                 struct _mulle_objc_runtime *runtime,
+                                 struct _mulle_objc_universe *universe,
                                  struct _mulle_objc_loadinfo *info)
 {
    log_printf( "Dumping category %s( %s) ...\n", p->classname, p->categoryname);
@@ -493,8 +493,8 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
    {
    case dump_methods  :
    case dump_coverage :
-      methodlist_loadcategory_dump( p->classmethods, '+', p, runtime, info);
-      methodlist_loadcategory_dump( p->instancemethods, '-', p, runtime, info);
+      methodlist_loadcategory_dump( p->classmethods, '+', p, universe, info);
+      methodlist_loadcategory_dump( p->instancemethods, '-', p, universe, info);
       return;
 
    case dump_classes :
@@ -515,7 +515,7 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
 #pragma mark - list walkers
 
 static void   loadclasslist_walk( struct _mulle_objc_loadclasslist *list,
-                                  struct _mulle_objc_runtime *runtime,
+                                  struct _mulle_objc_universe *universe,
                                   struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_loadclass   **p;
@@ -527,12 +527,12 @@ static void   loadclasslist_walk( struct _mulle_objc_loadclasslist *list,
    p        = list->loadclasses;
    sentinel = &p[ list->n_loadclasses];
    while( p < sentinel)
-      loadclass_walk( *p++, runtime, info);
+      loadclass_walk( *p++, universe, info);
 }
 
 
 static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
-                                     struct _mulle_objc_runtime *runtime,
+                                     struct _mulle_objc_universe *universe,
                                      struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_loadcategory   **p;
@@ -544,23 +544,23 @@ static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
    p        = list->loadcategories;
    sentinel = &p[ list->n_loadcategories];
    while( p < sentinel)
-      loadcategory_walk( *p++, runtime, info);
+      loadcategory_walk( *p++, universe, info);
 }
 
 
-int  __mulle_objc_loadinfo_callback( struct _mulle_objc_runtime *runtime,
+int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
                                      struct _mulle_objc_loadinfo *info)
 {
    static int   done;
 
    if( verbose && ! done)
    {
-      log_printf( "The loading runtime is %u.%u.%u",
-                     mulle_objc_version_get_major( runtime->version),
-                     mulle_objc_version_get_minor( runtime->version),
-                     mulle_objc_version_get_patch( runtime->version));
-      if( _mulle_objc_runtime_get_path( runtime))
-         log_printf( " (%s)", _mulle_objc_runtime_get_path( runtime));
+      log_printf( "The loading universe is %u.%u.%u",
+                     mulle_objc_version_get_major( universe->version),
+                     mulle_objc_version_get_minor( universe->version),
+                     mulle_objc_version_get_patch( universe->version));
+      if( _mulle_objc_universe_get_path( universe))
+         log_printf( " (%s)", _mulle_objc_universe_get_path( universe));
       log_printf( "\n");
 
       done = 1;
@@ -583,10 +583,10 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_runtime *runtime,
          return( 0);
       }
 
-      loadclasslist_walk( info->loadclasslist, runtime, info);
-      loadcategorylist_walk( info->loadcategorylist, runtime, info);
+      loadclasslist_walk( info->loadclasslist, universe, info);
+      loadcategorylist_walk( info->loadcategorylist, universe, info);
    }
-   return( 0); // don't add to runtime
+   return( 0); // don't add to universe
 }
 
 
@@ -608,11 +608,11 @@ int  main( int argc, char *argv[])
       usage();
 
    // this doesn't work
-   // the dylib comes usually with its own global runtime
+   // the dylib comes usually with its own global universe
    //
-   // struct _mulle_objc_runtime   *runtime;
-   // runtime = __get_or_create_mulle_objc_runtime();
-   // runtime->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
+   // struct _mulle_objc_universe   *universe;
+   // universe = __get_or_create_mulle_objc_runtime();
+   // universe->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
    // but
    /*
     * This method can fail in an interesting way.
@@ -624,7 +624,7 @@ int  main( int argc, char *argv[])
     * should_load_loadinfo( at the same offset) stuff
     * goes really wrong!
     *
-    * If the runtime versioning is done properly this
+    * If the universe versioning is done properly this
     * should be caught though.
     *
     */
@@ -719,14 +719,14 @@ int  main( int argc, char *argv[])
 #ifdef STATIC_LINKED_FOUNDATION
 
 MULLE_C_CONST_RETURN  // always returns same value (in same thread)
-struct _mulle_objc_runtime  *__get_or_create_mulle_objc_runtime( void)
+struct _mulle_objc_universe  *__get_or_create_mulle_objc_universe( void)
 {
-   struct _mulle_objc_runtime  *runtime;
+   struct _mulle_objc_universe  *universe;
 
-   runtime = __mulle_objc_get_runtime();
-   if( ! _mulle_objc_runtime_is_initialized( runtime))
-      __mulle_objc_runtime_setup( runtime, NULL);
-   return( runtime);
+   universe = __mulle_objc_get_universe();
+   if( ! _mulle_objc_universe_is_initialized( universe))
+      __mulle_objc_universe_setup( universe, NULL);
+   return( universe);
 }
 
 

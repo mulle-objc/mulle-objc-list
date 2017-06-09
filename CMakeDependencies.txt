@@ -1,0 +1,13 @@
+include( ${DEPENDENCIES_DIR}/include/mulle_objc_runtime/CMakeDependencies.txt)
+
+if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
+   find_library( MULLE_OBJC_RUNTIME_LIBRARY NAMES mulle_objc_runtime)
+   message(STATUS "MULLE_OBJC_RUNTIME_LIBRARY is ${MULLE_OBJC_RUNTIME_LIBRARY}")
+   set( DEPENDENCY_LIBRARIES
+${DEPENDENCY_LIBRARIES}
+${MULLE_OBJC_RUNTIME_LIBRARY}
+CACHE INTERNAL "need to cache this"
+)
+endif()
+
+message( STATUS "# Included mulle-objc-list CMakeDependencies.txt")
