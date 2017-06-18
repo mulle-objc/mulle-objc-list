@@ -556,9 +556,9 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
    if( verbose && ! done)
    {
       log_printf( "The loading universe is %u.%u.%u",
-                     mulle_objc_version_get_major( universe->version),
-                     mulle_objc_version_get_minor( universe->version),
-                     mulle_objc_version_get_patch( universe->version));
+                     mulle_objc_version_get_major( _mulle_objc_universe_get_version( universe)),
+                     mulle_objc_version_get_minor( _mulle_objc_universe_get_version( universe)),
+                     mulle_objc_version_get_patch( _mulle_objc_universe_get_version( universe)));
       if( _mulle_objc_universe_get_path( universe))
          log_printf( " (%s)", _mulle_objc_universe_get_path( universe));
       log_printf( "\n");
