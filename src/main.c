@@ -724,8 +724,8 @@ struct _mulle_objc_universe  *__get_or_create_mulle_objc_universe( void)
    struct _mulle_objc_universe  *universe;
 
    universe = __mulle_objc_get_universe();
-   if( ! _mulle_objc_universe_is_initialized( universe))
-      __mulle_objc_universe_setup( universe, NULL);
+   if( _mulle_objc_universe_is_uninitialized( universe))
+      _mulle_objc_universe_bang( universe, 0, 0, NULL);
    return( universe);
 }
 
