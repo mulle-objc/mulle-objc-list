@@ -3,14 +3,6 @@ language: c
 dist: trusty
 sudo: required
 
-addons:
-  apt:
-    sources:
-      - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
-    packages:
-      - cmake
-      - cmake-data
-
 before_install:
   - curl -L -O 'https://raw.githubusercontent.com/mulle-objc/mulle-objc-developer/release/install-ubuntu.sh'
   - chmod 755 install-ubuntu.sh
