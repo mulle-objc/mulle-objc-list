@@ -26,11 +26,9 @@ add_executable( "mulle-objc-list"
 ${SOURCES}
 )
 
-
+# since it's an executable we don't need to ALL-LOAD
 target_link_libraries( "mulle-objc-list"
-${BEGIN_ALL_LOAD}
-${DEPENDENCY_LIBRARIES}
-${END_ALL_LOAD}
+${C_DEPENDENCY_LIBRARIES}
 ${OS_SPECIFIC_LIBRARIES}
 )
 
