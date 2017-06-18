@@ -644,7 +644,7 @@ int  main( int argc, char *argv[])
                     (MULLE_OBJC_LIST_VERSION >> 20),
                     ((MULLE_OBJC_LIST_VERSION >> 8) & 0xFFF),
                     MULLE_OBJC_LIST_VERSION & 0xFF);
-            return( 1);
+            return( 0);
          }
 
       // options
