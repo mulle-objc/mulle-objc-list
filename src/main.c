@@ -52,16 +52,19 @@
 #include "version.h"
 
 
-#define STATIC_LINKED_FOUNDATION
+#define MULLE_OBJC_LOADER_CLASSID  0x58bd58d3
+
+// #define STANDALONE_MULLE_OBJC
 
 #define _stringify( x) #x
 #define stringify( x) _stringify( x)
 
 
 
-static int   verbose;
-static int   dump;
-static int   emit_sentinel;
+static int       verbose;
+static int       dump;
+static int       emit_sentinel;
+static uint32_t  loader_classid = MULLE_OBJC_LOADER_CLASSID;
 
 enum
 {
@@ -96,17 +99,18 @@ static void   usage( void)
             "   Implicitly loaded libraries by binary are listed.\n"
             "\n"
             "Options:\n"
-            "   -e : emit dependencies sentinel field\n"
-            "   -v : verbose\n"
+            "   -e      : emit dependencies sentinel field\n"
+            "   -l <id> : specify loader-class id for -d (default is 0x%08x)"
+            "   -v      : verbose\n"
             "\n"
             "Commands:\n"
-            "   -c : list classes and categories\n"
-            "   -d : list classes and categories as +dependencies\n"
-            "   -i : dump loadinfo version information\n"
-            "   -m : list methods (default)\n"
-            "   -t : terse list methods (coverage like)\n"
+            "   -c      : list classes and categories\n"
+            "   -d      : list classes and categories as +dependencies. Skips loaders\n"
+            "   -i      : dump loadinfo version information\n"
+            "   -m      : list methods (default)\n"
+            "   -t      : terse list methods (coverage like)\n"
             "\n"
-            );
+            , loader_classid);
    exit( 1);
 }
 
@@ -454,7 +458,6 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
    }
 }
 
-static char  *dep_seperator = "";
 
 static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                               struct _mulle_objc_universe *universe,
@@ -475,10 +478,14 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
       break;
 
    case dump_dependencies :
-      printf( "%s      { @selector( %s), MULLE_OBJC_NO_CATEGORYID }",
-             dep_seperator,
-                p->classname);
-      dep_seperator = ",\n";
+      if( p->classid != loader_classid)
+      {
+         printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
+                 "      // %08x,%08x\n",
+                  p->classname,
+                  p->classid,
+                  MULLE_OBJC_NO_CATEGORYID);
+      }
    }
 }
 
@@ -503,11 +510,15 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
       return;
 
    case dump_dependencies :
-      printf( "%s      { @selector( %s), @selector( %s) }",
-                dep_seperator,
+      if( p->classid != loader_classid)
+      {
+         printf( "      { @selector( %s), @selector( %s) },"
+                 "      // %08x,%08x\n",
                 p->classname,
-                p->categoryname);
-      dep_seperator = ",\n";
+                p->categoryname,
+                p->classid,
+                p->categoryid);
+      }
    }
 }
 
@@ -677,6 +688,14 @@ int  main( int argc, char *argv[])
          mode = dump_coverage;
          break;
 
+      case 'l':
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         loader_classid = atoi( argv[ i]);
+         break;
+
       default :
          usage();
       }
@@ -707,7 +726,6 @@ int  main( int argc, char *argv[])
 
    if( mode == dump_dependencies)
    {
-      printf( "%s", dep_seperator);
       if( emit_sentinel)
          printf( "      { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }\n");
    }
@@ -716,7 +734,7 @@ int  main( int argc, char *argv[])
 }
 
 
-#ifdef STATIC_LINKED_FOUNDATION
+#ifndef STANDALONE_MULLE_OBJC
 
 MULLE_C_CONST_RETURN  // always returns same value (in same thread)
 struct _mulle_objc_universe  *__get_or_create_mulle_objc_universe( void)
