@@ -6,5 +6,6 @@ set( SOURCES
 src/main.c
 )
 
-set( HEADERS
+set( PUBLIC_HEADERS
+src/mulle_objc_list.h
 )

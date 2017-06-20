@@ -9,6 +9,7 @@ build/
 mulle-configuration
 .DS_Store
 *.bak
+*.old
 bin/mulle-homebrew
 mulle-configurationbin/tap-info.sh
 tap-info.sh
