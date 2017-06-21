@@ -9,3 +9,8 @@ src/main.c
 set( PUBLIC_HEADERS
 src/mulle_objc_list.h
 )
+
+
+set( SCRIPTS
+bin/mulle-objc-create-dependencies-inc
+)

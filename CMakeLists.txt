@@ -32,6 +32,14 @@ ${C_DEPENDENCY_LIBRARIES}
 ${OS_SPECIFIC_LIBRARIES}
 )
 
+
 install( TARGETS "mulle-objc-list" DESTINATION "bin")
 install( FILES "mulle-objc-uncovered-methods" DESTINATION "bin")
 install( FILES ${PUBLIC_HEADERS} DESTINATION "include/mulle_objc_list")
+
+INSTALL( FILES ${SCRIPTS}
+PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+            GROUP_EXECUTE GROUP_READ
+            WORLD_EXECUTE WORLD_READ
+DESTINATION "bin")
+

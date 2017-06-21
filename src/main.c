@@ -745,7 +745,7 @@ struct _mulle_objc_universe  *__get_or_create_mulle_objc_universe( void)
    if( _mulle_objc_universe_is_uninitialized( universe))
    {
       _mulle_objc_universe_bang( universe, 0, 0, NULL);
-       universe->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
+       universe->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
    }
    return( universe);
 }
