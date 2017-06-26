@@ -4,6 +4,7 @@
 * do not emit MulleObjCLoader classes and categories when dumping dependencies
 * emit classid,categorid as comment when dumping dependencies
 * package gains script mulle-objc-create-dependencies-inc
+* improved error output
 
 ### 0.8.3
 

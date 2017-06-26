@@ -605,7 +605,8 @@ int  main( int argc, char *argv[])
 {
    void   *handle;
    int    i;
-
+   int    dlmode;
+   
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -618,6 +619,8 @@ int  main( int argc, char *argv[])
    if( argc < 2)
       usage();
 
+   dlmode = RTLD_LOCAL;
+   
    // this doesn't work
    // the dylib comes usually with its own global universe
    //
@@ -676,6 +679,10 @@ int  main( int argc, char *argv[])
          mode = dump_dependencies;
          break;
 
+      case 'g' :
+         mode = RTLD_GLOBAL;
+         break;
+            
       case 'i':
          mode = dump_info;
          break;
@@ -712,11 +719,11 @@ int  main( int argc, char *argv[])
       if( verbose)
          fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
 
-      handle = dlopen( argv[ i], RTLD_LAZY|RTLD_LOCAL);
+      handle = dlopen( argv[ i], RTLD_LAZY|dlmode);
       if( ! handle)
       {
          fprintf( stderr, "error: failed to open \"%s\" %s\n",
-                     argv[ i], strerror( errno));
+                     argv[ i], dlerror());
          return( 1);
       }
 
