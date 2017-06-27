@@ -26,9 +26,9 @@ _collect_objc_o_files()
 
       if ! fgrep -s -m 1 "${line}" method_db.csv
       then
-         # make this an error, for now. or is it dynamically generated code ?
+         # class/methods defined in the executable presumably
          echo "No match was found for ${line}." >&2
-         exit 1
+         continue
       fi
 
    done
@@ -47,8 +47,6 @@ collect_objc_o_files()
 collect_c_o_files()
 {
    local objc_filenames="$1"
-
-   local i
 
    for ofilename in *.d/*.o
    do
@@ -91,3 +89,15 @@ main()
 # combine all coverage files into one and sort -u it
 #
 main "$@"
+
+
+#
+# Problems with this:
+#
+# a) does not catch superclasses, that would be required for loading
+#    the classes. This can be easily fixed.
+#
+# b) Ignores +loads since they are not cached
+#
+# c) MulleObjCLoader categories and +dependencies are ignored, which
+#    could lead to stalls when loading stuff.

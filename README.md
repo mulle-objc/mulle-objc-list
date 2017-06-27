@@ -106,6 +106,7 @@ Commands:
    -m      : list methods (default)
    -M      : list also root -methods as +methods
    -t      : terse list methods (coverage like)
+   -T      : terse list methods with root -methods also as +methods
 ```
 
 

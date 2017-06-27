@@ -13,7 +13,5 @@ src/mulle_objc_list.h
 
 set( SCRIPTS
 mulle-objc-create-dependencies-inc
-mulle-objc-unarchive
-mulle-objc-optimize
 mulle-objc-uncovered-methods
 )
