@@ -53,16 +53,17 @@ Each line represents one exported method. The format is:
 
 Index | Column name  | Description
 ------|--------------|---------------------------------
-1     | classname    |  the name of the class
-2     | categoryid   |  optional: the id of the category
-3     | categoryname |  optional: the name of the category
-4     | methodid     |  the id of the method
-5     | name         |  methodname like `takeValue:forKey:` with +/- prefix
+1     | classid      |  the id of the class, 8 hex characters
+2     | classname    |  the name of the class
+3     | categoryid   |  optional: the id of the category
+4     | categoryname |  optional: the name of the category
+5     | methodid     |  the id of the method
+6     | name         |  methodname like `takeValue:forKey:` with +/- prefix
 
 
 This is the same format as the runtime coverage output, if you remove the first
 two columns from the output. Then subtracting the modified coverage from this
-list, shows all unused methods.
+list, would show you all unused methods.
 
 
 ### Objects Info
