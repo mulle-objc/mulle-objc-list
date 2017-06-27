@@ -1,0 +1,539 @@
+#! /bin/sh
+#
+# this script unpacks an .a file and creates a list of defined methods
+# for each .o file
+#
+
+create_undefined_linkage_c()
+{
+   local infile="$1"
+
+   local symbols
+
+   symbols="`nm -u "${infile}" | sed 's/^_//'`" || exit 1
+
+   local i
+
+   #
+   # if we redefine standard library symbols, the compiler is not
+   # happy so we copy the definitions here
+   #
+   # egrep '^LIBBUILTIN' mulle-clang/include/clang/Basic/Builtins.def | \
+   #  sed s'/^LIBBUILTIN(\([^,]*\).*$/\1/' | \
+   #  sort | \
+   #  sed s'/\(.*\)/         \1) ;;/'
+   #
+   for i in ${symbols}
+   do
+      case $i in
+         NSLog) ;;
+         NSLogv) ;;
+         _Block_object_assign) ;;
+         _Block_object_dispose) ;;
+         _Exit) ;;
+         __cospi) ;;
+         __cospif) ;;
+         __exp10) ;;
+         __exp10f) ;;
+         __finite) ;;
+         __finitef) ;;
+         __finitel) ;;
+         __sigsetjmp) ;;
+         __sinpi) ;;
+         __sinpif) ;;
+         __tanpi) ;;
+         __tanpif) ;;
+         _byteswap_uint64) ;;
+         _byteswap_ulong) ;;
+         _byteswap_ushort) ;;
+         _exit) ;;
+         _longjmp) ;;
+         _setjmp) ;;
+         _setjmpex) ;;
+         abort) ;;
+         abs) ;;
+         acos) ;;
+         acosf) ;;
+         acosh) ;;
+         acoshf) ;;
+         acoshl) ;;
+         acosl) ;;
+         alloca) ;;
+         asin) ;;
+         asinf) ;;
+         asinh) ;;
+         asinhf) ;;
+         asinhl) ;;
+         asinl) ;;
+         atan) ;;
+         atan2) ;;
+         atan2f) ;;
+         atan2l) ;;
+         atanf) ;;
+         atanh) ;;
+         atanhf) ;;
+         atanhl) ;;
+         atanl) ;;
+         bzero) ;;
+         cabs) ;;
+         cabsf) ;;
+         cabsl) ;;
+         cacos) ;;
+         cacosf) ;;
+         cacosh) ;;
+         cacoshf) ;;
+         cacoshl) ;;
+         cacosl) ;;
+         calloc) ;;
+         carg) ;;
+         cargf) ;;
+         cargl) ;;
+         casin) ;;
+         casinf) ;;
+         casinh) ;;
+         casinhf) ;;
+         casinhl) ;;
+         casinl) ;;
+         catan) ;;
+         catanf) ;;
+         catanh) ;;
+         catanhf) ;;
+         catanhl) ;;
+         catanl) ;;
+         cbrt) ;;
+         cbrtf) ;;
+         cbrtl) ;;
+         ccos) ;;
+         ccosf) ;;
+         ccosh) ;;
+         ccoshf) ;;
+         ccoshl) ;;
+         ccosl) ;;
+         ceil) ;;
+         ceilf) ;;
+         ceill) ;;
+         cexp) ;;
+         cexpf) ;;
+         cexpl) ;;
+         cimag) ;;
+         cimagf) ;;
+         cimagl) ;;
+         clog) ;;
+         clogf) ;;
+         clogl) ;;
+         conj) ;;
+         conjf) ;;
+         conjl) ;;
+         copysign) ;;
+         copysignf) ;;
+         copysignl) ;;
+         cos) ;;
+         cosf) ;;
+         cosh) ;;
+         coshf) ;;
+         coshl) ;;
+         cosl) ;;
+         cpow) ;;
+         cpowf) ;;
+         cpowl) ;;
+         cproj) ;;
+         cprojf) ;;
+         cprojl) ;;
+         creal) ;;
+         crealf) ;;
+         creall) ;;
+         csin) ;;
+         csinf) ;;
+         csinh) ;;
+         csinhf) ;;
+         csinhl) ;;
+         csinl) ;;
+         csqrt) ;;
+         csqrtf) ;;
+         csqrtl) ;;
+         ctan) ;;
+         ctanf) ;;
+         ctanh) ;;
+         ctanhf) ;;
+         ctanhl) ;;
+         ctanl) ;;
+         erf) ;;
+         erfc) ;;
+         erfcf) ;;
+         erfcl) ;;
+         erff) ;;
+         erfl) ;;
+         exit) ;;
+         exp) ;;
+         exp2) ;;
+         exp2f) ;;
+         exp2l) ;;
+         expf) ;;
+         expl) ;;
+         expm1) ;;
+         expm1f) ;;
+         expm1l) ;;
+         fabs) ;;
+         fabsf) ;;
+         fabsl) ;;
+         fdim) ;;
+         fdimf) ;;
+         fdiml) ;;
+         finite) ;;
+         finitef) ;;
+         finitel) ;;
+         floor) ;;
+         floorf) ;;
+         floorl) ;;
+         fma) ;;
+         fmaf) ;;
+         fmal) ;;
+         fmax) ;;
+         fmaxf) ;;
+         fmaxl) ;;
+         fmin) ;;
+         fminf) ;;
+         fminl) ;;
+         fmod) ;;
+         fmodf) ;;
+         fmodl) ;;
+         fprintf) ;;
+         frexp) ;;
+         frexpf) ;;
+         frexpl) ;;
+         fscanf) ;;
+         getcontext) ;;
+         hypot) ;;
+         hypotf) ;;
+         hypotl) ;;
+         ilogb) ;;
+         ilogbf) ;;
+         ilogbl) ;;
+         index) ;;
+         isalnum) ;;
+         isalpha) ;;
+         isblank) ;;
+         iscntrl) ;;
+         isdigit) ;;
+         isgraph) ;;
+         islower) ;;
+         isprint) ;;
+         ispunct) ;;
+         isspace) ;;
+         isupper) ;;
+         isxdigit) ;;
+         labs) ;;
+         ldexp) ;;
+         ldexpf) ;;
+         ldexpl) ;;
+         lgamma) ;;
+         lgammaf) ;;
+         lgammal) ;;
+         llabs) ;;
+         llrint) ;;
+         llrintf) ;;
+         llrintl) ;;
+         llround) ;;
+         llroundf) ;;
+         llroundl) ;;
+         log) ;;
+         log10) ;;
+         log10f) ;;
+         log10l) ;;
+         log1p) ;;
+         log1pf) ;;
+         log1pl) ;;
+         log2) ;;
+         log2f) ;;
+         log2l) ;;
+         logb) ;;
+         logbf) ;;
+         logbl) ;;
+         logf) ;;
+         logl) ;;
+         longjmp) ;;
+         lrint) ;;
+         lrintf) ;;
+         lrintl) ;;
+         lround) ;;
+         lroundf) ;;
+         lroundl) ;;
+         malloc) ;;
+         memchr) ;;
+         memcmp) ;;
+         memcpy) ;;
+         memmove) ;;
+         memset) ;;
+         modf) ;;
+         modff) ;;
+         modfl) ;;
+         nan) ;;
+         nanf) ;;
+         nanl) ;;
+         nearbyint) ;;
+         nearbyintf) ;;
+         nearbyintl) ;;
+         nextafter) ;;
+         nextafterf) ;;
+         nextafterl) ;;
+         nexttoward) ;;
+         nexttowardf) ;;
+         nexttowardl) ;;
+         objc_assign_global) ;;
+         objc_assign_ivar) ;;
+         objc_assign_strongCast) ;;
+         objc_assign_weak) ;;
+         objc_enumerationMutation) ;;
+         objc_exception_extract) ;;
+         objc_exception_match) ;;
+         objc_exception_throw) ;;
+         objc_exception_try_enter) ;;
+         objc_exception_try_exit) ;;
+         objc_getClass) ;;
+         objc_getMetaClass) ;;
+         objc_msgSend) ;;
+         objc_msgSendSuper) ;;
+         objc_msgSendSuper_stret) ;;
+         objc_msgSend_fp2ret) ;;
+         objc_msgSend_fpret) ;;
+         objc_msgSend_stret) ;;
+         objc_read_weak) ;;
+         objc_sync_enter) ;;
+         objc_sync_exit) ;;
+         pow) ;;
+         powf) ;;
+         powl) ;;
+         printf) ;;
+         qsetjmp) ;;
+         realloc) ;;
+         remainder) ;;
+         remainderf) ;;
+         remainderl) ;;
+         rindex) ;;
+         rint) ;;
+         rintf) ;;
+         rintl) ;;
+         round) ;;
+         roundf) ;;
+         roundl) ;;
+         savectx) ;;
+         scalbln) ;;
+         scalblnf) ;;
+         scalblnl) ;;
+         scalbn) ;;
+         scalbnf) ;;
+         scalbnl) ;;
+         scanf) ;;
+         setjmp) ;;
+         setjmp_syscall) ;;
+         siglongjmp) ;;
+         sigsetjmp) ;;
+         sin) ;;
+         sinf) ;;
+         sinh) ;;
+         sinhf) ;;
+         sinhl) ;;
+         sinl) ;;
+         snprintf) ;;
+         sprintf) ;;
+         sqrt) ;;
+         sqrtf) ;;
+         sqrtl) ;;
+         sscanf) ;;
+         stpcpy) ;;
+         stpncpy) ;;
+         strcasecmp) ;;
+         strcat) ;;
+         strchr) ;;
+         strcmp) ;;
+         strcpy) ;;
+         strcspn) ;;
+         strdup) ;;
+         strerror) ;;
+         strlcat) ;;
+         strlcpy) ;;
+         strlen) ;;
+         strncasecmp) ;;
+         strncat) ;;
+         strncmp) ;;
+         strncpy) ;;
+         strndup) ;;
+         strpbrk) ;;
+         strrchr) ;;
+         strspn) ;;
+         strstr) ;;
+         strtok) ;;
+         strxfrm) ;;
+         tan) ;;
+         tanf) ;;
+         tanh) ;;
+         tanhf) ;;
+         tanhl) ;;
+         tanl) ;;
+         tgamma) ;;
+         tgammaf) ;;
+         tgammal) ;;
+         tolower) ;;
+         toupper) ;;
+         trunc) ;;
+         truncf) ;;
+         truncl) ;;
+         vfork) ;;
+         vfprintf) ;;
+         vfscanf) ;;
+         vprintf) ;;
+         vscanf) ;;
+         vsnprintf) ;;
+         vsprintf) ;;
+         vsscanf) ;;
+         wcschr) ;;
+         wcscmp) ;;
+         wcslen) ;;
+         wcsncmp) ;;
+         wmemchr) ;;
+         wmemcmp) ;;
+
+         *)
+            echo "void  $i() {}"
+         ;;
+      esac
+   done
+}
+
+
+create_undefined_linkage()
+{
+   local infile="$1"
+   local outfile="$2"
+
+   local text
+
+   text="`create_undefined_linkage_c "${infile}"`"
+   if [ -z "${text}" ]
+   then
+      return 1
+   fi
+
+   local cfile
+
+   cfile="`basename -- "${outfile}" .o`".c
+   echo "${text}" > "${cfile}"
+
+   mulle-clang -c  -o "${outfile}" "${cfile}" || exit 1
+}
+
+
+create_csv()
+{
+   local folder="$1"
+
+   local i
+   local name
+   local undefined
+   local files
+   local shlib
+
+   local sedexpr
+
+   for i in *.o
+   do
+      name="`basename "$i" .o`"
+      undefined="${name}.undef.o"
+      files="${i}"
+
+      if create_undefined_linkage "${i}" "${undefined}"
+      then
+         files="${files} ${undefined}"
+      fi
+
+      case "${UNAME}" in
+         Darwin)
+            shlib="${name}.dylib"
+            mulle-clang -dynamiclib -undefined suppress \
+                        -flat_namespace ${files} -o "${shlib}" || exit 1
+         ;;
+
+         *)
+            shlib="${name}.so"
+            mulle-clang -dynamiclib -undefined suppress \
+                        -flat_namespace ${files} -o "${shlib}" || exit 1
+          ;;
+      esac
+
+      sedexpr="s|\$|;${folder}\/${i}|"
+      mulle-objc-list -T "${shlib}" | sed "${sedexpr}"
+   done
+}
+
+
+unarchive_library()
+{
+   local library="$1"
+
+   case "${library}" in
+      /*)
+      ;;
+
+      *)
+         library="${PWD}/${library}"
+      ;;
+   esac
+
+   local libname
+
+   case "${UNAME}" in
+      *)
+         libname="`basename -- "${library}" .a`"
+      ;;
+   esac
+
+   local folder
+
+   folder="${libname}.d"
+
+   if [ -d "${folder}" ]
+   then
+      rm -rf "${folder}" || exit 1
+   fi
+
+   (
+      mkdir "${folder}" &&
+      cd "${folder}" &&
+      ar x "${library}"
+   ) || exit 1
+
+   echo "${folder}"
+}
+
+
+create_csv_db()
+{
+   local folder
+   local old
+
+   old="${PWD}"
+
+   while [ $# -ne 0 ]
+   do
+      folder="`unarchive_library "$1"`" || exit 1
+
+      cd "${folder}" &&
+      create_csv "${folder}" &&
+      cd "${old}" || exit 1
+
+      shift
+   done
+}
+
+
+main()
+{
+   UNAME="`uname -s`"
+   create_csv_db "$@" > _method_db.csv
+   sort -u < _method_db.csv > method_db.csv
+   rm _method_db.csv
+}
+
+set -x
+
+main "$@"

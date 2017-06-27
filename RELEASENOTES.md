@@ -5,6 +5,8 @@
 * emit classid,categorid as comment when dumping dependencies
 * package gains script mulle-objc-create-dependencies-inc
 * improved error output
+* new +M dump method for the optimizer
+* new experimental scripts mulle-objc-unarchive and mulle-objc-optimize
 
 ### 0.8.3
 

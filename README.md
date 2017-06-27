@@ -95,15 +95,16 @@ usage: mulle-objc-list [options] [command] [libraries] <binary>
    Implicitly loaded libraries by binary are listed.
 
 Options:
-   -e : emit dependencies sentinel field
-   -v : verbose
+   -e      : emit dependencies sentinel field
+   -l <id> : specify loader-class id for -d (default is 0x58bd58d3)   -v      : verbose
 
 Commands:
-   -c : list classes and categories
-   -d : list classes and categories as +dependencies
-   -i : dump loadinfo version information
-   -m : list methods (default)
-   -t : terse list methods (coverage like)
+   -c      : list classes and categories
+   -d      : list classes and categories as +dependencies. Skips loaders
+   -i      : dump loadinfo version information
+   -m      : list methods (default)
+   -M      : list also root -methods as +methods
+   -t      : terse list methods (coverage like)
 ```
 
 

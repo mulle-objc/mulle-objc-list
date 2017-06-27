@@ -71,7 +71,9 @@ enum
    dump_classes,
    dump_dependencies,
    dump_methods,
+   dump_callable_methods,
    dump_coverage,  // coverage style
+   dump_callable_coverage,
    dump_info
 } mode = dump_methods;
 
@@ -108,7 +110,9 @@ static void   usage( void)
             "   -d      : list classes and categories as +dependencies. Skips loaders\n"
             "   -i      : dump loadinfo version information\n"
             "   -m      : list methods (default)\n"
+            "   -M      : list also root -methods as +methods\n"
             "   -t      : terse list methods (coverage like)\n"
+            "   -T      : terse list methods with root -methods as +methods\n"
             "\n"
             , loader_classid);
    exit( 1);
@@ -357,7 +361,7 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
    printf( ";%08x", method->descriptor.methodid);
    printf( ";%c%s", type, method->descriptor.name);
 
-   if( mode == dump_methods)
+   if( mode == dump_methods || mode == dump_callable_methods)
    {
       types = method->descriptor.signature;
       i     = 0;
@@ -397,6 +401,9 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
    printf( ";");
 
    loadmethod_dump( method, type, p->classname);
+   if( mode == dump_callable_methods || mode == dump_callable_coverage)
+      if( type == '-' && p->superclassid == MULLE_OBJC_NO_CLASSID)
+         loadmethod_class_dump( method, '+', p, universe, info);
 }
 
 
@@ -467,6 +474,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
 
    switch( mode)
    {
+   case dump_callable_coverage :
    case dump_methods :
    case dump_coverage :
       methodlist_loadclass_dump( p->classmethods, '+', p, universe, info);
@@ -691,8 +699,16 @@ int  main( int argc, char *argv[])
          mode = dump_methods;
          break;
 
+      case 'M':
+         mode = dump_callable_methods;
+         break;
+
       case 't':
          mode = dump_coverage;
+         break;
+
+      case 'T':
+         mode = dump_callable_coverage;
          break;
 
       case 'l':
