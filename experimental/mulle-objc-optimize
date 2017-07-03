@@ -94,10 +94,18 @@ main "$@"
 #
 # Problems with this:
 #
-# a) does not catch superclasses, that would be required for loading
-#    the classes. This can be easily fixed.
+# a) Does not catch superclasses, that would be required for loading
+#    the classes. This can be easily fixed. Collect all used classes
+#    and add superclasses.
 #
 # b) Ignores +loads since they are not cached
+#    Solution ? 1. ignore, 2. collect classes with +load and add them
+#    regardless ? 3. start caching loads! 4. Use coverage bit on methods ?
 #
 # c) MulleObjCLoader categories and +dependencies are ignored, which
 #    could lead to stalls when loading stuff.
+#    Get +dependencies.inc weed out unused stuff and compile
+#    a new loader. Not that difficult actually.
+#
+# d) Optionally just collect libraries that are needed ?
+#

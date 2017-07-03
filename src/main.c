@@ -614,7 +614,7 @@ int  main( int argc, char *argv[])
    void   *handle;
    int    i;
    int    dlmode;
-   
+
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -628,13 +628,13 @@ int  main( int argc, char *argv[])
       usage();
 
    dlmode = RTLD_LOCAL;
-   
+
    // this doesn't work
    // the dylib comes usually with its own global universe
    //
    // struct _mulle_objc_universe   *universe;
    // universe = __get_or_create_mulle_objc_runtime();
-   // universe->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
+   // universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
    // but
    /*
     * This method can fail in an interesting way.
@@ -690,7 +690,7 @@ int  main( int argc, char *argv[])
       case 'g' :
          mode = RTLD_GLOBAL;
          break;
-            
+
       case 'i':
          mode = dump_info;
          break;
@@ -768,7 +768,7 @@ struct _mulle_objc_universe  *__get_or_create_mulle_objc_universe( void)
    if( _mulle_objc_universe_is_uninitialized( universe))
    {
       _mulle_objc_universe_bang( universe, 0, 0, NULL);
-       universe->loadcallbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
+       universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
    }
    return( universe);
 }
