@@ -33,7 +33,7 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
       function = dlsym( MULLE_OBJC_DLSYM_HANDLE, "__mulle_objc_loadinfo_callback");
       if( function)
       {
-         universe->loadcallbacks.should_load_loadinfo = (int (*)()) function;
+         universe->callbacks.should_load_loadinfo = (int (*)()) function;
          if( universe->debug.trace.loadinfo)
             fprintf( stderr, "mulle_objc_universe %p: "
                  "__mulle_objc_loadinfo_callback set to %p\n", universe, function);
