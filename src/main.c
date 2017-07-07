@@ -74,6 +74,7 @@ enum
    dump_callable_methods,
    dump_coverage,  // coverage style
    dump_callable_coverage,
+   dump_classes_categories,
    dump_info
 } mode = dump_methods;
 
@@ -107,6 +108,7 @@ static void   usage( void)
             "\n"
             "Commands:\n"
             "   -c      : list classes and categories\n"
+            "   -C      : list classes with their superclass\n"
             "   -d      : list classes and categories as +dependencies. Skips loaders\n"
             "   -i      : dump loadinfo version information\n"
             "   -m      : list methods (default)\n"
@@ -481,8 +483,16 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
       methodlist_loadclass_dump( p->instancemethods, '-', p, universe, info);
       break;
 
-   case dump_classes :
+   case dump_classes_categories :
       printf( "%08x;%s\n", p->classid, p->classname);
+      break;
+
+   case dump_classes :
+      printf( "%08x;%s;", p->classid, p->classname);
+      if( p->superclassid == MULLE_OBJC_NO_CLASSID)
+         printf( "MULLE_OBJC_NO_CLASSID;\n", p->classid, p->classname);
+      else
+         printf( "%08x;%s\n", p->superclassid, p->superclassname);
       break;
 
    case dump_dependencies :
@@ -507,12 +517,13 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
    switch( mode)
    {
    case dump_methods  :
+   case dump_callable_coverage :
    case dump_coverage :
       methodlist_loadcategory_dump( p->classmethods, '+', p, universe, info);
       methodlist_loadcategory_dump( p->instancemethods, '-', p, universe, info);
       return;
 
-   case dump_classes :
+   case dump_classes_categories :
       printf( "%08x;%s;%08x;%s\n",
                p->classid, p->classname, p->categoryid, p->categoryname);
       return;
@@ -680,6 +691,10 @@ int  main( int argc, char *argv[])
 
       // commands
       case 'c':
+         mode = dump_classes_categories;
+         break;
+
+      case 'C':
          mode = dump_classes;
          break;
 
