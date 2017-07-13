@@ -106,7 +106,7 @@ _dump_loader_dependencies()
       then
          categoryid="`mulle-objc-uniqueid "${depname}" | tail -1`"
          exekutor echo "      { @selector( MulleObjCLoader), \
-@selector( ${depname}) },      // $classid,$categoryid"
+@selector( ${depname}) },      // $classid;MulleObjCLoader;$categoryid;${depname}";
       fi
 
       shift

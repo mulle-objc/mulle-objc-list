@@ -66,16 +66,18 @@ static int       dump;
 static int       emit_sentinel;
 static uint32_t  loader_classid = MULLE_OBJC_LOADER_CLASSID;
 
-enum
+static enum
 {
-   dump_classes,
-   dump_dependencies,
-   dump_methods,
-   dump_callable_methods,
-   dump_coverage,  // coverage style
+
    dump_callable_coverage,
+   dump_callable_methods,
+   dump_classes,
    dump_classes_categories,
-   dump_info
+   dump_coverage,  // coverage style
+   dump_dependencies,
+   dump_info,
+   dump_loader,
+   dump_methods
 } mode = dump_methods;
 
 
@@ -109,12 +111,13 @@ static void   usage( void)
             "Commands:\n"
             "   -c      : list classes and categories\n"
             "   -C      : list classes with their superclass\n"
-            "   -d      : list classes and categories as +dependencies. Skips loaders\n"
+            "   -d      : list classes and categories as +dependencies. Skips MulleObjCLoaders\n"
             "   -i      : dump loadinfo version information\n"
             "   -m      : list methods (default)\n"
             "   -M      : list also root -methods as +methods\n"
             "   -t      : terse list methods (coverage like)\n"
             "   -T      : terse list methods with root -methods as +methods\n"
+            "   -L      : list MulleObjCLoader dependencies\n"
             "\n"
             , loader_classid);
    exit( 1);
@@ -339,6 +342,28 @@ static void   print_typeinfo( struct mulle_objc_typeinfo  *typeinfo, char *metho
 }
 
 
+# pragma mark - load info dumper
+
+static void  hackish_emit_dependencies( struct _mulle_objc_method *method,
+                                        struct _mulle_objc_loadcategory *category)
+{
+   struct _mulle_objc_dependency   *dependencies;
+   
+   dependencies = (struct _mulle_objc_dependency *) (*method->value)( NULL, MULLE_OBJC_DEPENDENCIES_METHODID, NULL);
+   if( ! dependencies)
+      return;
+   
+   while( dependencies->classid != MULLE_OBJC_NO_CLASSID)
+   {
+      printf( "%08x;;%08x;\n",
+         dependencies->classid,
+         dependencies->categoryid);
+      ++dependencies;
+   }
+}
+
+# pragma mark - load info dumper
+
 //
 // Export Format: no escaping, no quoting!
 //
@@ -415,6 +440,15 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         struct _mulle_objc_universe *universe,
                                         struct _mulle_objc_loadinfo *info)
 {
+   if( mode == dump_loader)
+   {
+      if( method->descriptor.methodid != MULLE_OBJC_DEPENDENCIES_METHODID)
+         return;
+      
+      hackish_emit_dependencies( method, p);
+      return;
+   }
+   
    printf( "%08x",  p->classid);
    printf( ";%s",   p->classname);
    printf( ";%08x", p->categoryid);
@@ -490,7 +524,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    case dump_classes :
       printf( "%08x;%s;", p->classid, p->classname);
       if( p->superclassid == MULLE_OBJC_NO_CLASSID)
-         printf( "MULLE_OBJC_NO_CLASSID;\n", p->classid, p->classname);
+         printf( "MULLE_OBJC_NO_CLASSID;\n");
       else
          printf( "%08x;%s\n", p->superclassid, p->superclassname);
       break;
@@ -499,9 +533,10 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
       if( p->classid != loader_classid)
       {
          printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
-                 "      // %08x,%08x\n",
+                 "      // %08x;%s;%08x;\n",
                   p->classname,
                   p->classid,
+                  p->classname,
                   MULLE_OBJC_NO_CATEGORYID);
       }
    }
@@ -532,12 +567,18 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
       if( p->classid != loader_classid)
       {
          printf( "      { @selector( %s), @selector( %s) },"
-                 "      // %08x,%08x\n",
+                 "      // %08x;%s;%08x;%s\n",
                 p->classname,
                 p->categoryname,
                 p->classid,
-                p->categoryid);
+                p->classname,
+                p->categoryid,
+                p->categoryname);
       }
+      
+   case dump_loader :
+      if( p->classid == loader_classid)
+         methodlist_loadcategory_dump( p->classmethods, '+', p, universe, info);
    }
 }
 
@@ -607,8 +648,9 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
 
       log_printf( "Dumping loadinfo %s ...\n", mulle_objc_loadinfo_get_originator( info));
 
-      if( mode == dump_info)
+      switch( mode)
       {
+      case dump_info :
          mulle_objc_loadinfo_csvdump_terse( info, stdout);
          return( 0);
       }
@@ -623,6 +665,7 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
 int  main( int argc, char *argv[])
 {
    void   *handle;
+   void   *adr;
    int    i;
    int    dlmode;
 
@@ -710,6 +753,10 @@ int  main( int argc, char *argv[])
          mode = dump_info;
          break;
 
+      case 'L':
+         mode = dump_loader;
+         break;
+
       case 'm':
          mode = dump_methods;
          break;
@@ -750,16 +797,20 @@ int  main( int argc, char *argv[])
       if( verbose)
          fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
 
-      handle = dlopen( argv[ i], RTLD_LAZY|dlmode);
+      handle = dlopen( argv[ i], RTLD_NOW|dlmode);
       if( ! handle)
       {
          fprintf( stderr, "error: failed to open \"%s\" %s\n",
                      argv[ i], dlerror());
          return( 1);
       }
+      
+      adr = dlsym( handle, "mulle_objc_global_universe");
+      if( adr)
+         adr = dlsym( handle, "_mulle_objc_global_universe");
 
       if( verbose)
-         fprintf( stderr, "Loaded \"%s\".\n", argv[ i]);
+         fprintf( stderr, "Loaded \"%s\". (%p)\n", argv[ i], adr);
    }
 
    if( mode == dump_dependencies)
