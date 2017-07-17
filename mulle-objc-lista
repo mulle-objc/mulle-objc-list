@@ -1,0 +1,625 @@
+#! /usr/bin/env bash
+#
+# this script unpacks an .a file and creates a list of defined methods
+# for each .o file
+#
+
+MULLE_EXECUTABLE_VERSION=0.9.1
+
+MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
+MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
+
+
+usage()
+{
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE} [options] <library>
+
+   Use mulle-objc-list on a static library.
+
+Options:
+   See mulle-objc-list
+EOF
+
+   exit 1
+}
+
+
+shlib_extension()
+{
+   case "${UNAME}" in
+      darwin)
+         echo "dylib"
+      ;;
+
+      *)
+         echo "so"
+       ;;
+   esac
+}
+
+
+shlib_cflags()
+{
+   case "${UNAME}" in
+      darwin)
+         echo "-fno-common"
+      ;;
+
+      *)
+         echo "-fno-common"
+       ;;
+   esac
+}
+
+
+shlib_ldflags()
+{
+   case "${UNAME}" in
+      darwin)
+         echo "-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
+      ;;
+
+      *)
+         echo "-undefined suppress"
+       ;;
+   esac
+}
+
+
+#
+# read symbols from .a file, figure out the ones that we need to "spoof"
+# so that we can dummy link it
+#
+create_undefined_linkage_c()
+{
+   local infile="$1"
+   local tmpdir="$2"
+
+   local undefined_symbols
+
+   # global, no-undefined, no type info
+   nm -g -U -j "${infile}" | \
+      egrep -v ':$|^$' | \
+      sed 's/^_//' |
+      sort -u > "${tmpdir}/globals" || exit 1
+
+   # remove defined globals from undefined
+   undefined_symbols="`nm -g -u -j "${infile}" | \
+      egrep -v ':$|^$' | \
+      sed 's/^_//' |
+      sort -u |
+      fgrep -v -f "${tmpdir}/globals"`" || exit 1
+
+   local i
+
+   #
+   # if we redefine standard library symbols, the compiler is not
+   # happy so we copy the definitions here
+   #
+   # egrep '^LIBBUILTIN' mulle-clang/include/clang/Basic/Builtins.def | \
+   #  sed s'/^LIBBUILTIN(\([^,]*\).*$/\1/' | \
+   #  sort | \
+   #  sed s'/\(.*\)/         \1) ;;/'
+   #
+   for i in ${undefined_symbols}
+   do
+      case $i in
+         "") ;;
+         NSLog) ;;
+         NSLogv) ;;
+         _Block_object_assign) ;;
+         _Block_object_dispose) ;;
+         _Exit) ;;
+         __cospi) ;;
+         __cospif) ;;
+         __exp10) ;;
+         __exp10f) ;;
+         __finite) ;;
+         __finitef) ;;
+         __finitel) ;;
+         __sigsetjmp) ;;
+         __sinpi) ;;
+         __sinpif) ;;
+         __tanpi) ;;
+         __tanpif) ;;
+         _byteswap_uint64) ;;
+         _byteswap_ulong) ;;
+         _byteswap_ushort) ;;
+         _exit) ;;
+         _longjmp) ;;
+         _setjmp) ;;
+         _setjmpex) ;;
+         abort) ;;
+         abs) ;;
+         acos) ;;
+         acosf) ;;
+         acosh) ;;
+         acoshf) ;;
+         acoshl) ;;
+         acosl) ;;
+         alloca) ;;
+         asin) ;;
+         asinf) ;;
+         asinh) ;;
+         asinhf) ;;
+         asinhl) ;;
+         asinl) ;;
+         atan) ;;
+         atan2) ;;
+         atan2f) ;;
+         atan2l) ;;
+         atanf) ;;
+         atanh) ;;
+         atanhf) ;;
+         atanhl) ;;
+         atanl) ;;
+         bzero) ;;
+         cabs) ;;
+         cabsf) ;;
+         cabsl) ;;
+         cacos) ;;
+         cacosf) ;;
+         cacosh) ;;
+         cacoshf) ;;
+         cacoshl) ;;
+         cacosl) ;;
+         calloc) ;;
+         carg) ;;
+         cargf) ;;
+         cargl) ;;
+         casin) ;;
+         casinf) ;;
+         casinh) ;;
+         casinhf) ;;
+         casinhl) ;;
+         casinl) ;;
+         catan) ;;
+         catanf) ;;
+         catanh) ;;
+         catanhf) ;;
+         catanhl) ;;
+         catanl) ;;
+         cbrt) ;;
+         cbrtf) ;;
+         cbrtl) ;;
+         ccos) ;;
+         ccosf) ;;
+         ccosh) ;;
+         ccoshf) ;;
+         ccoshl) ;;
+         ccosl) ;;
+         ceil) ;;
+         ceilf) ;;
+         ceill) ;;
+         cexp) ;;
+         cexpf) ;;
+         cexpl) ;;
+         cimag) ;;
+         cimagf) ;;
+         cimagl) ;;
+         clog) ;;
+         clogf) ;;
+         clogl) ;;
+         conj) ;;
+         conjf) ;;
+         conjl) ;;
+         copysign) ;;
+         copysignf) ;;
+         copysignl) ;;
+         cos) ;;
+         cosf) ;;
+         cosh) ;;
+         coshf) ;;
+         coshl) ;;
+         cosl) ;;
+         cpow) ;;
+         cpowf) ;;
+         cpowl) ;;
+         cproj) ;;
+         cprojf) ;;
+         cprojl) ;;
+         creal) ;;
+         crealf) ;;
+         creall) ;;
+         csin) ;;
+         csinf) ;;
+         csinh) ;;
+         csinhf) ;;
+         csinhl) ;;
+         csinl) ;;
+         csqrt) ;;
+         csqrtf) ;;
+         csqrtl) ;;
+         ctan) ;;
+         ctanf) ;;
+         ctanh) ;;
+         ctanhf) ;;
+         ctanhl) ;;
+         ctanl) ;;
+         erf) ;;
+         erfc) ;;
+         erfcf) ;;
+         erfcl) ;;
+         erff) ;;
+         erfl) ;;
+         exit) ;;
+         exp) ;;
+         exp2) ;;
+         exp2f) ;;
+         exp2l) ;;
+         expf) ;;
+         expl) ;;
+         expm1) ;;
+         expm1f) ;;
+         expm1l) ;;
+         fabs) ;;
+         fabsf) ;;
+         fabsl) ;;
+         fdim) ;;
+         fdimf) ;;
+         fdiml) ;;
+         finite) ;;
+         finitef) ;;
+         finitel) ;;
+         floor) ;;
+         floorf) ;;
+         floorl) ;;
+         fma) ;;
+         fmaf) ;;
+         fmal) ;;
+         fmax) ;;
+         fmaxf) ;;
+         fmaxl) ;;
+         fmin) ;;
+         fminf) ;;
+         fminl) ;;
+         fmod) ;;
+         fmodf) ;;
+         fmodl) ;;
+         fprintf) ;;
+         frexp) ;;
+         frexpf) ;;
+         frexpl) ;;
+         fscanf) ;;
+         getcontext) ;;
+         hypot) ;;
+         hypotf) ;;
+         hypotl) ;;
+         ilogb) ;;
+         ilogbf) ;;
+         ilogbl) ;;
+         index) ;;
+         isalnum) ;;
+         isalpha) ;;
+         isblank) ;;
+         iscntrl) ;;
+         isdigit) ;;
+         isgraph) ;;
+         islower) ;;
+         isprint) ;;
+         ispunct) ;;
+         isspace) ;;
+         isupper) ;;
+         isxdigit) ;;
+         labs) ;;
+         ldexp) ;;
+         ldexpf) ;;
+         ldexpl) ;;
+         lgamma) ;;
+         lgammaf) ;;
+         lgammal) ;;
+         llabs) ;;
+         llrint) ;;
+         llrintf) ;;
+         llrintl) ;;
+         llround) ;;
+         llroundf) ;;
+         llroundl) ;;
+         log) ;;
+         log10) ;;
+         log10f) ;;
+         log10l) ;;
+         log1p) ;;
+         log1pf) ;;
+         log1pl) ;;
+         log2) ;;
+         log2f) ;;
+         log2l) ;;
+         logb) ;;
+         logbf) ;;
+         logbl) ;;
+         logf) ;;
+         logl) ;;
+         longjmp) ;;
+         lrint) ;;
+         lrintf) ;;
+         lrintl) ;;
+         lround) ;;
+         lroundf) ;;
+         lroundl) ;;
+         malloc) ;;
+         memchr) ;;
+         memcmp) ;;
+         memcpy) ;;
+         memmove) ;;
+         memset) ;;
+         modf) ;;
+         modff) ;;
+         modfl) ;;
+         nan) ;;
+         nanf) ;;
+         nanl) ;;
+         nearbyint) ;;
+         nearbyintf) ;;
+         nearbyintl) ;;
+         nextafter) ;;
+         nextafterf) ;;
+         nextafterl) ;;
+         nexttoward) ;;
+         nexttowardf) ;;
+         nexttowardl) ;;
+         objc_assign_global) ;;
+         objc_assign_ivar) ;;
+         objc_assign_strongCast) ;;
+         objc_assign_weak) ;;
+         objc_enumerationMutation) ;;
+         objc_exception_extract) ;;
+         objc_exception_match) ;;
+         objc_exception_throw) ;;
+         objc_exception_try_enter) ;;
+         objc_exception_try_exit) ;;
+         objc_getClass) ;;
+         objc_getMetaClass) ;;
+         objc_msgSend) ;;
+         objc_msgSendSuper) ;;
+         objc_msgSendSuper_stret) ;;
+         objc_msgSend_fp2ret) ;;
+         objc_msgSend_fpret) ;;
+         objc_msgSend_stret) ;;
+         objc_read_weak) ;;
+         objc_sync_enter) ;;
+         objc_sync_exit) ;;
+         pow) ;;
+         powf) ;;
+         powl) ;;
+         printf) ;;
+         qsetjmp) ;;
+         realloc) ;;
+         remainder) ;;
+         remainderf) ;;
+         remainderl) ;;
+         rindex) ;;
+         rint) ;;
+         rintf) ;;
+         rintl) ;;
+         round) ;;
+         roundf) ;;
+         roundl) ;;
+         savectx) ;;
+         scalbln) ;;
+         scalblnf) ;;
+         scalblnl) ;;
+         scalbn) ;;
+         scalbnf) ;;
+         scalbnl) ;;
+         scanf) ;;
+         setjmp) ;;
+         setjmp_syscall) ;;
+         siglongjmp) ;;
+         sigsetjmp) ;;
+         sin) ;;
+         sinf) ;;
+         sinh) ;;
+         sinhf) ;;
+         sinhl) ;;
+         sinl) ;;
+         snprintf) ;;
+         sprintf) ;;
+         sqrt) ;;
+         sqrtf) ;;
+         sqrtl) ;;
+         sscanf) ;;
+         stpcpy) ;;
+         stpncpy) ;;
+         strcasecmp) ;;
+         strcat) ;;
+         strchr) ;;
+         strcmp) ;;
+         strcpy) ;;
+         strcspn) ;;
+         strdup) ;;
+         strerror) ;;
+         strlcat) ;;
+         strlcpy) ;;
+         strlen) ;;
+         strncasecmp) ;;
+         strncat) ;;
+         strncmp) ;;
+         strncpy) ;;
+         strndup) ;;
+         strpbrk) ;;
+         strrchr) ;;
+         strspn) ;;
+         strstr) ;;
+         strtok) ;;
+         strxfrm) ;;
+         tan) ;;
+         tanf) ;;
+         tanh) ;;
+         tanhf) ;;
+         tanhl) ;;
+         tanl) ;;
+         tgamma) ;;
+         tgammaf) ;;
+         tgammal) ;;
+         tolower) ;;
+         toupper) ;;
+         trunc) ;;
+         truncf) ;;
+         truncl) ;;
+         vfork) ;;
+         vfprintf) ;;
+         vfscanf) ;;
+         vprintf) ;;
+         vscanf) ;;
+         vsnprintf) ;;
+         vsprintf) ;;
+         vsscanf) ;;
+         wcschr) ;;
+         wcscmp) ;;
+         wcslen) ;;
+         wcsncmp) ;;
+         wmemchr) ;;
+         wmemcmp) ;;
+
+         mulle_objc_loadinfo_unfailing_enqueue) ;;
+
+         *)
+            echo "void  $i() {}"
+         ;;
+      esac
+   done
+}
+
+
+#
+# create a  .o file with (almost) all the symbols that
+# are missing from "$1"
+#
+create_undefined_linkage()
+{
+   local infile="$1"
+   local outfile="$2"
+   local tmpdir="$3"
+
+   local text
+
+   text="`create_undefined_linkage_c "${infile}" "${tmpdir}"`"
+   if [ -z "${text}" ]
+   then
+      log_fluff "No undefined symbols to spoof for \"${infile}\""
+      return 1
+   fi
+
+   local cfile
+   local folder
+
+   folder="`dirname -- "${outfile}"`"
+   cfile="${folder}/`basename -- "${outfile}" .o`".c
+   redirect_exekutor "${cfile}" echo "${text}"
+
+   local cflags
+
+   cflags="`shlib_cflags`"
+
+   log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
+   exekutor mulle-clang ${cflags} -c -o "${outfile}" "${cfile}" || exit 1
+}
+
+
+#
+# create a shared library for the .a file
+#
+create_shlib()
+{
+   local library="$1"
+
+   local name
+   local undefined
+   local files
+   local shlib
+
+   local ext
+   local ldflags
+
+   ext="`shlib_extension`"
+   ldflags="`shlib_ldflags`"
+
+   tmpdir="`mktemp -d -t "mulle-objc-list-a.XXXXXX"`"
+
+   name="`basename "${library}" .a`"
+   undefined="${tmpdir}/${name}.undef.o"
+   shlib="${tmpdir}/${name}.${ext}"
+
+   files="${library}"
+
+   if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
+   then
+      files="${undefined} ${library}"
+   fi
+
+   log_fluff "Create shlib \"${shlib}\"..."
+
+   exekutor mulle-clang ${ldflags} ${files} -o "${shlib}" || exit 1
+
+   echo "${shlib}"
+}
+
+
+_init()
+{
+   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
+   if [ -z "${libexecpath}" ]
+   then
+      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
+      exit 1
+   fi
+
+   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
+   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
+}
+
+
+main()
+{
+   # your code follows here
+   if [ -z "`command -v mulle-objc-list`" ]
+   then
+      fail "mulle-objc-list not in PATH"
+   fi
+
+   local cmdline
+   local library
+   local shlib
+
+   cmdline="mulle-objc-list"
+
+   # collect options for mulle-objc-list
+   while [ $# -gt 1 ]
+   do
+      cmdline="${cmdline} '$1'"
+
+      shift
+   done
+
+   library="$1"
+   if [ ! -f "${library}" ]
+   then
+      usage
+   fi
+
+   log_verbose "Create shared libs (if needed)..."
+
+   shlib="`create_shlib "${library}"`" || exit 1
+   cmdline="${cmdline} '${shlib}'"
+
+   log_verbose "Run mulle-objc-list on shared library..."
+
+   eval_exekutor ${cmdline}
+}
+
+
+
+MULLE_EXECUTABLE="`basename -- "$0"`"
+MULLE_ARGUMENTS="$@"
+MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
+MULLE_EXECUTABLE_PID="$$"
+
+
+set -o pipefail
+
+_init "$@" # needs params
+
+main "$@"

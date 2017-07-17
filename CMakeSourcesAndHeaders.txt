@@ -13,5 +13,6 @@ src/mulle_objc_list.h
 
 set( SCRIPTS
 mulle-objc-create-dependencies-inc
+mulle-objc-lista
 mulle-objc-uncovered-methods
 )

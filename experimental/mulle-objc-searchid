@@ -1,0 +1,288 @@
+#! /usr/bin/env bash
+#
+# Look through libraries and find a name for the given
+# uniqueid. Searches classes and methods at the moment.
+#
+
+MULLE_EXECUTABLE_VERSION=0.9.1
+
+MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
+MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
+
+
+usage()
+{
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE} [options] <library>+
+
+Options:
+EOF
+
+   core_technical_option_usage | sort >&2
+
+   exit 1
+}
+
+
+add_path()
+{
+   local line="$1"
+   local path="$2"
+
+   if [ -z "${line}" ]
+   then
+      echo "${path}"
+   else
+      if [ -z "${path}" ]
+      then
+         echo "${line}"
+      else
+         echo "${line}:${path}"
+      fi
+   fi
+}
+
+
+prettify_uniqueid()
+{
+   local uniqueid="$1"
+
+   uniqueid="`tr '[A-Z]' '[a-z]' <<< "${uniqueid}"`"
+   uniqueid="`sed 's/^0x//' <<< "${uniqueid}"`"
+   uniqueid="`sed 's/^\$//' <<< "${uniqueid}"`"
+
+   case "${uniqueid}" in
+      [0-9a-f])
+         uniqueid="0000000${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f])
+         uniqueid="000000${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f][0-9a-f])
+         uniqueid="00000${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f][0-9a-f][0-9a-f])
+         uniqueid="0000${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f])
+         uniqueid="000${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f])
+         uniqueid="00${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f])
+         uniqueid="0${uniqueid}"
+      ;;
+      [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f])
+      ;;
+
+      *)
+         return 1
+      ;;
+   esac
+
+   echo "${uniqueid}"
+}
+
+
+grep_library()
+{
+   local uniqueid="$1"
+   local library="$2"
+
+   if [ ! -f "${library}" ]
+   then
+      return 1
+   fi
+
+   case "${library}" in
+      *.so|*.dylib)
+         mulle-objc-list -s "${library}" | fgrep "${uniqueid}"
+      ;;
+
+      *)
+         mulle-objc-lista -s "${library}" | fgrep "${uniqueid}"
+      ;;
+   esac
+}
+
+
+grep_libraries()
+{
+   local uniqueid="$1"
+
+   IFS="
+"
+   for i in `ls -1`
+   do
+      IFS="${DEFAULT_IFS}"
+
+      case "$i" in
+         *.a|*.lib)
+            grep_library "${uniqueid}" "$i" 2> /dev/null
+         ;;
+
+         *.so|*.dylib)
+            grep_library "${uniqueid}" "$i" 2> /dev/null
+         ;;
+      esac
+   done
+
+   IFS="${DEFAULT_IFS}"
+}
+
+
+search()
+{
+   local uniqueid="$1"; shift
+
+   local folder
+
+   if [ $# -eq 0 ]
+   then
+      IFS=":"
+
+      for folder in ${LIB_PATH}
+      do
+         IFS="${DEFAULT_IFS}"
+         (
+            cd "${folder}"
+            grep_libraries "${uniqueid}"
+         )
+      done
+      IFS="${DEFAULT_IFS}"
+   else
+      while [ $# -ne 0 ]
+      do
+         IFS=":"
+
+         for folder in ${LIB_PATH}
+         do
+            IFS="${DEFAULT_IFS}"
+            (
+               cd "${folder}"
+               grep_library "${uniqueid}" "${1}"
+            )
+         done
+         IFS="${DEFAULT_IFS}"
+      done
+   fi
+}
+
+
+
+main()
+{
+   local LIB_PATH
+
+   while [ $# -ne 0 ]
+   do
+      if core_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      # your option handling
+      case "$1" in
+         --version)
+            echo "${MULLE_EXECUTABLE_VERSION}"
+            exit 0
+         ;;
+
+         -L|--librarypath)
+            [ $# -eq 1 ] && fail "missing argument to $1"
+            shift
+
+            LIB_PATH="`add_path "${LIB_PATH}" "$1"`"
+         ;;
+
+         -h|--help)
+            usage
+         ;;
+
+         -*)
+            fail "unknown option $1"
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   core_setup_trace "${MULLE_TRACE}"
+
+   local uniqueid
+
+   [ $# -eq 0 ] && usage
+
+   if [ -z "${LIB_PATH}" ]
+   then
+      LIB_PATH="`mulle-bootstrap paths librarypath`"
+      if [ -z "${LIB_PATH}" ]
+      then
+         LIB_PATH="."
+      fi
+   fi
+
+   if [ -z "`command -v mulle-objc-list`" ]
+   then
+      fail "mulle-objc-list not in PATH"
+   fi
+
+   if [ -z "`command -v mulle-objc-lista`" ]
+   then
+      fail "mulle-objc-lista not in PATH"
+   fi
+
+   #
+   # make uniqueid pretty for various formats
+   #
+   uniqueid="`prettify_uniqueid "$1"`"
+   [ -z "${uniqueid}" ] && fail "malformed uniqueid \"$1\""
+   shift
+
+   search "${uniqueid}" "$@" | \
+      sed "s|^${uniqueid};\\([^;]*\\).*$|\\1|" | \
+      sed "s|^.*;${uniqueid};\\([^;]*\\).*$|\\1|" | \
+      sed 's|^[-+]||' | \
+      sort -u
+}
+
+
+
+_init()
+{
+   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
+   if [ -z "${libexecpath}" ]
+   then
+      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
+      exit 1
+   fi
+
+   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
+   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
+   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+}
+
+
+MULLE_EXECUTABLE="`basename -- "$0"`"
+MULLE_ARGUMENTS="$@"
+MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
+MULLE_EXECUTABLE_PID="$$"
+
+
+set -o pipefail
+
+_init "$@" # needs params
+
+
+#
+# combine all coverage files into one and sort -u it
+#
+
+main "$@"

@@ -134,7 +134,10 @@ _combine_dependencies_inc()
 }
 
 
-_do_dump_dependencies()
+#
+# the old way
+#
+_do_dump_dylib_dependencies()
 {
    #
    # First get all classes and categories "below" OS for later removal
@@ -148,7 +151,7 @@ _do_dump_dependencies()
    tmpminus="`mktemp "/tmp/minus-XXXXXX"`"
 
    redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
-   redirect_exekutor "${tmpplus}" mulle-objc-list -d "${BUILDPATH}/${STANDALONE_LIB}" || fail "mulle-objc-list failed"
+   redirect_exekutor "${tmpplus}" mulle-objc-list -d "${BUILDPATH}/${LIBRARYFILE}" || fail "mulle-objc-list failed"
 
    #
    # remove inherited dependencies from standalone dependencies
@@ -170,11 +173,14 @@ _do_dump_dependencies()
 }
 
 
+_do_dump_static_dependencies()
+{
+   mulle-objc-lista -d "${BUILDPATH}/${LIBRARYFILE}" || fail "mulle-objc-lista failed"
+}
+
+
 _dump_dependencies()
 {
-   #
-   # get path for mulle-objc-list
-   #
    DEPENDENCIES="`mulle-bootstrap paths dependencies`"
    if [ -z "${DEPENDENCIES}" ]
    then
@@ -184,9 +190,9 @@ _dump_dependencies()
    log_fluff "DEPENDENCIES : $PWD"
 
    _dump_loader_dependencies "$@" | sort | sort -u
-   if [ ! -z "${STANDALONE_LIB}" ]
+   if [ ! -z "${LIBRARYFILE}" ]
    then
-      _do_dump_dependencies "$@" | sort | sort -u
+      _do_dump_static_dependencies | sort | sort -u
    fi
 }
 
@@ -266,9 +272,14 @@ main()
 
    [ "${MULLE_TRACE}" = "1848" ] && set -x
 
+   eval `mulle-bootstrap paths path` || fail "mulle-bootstrap not found"
+
+
    NAME="$1"
    [ -z "${NAME}" ] && usage
    shift
+
+   LISTER="mulle-objc-lista"
 
    case "${NAME}" in
       ""|"-")
@@ -276,40 +287,35 @@ main()
 
       *)
          case "`uname -s`" in
-            Darwin)
-               STANDALONE_LIB="lib${NAME}Standalone.dylib"
-            ;;
-
             MINGW*|Win*|WIN*)
-              STANDALONE_LIB="${NAME}Standalone.dll" # assume
+               LIBRARYFILE="${NAME}.lib" # assume
             ;;
 
             *)
-              STANDALONE_LIB="lib${NAME}Standalone.so"
+               LIBRARYFILE="lib${NAME}.a"
             ;;
          esac
       ;;
    esac
 
-   eval `mulle-bootstrap paths path` || fail "mulle-bootstrap not found"
-
-   if [ -z "`command -v mulle-objc-list`" ]
+   if [ -z "`command -v "${LISTER}"`" ]
    then
-      fail "mulle-objc-list not found in PATH"
+      fail "${LISTER} not found in PATH"
    fi
 
    #
    # could build it dynamically --
    #
-   if [ ! -z "${STANDALONE_LIB}" -a  ! -f "${BUILDPATH}/${STANDALONE_LIB}" ]
+   if [ ! -z "${LIBRARYFILE}" -a ! -f "${BUILDPATH}/${LIBRARYFILE}" ]
    then
-      fail "${BUILDPATH}/${STANDALONE_LIB} not found. \
+      fail "${BUILDPATH}/${LIBRARYFILE} not found. \
 mulle-build first or specify build directory with -b"
    fi
 
    local result
 
    result="`dump_dependencies "$@"`"
+
    if [ -z "${OUTPUT}" ]
    then
       exekutor echo "$result"
