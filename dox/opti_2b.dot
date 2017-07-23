@@ -1,0 +1,21 @@
+digraph optimizer {
+
+   node [ shape="note"]
+
+
+   "libFoo.a"      [ penwidth=2, color="blue"]
+   "main.m"        [ penwidth=2, color="purple"]
+
+   node [ shape="folder"]
+
+   myexe -> src
+   src -> "main.m"
+   myexe -> dependencies
+
+
+   "dependencies"
+   "dependencies" -> "include" -> "Foo" -> "dependencies.inc"
+   "dependencies" -> "lib" -> "libFoo.a"
+
+   "dependencies.inc" [ shape="note", penwidth=2, color="goldenrod"]
+}

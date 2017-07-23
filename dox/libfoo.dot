@@ -1,0 +1,10 @@
+digraph optimizer {
+
+   node [ shape="note"]
+
+   "libFoo.a" -> "Foo.o"
+   "libFoo.a" -> "Foo+Bar.o"
+   "libFoo.a" -> "MulleObjCLoader+Foo.o"
+
+   "libFoo.a"     [ penwidth=2, shape="folder", color="blue"]
+}

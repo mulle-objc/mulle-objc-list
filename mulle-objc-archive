@@ -16,17 +16,17 @@ create_undefined_linkage_c()
 
    #
    # if we redefine standard library symbols, the compiler is not
-   # happy so we copy the definitions here
+   # happy and no one-else either
+   # the proper solution would be to collect all symbols defined
+   # and available by mulle-objc-list and substract them. For now
+   # just substitute C symbols assumed to be ObjC
    #
-   # egrep '^LIBBUILTIN' mulle-clang/include/clang/Basic/Builtins.def | \
-   #  sed s'/^LIBBUILTIN(\([^,]*\).*$/\1/' | \
-   #  sort | \
-   #  sed s'/\(.*\)/         \1) ;;/'
+   # egrep '^LIBBUILTIN' mulle-clang/include/clang/Basic/Builtins.def | sed s'/^LIBBUILTIN(\([^,]*\).*$/\1/' | sort | sed s'/\(.*\)/   \1) ;;/'
    #
    for i in ${symbols}
    do
       case $i in
-         NSLog) ;;
+        NSLog) ;;
          NSLogv) ;;
          _Block_object_assign) ;;
          _Block_object_dispose) ;;
@@ -425,50 +425,50 @@ create_undefined_linkage()
 
 create_csv()
 {
-   local folder="$1"
+   (
+      cd "${folder}"
 
-   local i
-   local name
-   local undefined
-   local files
-   local shlib
+      UNAME="`uname -s`"
 
-   local sedexpr
+      for i in *.o
+      do
+         name="`basename "$i" .o`"
+         undefined="${name}.undef.o"
+         files="${i}"
 
-   for i in *.o
-   do
-      name="`basename "$i" .o`"
-      undefined="${name}.undef.o"
-      files="${i}"
+         if create_undefined_linkage "${i}" "${undefined}"
+         then
+            files="${files} ${undefined}"
+         fi
 
-      if create_undefined_linkage "${i}" "${undefined}"
-      then
-         files="${files} ${undefined}"
-      fi
+         case "${UNAME}" in
+            Darwin)
+               shlib="${name}.dylib"
+               mulle-clang -dynamiclib -undefined suppress -flat_namespace ${files} -o "${shlib}" || exit 1
+            ;;
 
-      case "${UNAME}" in
-         Darwin)
-            shlib="${name}.dylib"
-            mulle-clang -dynamiclib -undefined suppress \
-                        -flat_namespace ${files} -o "${shlib}" || exit 1
-         ;;
+            *)
+               shlib="${name}.so"
+               mulle-clang -dynamiclib -undefined suppress -flat_namespace ${files} -o "${shlib}" || exit 1
+             ;;
+         esac
 
-         *)
-            shlib="${name}.so"
-            mulle-clang -dynamiclib -undefined suppress \
-                        -flat_namespace ${files} -o "${shlib}" || exit 1
-          ;;
-      esac
-
-      sedexpr="s|\$|;${folder}\/${i}|"
-      mulle-objc-list -T "${shlib}" | sed "${sedexpr}"
-   done
+         result="`mulle-objc-list -t "${shlib}"`"
+         if [ ! -z "${result}" ]
+         then
+            echo "Created \"${folder}/${i}.csv\"" >&2
+            echo "${result}" > "${folder}/${i}.csv" || exit 1
+         fi
+      done
+   ) || exit 1
 }
 
 
 unarchive_library()
 {
    local library="$1"
+
+   local folder
 
    case "${library}" in
       /*)
@@ -479,25 +479,18 @@ unarchive_library()
       ;;
    esac
 
-   local libname
-
+   TMPDIR=/tmp
    case "${UNAME}" in
+      Darwin)
+         folder="`mktemp -d -t mulle-objc-unarchive`"
+      ;;
+
       *)
-         libname="`basename -- "${library}" .a`"
+         folder="`mktemp -d -t mulle-objc-unarchive-XXXXXX`"
       ;;
    esac
 
-   local folder
-
-   folder="${libname}.d"
-
-   if [ -d "${folder}" ]
-   then
-      rm -rf "${folder}" || exit 1
-   fi
-
    (
-      mkdir "${folder}" &&
       cd "${folder}" &&
       ar x "${library}"
    ) || exit 1
@@ -506,34 +499,15 @@ unarchive_library()
 }
 
 
-create_csv_db()
-{
-   local folder
-   local old
-
-   old="${PWD}"
-
-   while [ $# -ne 0 ]
-   do
-      folder="`unarchive_library "$1"`" || exit 1
-
-      cd "${folder}" &&
-      create_csv "${folder}" &&
-      cd "${old}" || exit 1
-
-      shift
-   done
-}
-
-
 main()
 {
+   local folder
+
    UNAME="`uname -s`"
-   create_csv_db "$@" > _method_db.csv
-   sort -u < _method_db.csv > method_db.csv
-   rm _method_db.csv
+
+   folder="`unarchive_library "$1"`"
+   create_csv "${folder}"
 }
 
-set -x
 
 main "$@"

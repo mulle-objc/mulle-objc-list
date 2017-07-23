@@ -1,0 +1,35 @@
+digraph optimizer {
+
+   node [ shape="note"]
+
+
+   "unarchive" -> "Foo.d"
+   "Foo.d" -> "Foo.o"
+   "Foo.d" -> "Foo+Bar.o"
+   "Foo.d" -> "method_db.csv"
+   "Foo.d" -> "class_db.csv"
+
+   "unarchive" [ shape="folder" ]
+
+   "class_db.csv"  [ penwidth=2, color="seagreen"]
+   "method_db.csv" [ penwidth=2, color="seagreen"]
+
+   "optimize"
+   "optimize" [ shape="folder" ]
+
+   "optimize" -> "Foo2.d"
+
+   "Foo2.d" [ label="Foo.d", shape="folder" ]
+   "Foo2.d" -> "MulleObjCLoader+Foo.o"
+
+   "optimize" -> "class-coverage.csv"
+   "optimize" -> "method-coverage.csv"
+   "class-coverage.csv"  [ penwidth=2, color="seagreen"]
+   "method-coverage.csv" [ penwidth=2, color="seagreen"]
+
+   "optimize" -> "lib_c.a"
+   "optimize" -> "lib_ObjC.a"
+
+   "lib_c.a"      [ penwidth=2, color="blue" ]
+   "lib_ObjC.a"   [ penwidth=2, color="blue" ]
+}

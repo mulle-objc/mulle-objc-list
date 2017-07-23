@@ -1,0 +1,162 @@
+#! /usr/bin/env bash
+#
+# Look through libraries and find a name for the given
+# uniqueid. Searches classes and methods at the moment.
+#
+
+MULLE_EXECUTABLE_VERSION=0.9.1
+
+MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
+MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
+
+
+usage()
+{
+   cat <<EOF >&2
+Usage:
+   ${MULLE_EXECUTABLE} [options] <class>
+
+   Print a class-coverage.csv line for a class or category. If you also specify
+   a method with -m then a method-coverage.csv line will be printed.
+
+Options:
+   --method <name>   : specify method
+   --category <name> : specify category
+EOF
+
+   core_technical_option_usage | sort >&2
+
+   exit 1
+}
+
+
+
+
+main()
+{
+   local LIB_PATH
+
+   local OPTION_SELECTOR="NO"
+
+   while [ $# -ne 0 ]
+   do
+      if core_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      # your option handling
+      case "$1" in
+         --version)
+            echo "${MULLE_EXECUTABLE_VERSION}"
+            exit 0
+         ;;
+
+         -c|--category)
+            [ $# -eq 1 ] && fail "missing argument to $1"
+            shift
+
+            CATEGORY="$1"
+         ;;
+
+         -m|--method)
+            [ $# -eq 1 ] && fail "missing argument to $1"
+            shift
+
+            METHOD="$1"
+         ;;
+
+         -h|--help)
+            usage
+         ;;
+
+         -*)
+            fail "unknown option $1"
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   core_setup_trace "${MULLE_TRACE}"
+
+   local uniqueid
+
+   [ $# -ne 1 ] && usage
+   CLASS="$1"
+
+   if [ -z "`command -v mulle-objc-uniqueid`" ]
+   then
+      fail "mulle-objc-uniqueid not in PATH"
+   fi
+
+   CLASSID="`mulle-objc-uniqueid "${CLASS}"`"
+
+   if [ ! -z "${CATEGORY}" ]
+   then
+      CATEGORYID="`mulle-objc-uniqueid "${CATEGORY}"`"
+   fi
+
+   if [ -z "${METHOD}" ]
+   then
+      echo "${CLASSID};${CLASS};${CATEGORYID};${CATEGORY}"
+      return 0
+   fi
+
+   case "${METHOD}" in
+      -*)
+         PREFIX="-"
+      ;;
+
+      +*)
+         PREFIX="+"
+      ;;
+
+      *)
+         fail "Method must have - or + prefix"
+      ;;
+   esac
+
+   METHOD="${METHOD:1:${#METHOD}-1}"
+   METHODID="`mulle-objc-uniqueid "${METHOD}"`"
+
+   echo "${CLASSID};${CLASS};${CATEGORYID};${CATEGORY};${METHODID};${PREFIX}${METHOD}"
+}
+
+
+
+_init()
+{
+   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
+   if [ -z "${libexecpath}" ]
+   then
+      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
+      exit 1
+   fi
+
+   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
+   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
+   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+}
+
+
+MULLE_EXECUTABLE="`basename -- "$0"`"
+MULLE_ARGUMENTS="$@"
+MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
+MULLE_EXECUTABLE_PID="$$"
+
+
+set -o pipefail
+
+_init "$@" # needs params
+
+#
+# combine all coverage files into one and sort -u it
+#
+
+main "$@"

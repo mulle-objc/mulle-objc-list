@@ -1,0 +1,10 @@
+digraph optimizer {
+
+   node [ shape="note"]
+
+   "coverage" [ shape="folder" ]
+   "coverage" -> "class-coverage.csv"
+   "coverage" -> "method-coverage.csv"
+   "class-coverage.csv"  [ penwidth=2, color="seagreen"]
+   "method-coverage.csv" [ penwidth=2, color="seagreen"]
+}

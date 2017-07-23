@@ -14,5 +14,9 @@ src/mulle_objc_list.h
 set( SCRIPTS
 mulle-objc-create-dependencies-inc
 mulle-objc-lista
+mulle-objc-optimize
+mulle-objc-printline
+mulle-objc-searchid
+mulle-objc-unarchive
 mulle-objc-uncovered-methods
 )

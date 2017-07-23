@@ -1,0 +1,14 @@
+digraph optimizer {
+
+   node [ shape="note"]
+
+   "libFoo.a"      [ penwidth=2, color="blue"]
+
+   node [ shape="folder"]
+
+   "dependencies"
+   "dependencies" -> "include" -> "Foo" -> "dependencies.inc"
+   "dependencies" -> "lib" -> "libFoo.a"
+
+   "dependencies.inc" [ shape="note", penwidth=2, color="goldenrod"]
+}

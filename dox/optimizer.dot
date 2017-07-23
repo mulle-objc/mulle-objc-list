@@ -1,0 +1,25 @@
+digraph optimizer {
+
+   node [ shape="folder"]
+   "src" -> "Foo.m"
+   "src" -> "Foo+Bar.m"
+
+   "dependencies" -> "include" -> "Foo" -> "dependencies.inc"
+   "dependencies" -> "lib" -> "libFoo.a"
+   "build" -> "Foo.d" -> "dependencies.db"
+   "Foo.d" -> "Foo.o"
+   "Foo.d" -> "Foo+Bar.o"
+   "Foo.d" -> "class.db"
+   "Foo.d" -> "method.db"
+
+   "build" -> "method_db.csv"
+   "build" -> "class_db.csv"
+
+   "dependencies.inc" [ shape="note"]
+   "libFoo.a" [ shape="note"]
+   "Foo.o" [ shape="note"]
+   "Foo+Bar.o" [ shape="note"]
+   "dependencies.db" [ shape="note"]
+   "class.db" [ shape="note"]
+   "method.db" [ shape="note"]
+}

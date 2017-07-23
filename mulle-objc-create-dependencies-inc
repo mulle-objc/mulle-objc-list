@@ -47,29 +47,11 @@ usage:
    of this library.
 
    Options:
+      -f        : force write output
       -n        : don't actually do anything
       -o <file> : write output to file
 EOF
    exit 1
-}
-
-
-setup_bootstrap_environment()
-{
-   local libexec
-
-   libexec="`mulle-bootstrap library-path 2> /dev/null | head -1`"
-   if [ -z "${libexec}" ]
-   then
-      echo "mulle-bootstrap not installed or not in PATH: $PATH" >&2
-      exit 1
-   fi
-
-   PATH="${libexec}:${PATH}"
-
-   . mulle-bootstrap-logging.sh
-   . mulle-bootstrap-functions.sh
-   . mulle-bootstrap-local-environment.sh
 }
 
 
@@ -213,15 +195,14 @@ dump_dependencies()
 #
 main()
 {
-   setup_bootstrap_environment
-
    local BUILDPATH="${BUILDPATH:-.}"
    local OPTION_REMOVE_TMP="YES"
+   local OPTION_FORCE="NO"
    local OUTPUT
 
    while [ $# -ne 0 ]
    do
-      if bootstrap_technical_flags "$1"
+      if core_technical_flags "$1"
       then
          shift
          continue
@@ -235,6 +216,11 @@ main()
          --no-remove)
             OPTION_REMOVE_TMP="NO"
          ;;
+
+         -f|--force)
+            OPTION_FORCE="YES"
+         ;;
+
 
          -b|--build-path)
             [ $# -eq 1 ] && usage
@@ -273,7 +259,6 @@ main()
    [ "${MULLE_TRACE}" = "1848" ] && set -x
 
    eval `mulle-bootstrap paths path` || fail "mulle-bootstrap not found"
-
 
    NAME="$1"
    [ -z "${NAME}" ] && usage
@@ -319,22 +304,23 @@ mulle-build first or specify build directory with -b"
    if [ -z "${OUTPUT}" ]
    then
       exekutor echo "$result"
-   else
-      local previous
-
-      if [ -f "${OUTPUT}" ]
-      then
-         local before
-
-         before="`cat "${OUTPUT}"`"
-         if [ "${result}" = "${before}" ]
-         then
-            log_verbose "Contents \"dependencies.inc\" already up to date"
-            return 0
-         fi
-      fi
-      redirect_exekutor "${OUTPUT}" echo "${result}"
+      return
    fi
+
+   if [ "${OPTION_FORCE}" = "NO" ] && [ -f "${OUTPUT}" ]
+   then
+      local before
+
+      before="`cat "${OUTPUT}"`"
+      if [ "${result}" = "${before}" ]
+      then
+         log_verbose "Contents \"dependencies.inc\" already up to date"
+         return 0
+      fi
+   fi
+
+   redirect_exekutor "${OUTPUT}" echo "${result}"
+   log_info "Wrote \"${OUTPUT}\""
 }
 
 
@@ -345,8 +331,27 @@ then
    MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
 fi
 
+
 MULLE_ARGUMENTS="$@"
 MULLE_EXECUTABLE_PID="$$"
 export MULLE_EXECUTABLE_PID
+
+set -o pipefail
+
+_init()
+{
+   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
+   if [ -z "${libexecpath}" ]
+   then
+      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
+      exit 1
+   fi
+
+   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
+   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
+   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+}
+
+_init "$@" # needs params
 
 main "$@"

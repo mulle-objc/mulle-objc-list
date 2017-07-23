@@ -528,11 +528,10 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    case dump_dependencies :
       if( p->classid != loader_classid)
          printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
-                "      // %08x;%s;%08x;\n",
+                "      // %08x;%s;;\n",
                 p->classname,
                 p->classid,
-                p->classname,
-                MULLE_OBJC_NO_CATEGORYID);
+                p->classname);
       break;
    }
    

@@ -1,0 +1,13 @@
+#! /usr/bin/env bash
+#
+
+
+#
+# doesn't do much yet, except to find the largest cache for each
+# infra and metaclass
+#
+grep -v ';0;0;0' "$1" | \
+   sort -u | \
+   sort -t ';' -k 1,2 -k 3,3 -r -n | \
+   sort -t ';' -k 1,2 -u | \
+   sort -t ';' -r -n -k 3,3
