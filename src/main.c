@@ -39,8 +39,8 @@
 #define __MULLE_OBJC_NO_TPS__ 1
 #define __MULLE_OBJC_NO_TRT__ 1
 
-#import <mulle_objc_runtime/mulle_objc_runtime.h>
-#import <mulle_objc_runtime/mulle_objc_csvdump.h>
+#include <mulle_objc_runtime/mulle_objc_runtime.h>
+#include <mulle_objc_runtime/mulle_objc_csvdump.h>
 
 #include <ctype.h>
 #include <string.h>
