@@ -48,7 +48,7 @@ shlib_cflags()
       ;;
 
       *)
-         echo "-fno-common"
+         echo "-fPIC -fno-common"
        ;;
    esac
 }
@@ -62,7 +62,7 @@ shlib_ldflags()
       ;;
 
       *)
-         echo "-undefined suppress"
+         echo "-shared"
        ;;
    esac
 }
@@ -86,7 +86,23 @@ nm_global_defined_names()
          exekutor nm -g --defined-only -p -P "${filename}" | awk '{ print $1} '
       ;;
    esac
+}
 
+
+nm_global_undefined_names()
+{
+   local filename="$1"
+
+   case "${UNAME}" in
+      darwin)
+         exekutor nm -g -u -j "${filename}"
+      ;;
+
+      linux|*)
+         # -p no sort, -P posix style (name first)
+         exekutor nm -g --undefined-only -p -P "${filename}" | awk '{ print $1} '
+      ;;
+   esac
 }
 
 
