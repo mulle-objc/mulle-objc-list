@@ -983,9 +983,9 @@ create_class_csv_db()
 
 
 
-finalize_folder()
+clean_folder_tmp()
 {
-   log_debug "finalize_folder" "$*"
+   log_debug "clean_folder_tmp" "$*"
 
    local folder="$1"
 
@@ -993,8 +993,8 @@ finalize_folder()
 
    log_fluff "Removing undef files and shlibs in \"${folder}\" ..."
 
-   exekutor rm *.undef.*  2> /dev/null
-   exekutor rm *."${ext}" 2> /dev/null
+   exekutor rm -f *.undef.*  2> /dev/null
+   exekutor rm -f *."${ext}" 2> /dev/null
 }
 
 
@@ -1036,7 +1036,11 @@ create_databases()
          cd "${folder}" || return 1
          create_method_csv_db "${folder}"
          create_class_csv_db "${folder}"
-         finalize_folder "${folder}"
+
+         if [ "${OPTION_KEEP_TMP}" = "NO" ]
+         then
+            clean_folder_tmp "${folder}"
+         fi
          cd "${old}"
 
          touch "${folder}/.unarchive_done"
@@ -1111,6 +1115,7 @@ main()
    local UNARCHIVE_PREFIX=""
    local DB_PREFIX=""
    local OPTION_FORCE="NO"
+   local OPTION_KEEP_TMP="NO"
 
    while [ $# -ne 0 ]
    do
@@ -1129,6 +1134,10 @@ main()
 
          -f|--force)
             OPTION_FORCE="YES"
+         ;;
+
+         --keep-tmp)
+            OPTION_KEEP_TMP="YES"
          ;;
 
          --unarchive-dir)
