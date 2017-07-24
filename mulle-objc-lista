@@ -72,6 +72,42 @@ shlib_ldflags()
 # read symbols from .a file, figure out the ones that we need to "spoof"
 # so that we can dummy link it
 #
+nm_global_defined_names()
+{
+   local filename="$1"
+
+   case "${UNAME}" in
+      darwin)
+         exekutor nm -g -U -j "${filename}"
+      ;;
+
+      linux|*)
+         # -p no sort, -P posix style (name first)
+         exekutor nm -g --defined-only -p -P "${filename}" | awk '{ print $1} '
+      ;;
+   esac
+
+}
+
+
+nm_global_undefined_names()
+{
+   local filename="$1"
+
+   case "${UNAME}" in
+      darwin)
+         exekutor nm -g -u -j "${filename}"
+      ;;
+
+      linux|*)
+         # -p no sort, -P posix style (name first)
+         exekutor nm -g --undefined-only -p -P "${filename}" | awk '{ print $1} '
+      ;;
+   esac
+
+}
+
+
 create_undefined_linkage_c()
 {
    local infile="$1"
@@ -79,18 +115,18 @@ create_undefined_linkage_c()
 
    local undefined_symbols
 
-   # global, no-undefined, no type info
-   nm -g -U -j "${infile}" | \
-      egrep -v ':$|^$' | \
-      sed 's/^_//' |
-      sort -u > "${tmpdir}/globals" || exit 1
+   # global, defined
+   nm_global_defined_names "${infile}" | \
+      exekutor egrep -v ':$|^$' | \
+      exekutor sed 's/^_//' |
+      redirect_executor "${tmpdir}/globals" sort -u || exit 1
 
    # remove defined globals from undefined
-   undefined_symbols="`nm -g -u -j "${infile}" | \
-      egrep -v ':$|^$' | \
-      sed 's/^_//' |
-      sort -u |
-      fgrep -v -f "${tmpdir}/globals"`" || exit 1
+   undefined_symbols="`nm_global_undefined_names "${infile}" | \
+      exekutor egrep -v ':$|^$' | \
+      exekutor sed 's/^_//' |
+      exekutor sort -u |
+      exekutor fgrep -v -f "${tmpdir}/globals"`" || exit 1
 
    local i
 

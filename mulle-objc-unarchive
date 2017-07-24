@@ -108,6 +108,24 @@ shlib_ldflags()
 # read symbols from .o file, figure out the ones that we need to "spoof"
 # so that we can dummy link it
 #
+nm_global_undefined_names()
+{
+   local filename="$1"
+
+   case "${UNAME}" in
+      darwin)
+         exekutor nm -g -u -j "${filename}"
+      ;;
+
+      linux|*)
+         # -p no sort, -P posix style (name first)
+         exekutor nm -g --undefined-only -p -P "${filename}" | awk '{ print $1} '
+      ;;
+   esac
+
+}
+
+
 create_undefined_linkage_c()
 {
    local infile="$1"
@@ -115,7 +133,7 @@ create_undefined_linkage_c()
    local symbols
 
    # global, undefined, no type info
-   symbols="`nm -g -u -j "${infile}" | sed 's/^_//'`" || exit 1
+   symbols="`nm_global_undefined_names "${infile}" | sed 's/^_//'`" || exit 1
 
    local i
 
