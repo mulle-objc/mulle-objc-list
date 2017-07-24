@@ -675,13 +675,31 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
 }
 
 
+static char   *concat( char *a, char *b)
+{
+   size_t   len_a;
+   size_t   len_b;
+   char      *s;
+   
+   len_a = strlen( a);
+   len_b = strlen( b);
+   s = malloc(  len_a + len_b + 1);
+   if( ! s)
+      abort();
+   memcpy( s, a, len_a);
+   strcpy( &s[ len_a], b);
+   return( s);
+}
+
+
 int  main( int argc, char *argv[])
 {
    void   *handle;
    void   *adr;
    int    i;
    int    dlmode;
-
+   char   *path;
+   
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -810,11 +828,22 @@ int  main( int argc, char *argv[])
    {
       if( i == argc - 1)  // dump the last one
          dump = 1;
-
+      
+      path = argv[ i];
       if( verbose)
          fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
 
-      handle = dlopen( argv[ i], RTLD_NOW|dlmode);
+      switch( argv[ i][ 0])
+      {
+      case '/' :
+      case '.' :
+         break;
+      
+      default :
+         path = concat( "./", argv[ i]);
+      }
+      
+      handle = dlopen( path, RTLD_NOW|dlmode);
       if( ! handle)
       {
          char   *pwd;
@@ -826,6 +855,9 @@ int  main( int argc, char *argv[])
                      dlerror());
          return( 1);
       }
+      
+      if( path != argv[ i])
+         free( path);
       
       adr = dlsym( handle, "mulle_objc_global_universe");
       if( adr)
