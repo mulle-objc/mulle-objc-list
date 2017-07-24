@@ -90,24 +90,6 @@ nm_global_defined_names()
 }
 
 
-nm_global_undefined_names()
-{
-   local filename="$1"
-
-   case "${UNAME}" in
-      darwin)
-         exekutor nm -g -u -j "${filename}"
-      ;;
-
-      linux|*)
-         # -p no sort, -P posix style (name first)
-         exekutor nm -g --undefined-only -p -P "${filename}" | awk '{ print $1} '
-      ;;
-   esac
-
-}
-
-
 create_undefined_linkage_c()
 {
    local infile="$1"
@@ -119,7 +101,7 @@ create_undefined_linkage_c()
    nm_global_defined_names "${infile}" | \
       exekutor egrep -v ':$|^$' | \
       exekutor sed 's/^_//' |
-      redirect_executor "${tmpdir}/globals" sort -u || exit 1
+      redirect_exekutor "${tmpdir}/globals" sort -u || exit 1
 
    # remove defined globals from undefined
    undefined_symbols="`nm_global_undefined_names "${infile}" | \
