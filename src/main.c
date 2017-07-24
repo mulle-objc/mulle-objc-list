@@ -817,8 +817,13 @@ int  main( int argc, char *argv[])
       handle = dlopen( argv[ i], RTLD_NOW|dlmode);
       if( ! handle)
       {
-         fprintf( stderr, "error: failed to open \"%s\" %s\n",
-                     argv[ i], dlerror());
+         char   *pwd;
+         
+         pwd = getenv( "PWD");
+         fprintf( stderr, "mulle-objc-list error: failed to open \"%s\" (%s) %s\n",
+                     argv[ i],
+                     pwd ? pwd : "???",
+                     dlerror());
          return( 1);
       }
       

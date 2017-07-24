@@ -84,7 +84,7 @@ shlib_cflags()
       ;;
 
       *)
-         echo "-fno-common"
+         echo "-fPIC -fno-common"
        ;;
    esac
 }
@@ -98,7 +98,7 @@ shlib_ldflags()
       ;;
 
       *)
-         echo "-undefined suppress"
+         echo "-shared"
        ;;
    esac
 }
