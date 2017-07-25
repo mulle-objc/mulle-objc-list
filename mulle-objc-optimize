@@ -168,7 +168,9 @@ prepare_coverage_files()
 {
    log_debug "prepare_coverage_files" "$*"
 
-   [ -z "${TMPDIR}" -o ! -d "${TMPDIR}" ] && internal_fail "TMPDIR missing"
+   TMPDIR="${TMPDIR:-/tmp}"
+
+   [ ! -d "${TMPDIR}" ] && internal_fail "TMPDIR \"${TMPDIR}\" is missing"
 
    if [ ! -f "${COVERAGE_PREFIX}method-coverage.csv" ]
    then

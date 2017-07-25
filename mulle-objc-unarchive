@@ -133,7 +133,16 @@ create_undefined_linkage_c()
    local symbols
 
    # global, undefined, no type info
-   symbols="`nm_global_undefined_names "${infile}" | sed 's/^_//'`" || exit 1
+   case "${UNAME}" in
+      darwin)
+         symbols="`nm_global_undefined_names "${infile}" | sed 's/^_//'`" || exit 1
+      ;;
+
+      *)
+         symbols="`nm_global_undefined_names "${infile}"`" || exit 1
+      ;;
+   esac
+
 
    local i
 
@@ -643,7 +652,7 @@ create_shlibs()
 
       if create_undefined_linkage "${i}" "${undefined}"
       then
-         files="${undefined} ${files}"
+         files="${files} ${undefined}" # order important for linux ?
       fi
 
       log_fluff "Create shlib \"${shlib}\"..."
@@ -855,8 +864,6 @@ unpack_library()
       then
          create_shlibs "${folder}" || return 1
 
-         exekutor rm "${folder}"/*".undef."* 2> /dev/null
-         exekutor rm "${folder}"/*".${ext}" 2> /dev/null
          log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as ObjC"
 
          #
@@ -1040,6 +1047,8 @@ create_databases()
          if [ "${OPTION_KEEP_TMP}" = "NO" ]
          then
             clean_folder_tmp "${folder}"
+         else
+            log_warning "--keep-tmp is just for debugging and breaks a later optimize pass"
          fi
          cd "${old}"
 
