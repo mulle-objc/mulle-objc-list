@@ -9,11 +9,11 @@ Also contains:
 
 Executable              | Description
 ------------------------|------------------------
-* mulle-objc-create-dependencies-inc | Create "dependencies.inc" files for MulleObjCLoader categories, to facilitate dependency management of statically linked libraries
-* mulle-objc-lista      | Compiles a static library into a shared library, then uses `mulle-objc-list` to dump load info
-* mulle-objc-optimize   | Separate code into ObjC linkable and C linkable according to coverage information
-* mulle-objc-searchid   | Search through libraries for the name of a classid or @selector
-* mulle-objc-unarchive  | Unpack Objective-C library as a first step to omptimizing it using coverage information
+`mulle-objc-create-dependencies-inc` | Create "dependencies.inc" files for MulleObjCLoader categories, to facilitate dependency management of statically linked libraries
+`mulle-objc-lista`      | Compiles a static library into a shared library, then uses `mulle-objc-list` to dump load info
+`mulle-objc-optimize`   | Separate code into ObjC linkable and C linkable according to coverage information
+`mulle-objc-searchid`   | Search through libraries for the name of a classid or @selector
+`mulle-objc-unarchive`  | Unpack Objective-C library as a first step to omptimizing it using coverage information
 
 
 ## mulle-objc-list
