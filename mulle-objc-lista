@@ -68,44 +68,64 @@ shlib_ldflags()
 }
 
 
-#
-# read symbols from .a file, figure out the ones that we need to "spoof"
-# so that we can dummy link it
-#
-nm_global_defined_names()
+_nm_global_defined_names()
 {
    local filename="$1"
 
    case "${UNAME}" in
       darwin)
-         exekutor nm -g -U -j "${filename}"
+         exekutor nm -g -U -j "${filename}" | \
+            egrep -v ':$|^$' | \
+            sed 's/^_//'
       ;;
 
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor nm -g --defined-only -p -P "${filename}" | awk '{ print $1} '
+         exekutor nm -g --defined-only -p -P "${filename}" | \
+            awk '{ print $1} ' | \
+            egrep -v ':$|^$'
       ;;
    esac
+}
+
+
+_nm_global_undefined_names()
+{
+   local filename="$1"
+
+   case "${UNAME}" in
+      darwin)
+         exekutor nm -g -u -j "${filename}" | \
+            egrep -v ':$|^$' | \
+            sed 's/^_//'
+      ;;
+
+      linux|*)
+         # -p no sort, -P posix style (name first)
+         exekutor nm -g --undefined-only -p -P "${filename}" | \
+            awk '{ print $1}' | \
+            egrep -v ':$|^$'
+      ;;
+   esac
+}
+
+
+nm_global_defined_names()
+{
+   _nm_global_defined_names "$@" | sed '/^$/d' | sort -u
 }
 
 
 nm_global_undefined_names()
 {
-   local filename="$1"
-
-   case "${UNAME}" in
-      darwin)
-         exekutor nm -g -u -j "${filename}"
-      ;;
-
-      linux|*)
-         # -p no sort, -P posix style (name first)
-         exekutor nm -g --undefined-only -p -P "${filename}" | awk '{ print $1} '
-      ;;
-   esac
+   _nm_global_undefined_names "$@" | sed '/^$/d' | sort -u
 }
 
 
+#
+# read symbols from .a file, figure out the ones that we need to "spoof"
+# so that we can dummy link it
+#
 create_undefined_linkage_c()
 {
    local infile="$1"
@@ -115,16 +135,19 @@ create_undefined_linkage_c()
 
    # global, defined
    nm_global_defined_names "${infile}" | \
-      exekutor egrep -v ':$|^$' | \
-      exekutor sed 's/^_//' |
-      redirect_exekutor "${tmpdir}/globals" sort -u || exit 1
+      redirect_exekutor "${tmpdir}/defined_globals" sort -u
 
-   # remove defined globals from undefined
-   undefined_symbols="`nm_global_undefined_names "${infile}" | \
-      exekutor egrep -v ':$|^$' | \
-      exekutor sed 's/^_//' |
-      exekutor sort -u |
-      exekutor fgrep -v -f "${tmpdir}/globals"`" || exit 1
+   # fgrep behaves funny with empty files
+   if [ -z "`cat ${tmpdir}/defined_globals`" ]
+   then
+      # remove defined globals from undefined
+      nm_global_undefined_names "${infile}" | \
+         redirect_exekutor "${tmpdir}/undefined_globals" cat
+   else
+      nm_global_undefined_names "${infile}" | \
+         redirect_exekutor "${tmpdir}/undefined_globals" \
+            fgrep -v -f "${tmpdir}/defined_globals"
+   fi
 
    local i
 
@@ -137,12 +160,12 @@ create_undefined_linkage_c()
    #  sort | \
    #  sed s'/\(.*\)/         \1) ;;/'
    #
-   for i in ${undefined_symbols}
+   for i in `cat "${tmpdir}/undefined_globals"`
    do
       case $i in
          "") ;;
-         NSLog) ;;
-         NSLogv) ;;
+#         NSLog) ;;
+#         NSLogv) ;;
          _Block_object_assign) ;;
          _Block_object_dispose) ;;
          _Exit) ;;
@@ -530,7 +553,7 @@ create_undefined_linkage()
 
    local text
 
-   text="`create_undefined_linkage_c "${infile}" "${tmpdir}"`"
+   text="`create_undefined_linkage_c "${infile}" "${tmpdir}"`" || exit 1
    if [ -z "${text}" ]
    then
       log_fluff "No undefined symbols to spoof for \"${infile}\""
@@ -603,6 +626,7 @@ _init()
 
    . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
    . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
+   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
 }
 
 
@@ -627,6 +651,9 @@ main()
 
       shift
    done
+
+   core_setup_trace "${MULLE_TRACE}"
+   export MULLE_TRACE
 
    library="$1"
    if [ ! -f "${library}" ]

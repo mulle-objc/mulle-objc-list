@@ -223,8 +223,9 @@ optimize_folder()
    then
       log_verbose "${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} is C"
 
-      exekutor ar -q -c -S "${C_LIBRARY}" `cat ${opti}/all_files` || \
-         fail "Could not add to \"${C_LIBRARY}\""
+      exekutor tr '\010' '\000' < "${opti}/all_files" | \
+               exekutor xargs ar -q -c -S "${C_LIBRARY}" || \
+                  fail "Could not add to \"${C_LIBRARY}\""
       return 0
    fi
 
@@ -277,7 +278,7 @@ optimize_folder()
       # figure out remaining files
       # fgrep doesn't match empty files well though
       #
-      if [ ! -z "`cat "${opti}/objc_files"`" ]
+      if [ ! -z "`head -1 "${opti}/objc_files"`" ]
       then
          redirect_exekutor "${opti}/c_files" \
              fgrep -v -f "${opti}/objc_files" "${opti}/all_files"
@@ -293,15 +294,18 @@ optimize_folder()
       log_verbose "${optimized} of ${all} files were optimized"
    fi
 
+   local has_objects
    #
    # add files to the libraries already
    # doesn't work with spaces in filenames though...
    #
-   objects="`exekutor cat "${opti}/objc_files"`"
-   if [ ! -z "${objects}" ]
+   has_objects="`exekutor head -1 "${opti}/objc_files"`"
+   if [ ! -z "${has_objects}" ]
    then
       log_fluff "Adding unoptimizable files of \"${name}\" to \"${OBJC_LIBRARY}\"..."
-      exekutor ar -q -c -S "${OBJC_LIBRARY}" ${objects} || fail "Could not add to \"${OBJC_LIBRARY}\""
+      exekutor tr '\010' '\000' < "${opti}/objc_files" | \
+               exekutor xargs ar -q -c -S "${OBJC_LIBRARY}" || \
+                  fail "Could not add to \"${OBJC_LIBRARY}\""
    fi
 
    #
@@ -313,11 +317,13 @@ optimize_folder()
       return 0
    fi
 
-   objects="`exekutor cat "${opti}/c_files" 2> /dev/null`"
-   if [ ! -z "${objects}" ]
+   has_objects="`exekutor head -2 "${opti}/c_files" 2> /dev/null`"
+   if [ ! -z "${has_objects}" ]
    then
       log_fluff "Adding optimizable files of \"${name}\" to \"${C_LIBRARY}\"..."
-      exekutor ar -q -c -S "${C_LIBRARY}" ${objects} || fail "Could not add to \"${C_LIBRARY}\""
+      exekutor tr '\010' '\000' < "${opti}/c_files" | \
+               exekutor xargs ar -q -c -S "${C_LIBRARY}" || \
+                  fail "Could not add to \"${C_LIBRARY}\""
    fi
 
    #

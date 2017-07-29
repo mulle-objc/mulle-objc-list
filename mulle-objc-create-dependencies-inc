@@ -30,6 +30,12 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #
 
+MULLE_EXECUTABLE_VERSION=0.9.1
+
+MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
+MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
+
+
 #
 # environment
 #
@@ -70,14 +76,27 @@ _dump_loader_dependencies()
    classid="`mulle-objc-uniqueid MulleObjCLoader | tail -1`"
    while [ $# -ne 0 ]
    do
-      depfile="${DEPENDENCIES}/include/$1/dependencies.inc"
+      case "$1" in
+         *:*)
+            depfile="`cut -d ':' -f 1 <<< "$1"`"
+            depname="`cut -d ':' -f 2 <<< "$1"`"
+         ;;
+
+         *)
+            depfile="${DEPENDENCIES}/include/$1/dependencies.inc"
+            depname="$1"
+         ;;
+      esac
 
       if [ ! -f "${depfile}" ]
       then
          fail "\"${depfile}\" not found, mulle-bootstrap first"
       fi
+      if [ -z "${depname}" ]
+      then
+         fail "No name given for dependency"
+      fi
 
-      depname="$1"
       case "${depname}" in
          MulleObjC)
             depname=""
@@ -133,7 +152,7 @@ _do_dump_dylib_dependencies()
    tmpminus="`mktemp "/tmp/minus-XXXXXX"`"
 
    redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
-   redirect_exekutor "${tmpplus}" mulle-objc-list -d "${BUILDPATH}/${LIBRARYFILE}" || fail "mulle-objc-list failed"
+   redirect_exekutor "${tmpplus}" mulle-objc-list -d "${LIBRARYFILE}" || fail "mulle-objc-list failed"
 
    #
    # remove inherited dependencies from standalone dependencies
@@ -157,7 +176,7 @@ _do_dump_dylib_dependencies()
 
 _do_dump_static_dependencies()
 {
-   mulle-objc-lista -d "${BUILDPATH}/${LIBRARYFILE}" || fail "mulle-objc-lista failed"
+   exekutor mulle-objc-lista -d "${LIBRARYFILE}" || fail "mulle-objc-lista failed"
 }
 
 
@@ -256,44 +275,56 @@ main()
       shift
    done
 
-   [ "${MULLE_TRACE}" = "1848" ] && set -x
+
+   core_setup_trace "${MULLE_TRACE}"
+   export MULLE_TRACE
 
    eval `mulle-bootstrap paths path` || fail "mulle-bootstrap not found"
 
-   NAME="$1"
-   [ -z "${NAME}" ] && usage
+   local name
+
+   name="$1"
+   [ -z "${name}" ] && usage
    shift
 
-   LISTER="mulle-objc-lista"
-
-   case "${NAME}" in
+   case "${name}" in
       ""|"-")
       ;;
 
       *)
-         case "`uname -s`" in
-            MINGW*|Win*|WIN*)
-               LIBRARYFILE="${NAME}.lib" # assume
-            ;;
+         if [ -f "${name}" ]
+         then
+            LIBRARYFILE="${name}" # assume
+         else
+            case "`uname -s`" in
+               MINGW*|Win*|WIN*)
+                  LIBRARYFILE="${BUILDPATH}/${name}.lib" # assume
+               ;;
 
-            *)
-               LIBRARYFILE="lib${NAME}.a"
-            ;;
-         esac
+               *)
+                  LIBRARYFILE="${BUILDPATH}/lib${name}.a"
+               ;;
+            esac
+         fi
       ;;
    esac
 
-   if [ -z "`command -v "${LISTER}"`" ]
+   if [ -z "`command -v "mulle-objc-list"`" ]
    then
-      fail "${LISTER} not found in PATH"
+      fail "mulle-objc-list not found in PATH"
+   fi
+
+   if [ -z "`command -v "mulle-objc-lista"`" ]
+   then
+      fail "mulle-objc-lista not found in PATH"
    fi
 
    #
    # could build it dynamically --
    #
-   if [ ! -z "${LIBRARYFILE}" -a ! -f "${BUILDPATH}/${LIBRARYFILE}" ]
+   if [ ! -z "${LIBRARYFILE}" -a ! -f "${LIBRARYFILE}" ]
    then
-      fail "${BUILDPATH}/${LIBRARYFILE} not found. \
+      fail "\"${LIBRARYFILE}\" not found. \
 mulle-build first or specify build directory with -b"
    fi
 
@@ -314,7 +345,7 @@ mulle-build first or specify build directory with -b"
       before="`cat "${OUTPUT}"`"
       if [ "${result}" = "${before}" ]
       then
-         log_verbose "Contents \"dependencies.inc\" already up to date"
+         log_verbose "Contents of \"`basename -- ${OUTPUT}`\" are already up to date"
          return 0
       fi
    fi
@@ -323,20 +354,6 @@ mulle-build first or specify build directory with -b"
    log_info "Wrote \"${OUTPUT}\""
 }
 
-
-# sometimes passed in
-if [ -z "${MULLE_EXECUTABLE}" ]
-then
-   MULLE_EXECUTABLE="`basename -- "$0"`"
-   MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
-fi
-
-
-MULLE_ARGUMENTS="$@"
-MULLE_EXECUTABLE_PID="$$"
-export MULLE_EXECUTABLE_PID
-
-set -o pipefail
 
 _init()
 {
@@ -352,6 +369,25 @@ _init()
    . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
 }
 
+
+# sometimes passed in
+if [ -z "${MULLE_EXECUTABLE}" ]
+then
+   MULLE_EXECUTABLE="`basename -- "$0"`"
+   MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
+fi
+
+MULLE_EXECUTABLE="`basename -- "$0"`"
+MULLE_ARGUMENTS="$@"
+MULLE_EXECUTABLE_PID="$$"
+
+
+set -o pipefail
+
 _init "$@" # needs params
+
+#
+# combine all coverage files into one and sort -u it
+#
 
 main "$@"

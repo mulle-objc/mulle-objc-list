@@ -659,9 +659,11 @@ create_shlibs()
 
       exekutor mulle-clang ${ldflags} ${files} -o "${shlib}" || fail "Failed to produce \"${shlib}\", can't optimize \"${name}\""
 
-      if [ "${OPTION_KEEP_TMP}" = "NO" ]
+      if [ "${OPTION_KEEP_TMP}" = "YES" ]
       then
-         exekutor rm -f *.undef.*
+         exekutor mv "${undefined}" "${undefined}.tmp"
+      else
+         remove_file_if_present "${undefined}"
       fi
    done
 }
@@ -1149,7 +1151,6 @@ main()
 
          --keep-tmp)
             OPTION_KEEP_TMP="YES"
-            log_warning "--keep-tmp is just for debugging and breaks a later optimize pass"
          ;;
 
          --unarchive-dir)

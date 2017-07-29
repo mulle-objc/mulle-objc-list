@@ -1,5 +1,6 @@
 ## 0.9.1
 
+* various little fixes, especially for linux
 * adapt to runtime changes
 * do not emit MulleObjCLoader classes and categories when dumping dependencies
 * emit classid,categorid as comment when dumping dependencies
