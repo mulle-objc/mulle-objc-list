@@ -28,7 +28,6 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
 # define MULLE_OBJC_DLSYM_HANDLE   RTLD_DEFAULT
 #endif
       void      *function;
-      Dl_info   info;
 
       function = dlsym( MULLE_OBJC_DLSYM_HANDLE, "__mulle_objc_loadinfo_callback");
       if( function)
@@ -40,8 +39,14 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
       }
 
      // set path of universe for debugging
-     if( dladdr( (void *) __mulle_objc_universe_setup, &info))
-        mulle_objc_universe_set_path( universe, (char *) info.dli_fname);
+#if __APPLE__
+      { 
+         Dl_info   info;
+
+         if( dladdr( (void *) __mulle_objc_universe_setup, &info))
+            mulle_objc_universe_set_path( universe, (char *) info.dli_fname);
+      }
+#endif
    }
 #endif
 }
