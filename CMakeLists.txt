@@ -22,6 +22,14 @@ include( CMakeDependencies.txt)
 
 ###
 
+if( MSVC)
+   set( SCRIPTS
+${SCRIPTS}
+mulle-objc-create-dependencies-inc.bat
+)
+endif()
+
+
 add_executable( "mulle-objc-list"
 ${SOURCES}
 )
