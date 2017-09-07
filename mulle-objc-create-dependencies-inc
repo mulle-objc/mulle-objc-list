@@ -331,6 +331,12 @@ main()
 
    eval "${pathcmd}"
 
+   # windows...
+   if [ -z "`command -v "fgrep"`" ]
+   then
+      fail "fgrep not found in PATH ($PATH)"
+   fi
+
    if [ -z "`command -v "mulle-objc-list"`" ]
    then
       fail "mulle-objc-list not found in PATH ($PATH)"
@@ -398,6 +404,17 @@ _init()
    . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
    . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
 }
+
+
+#
+# leading backslash ? looks like we're getting called from
+# mingw via a .BAT or so
+#
+case "$PATH" in
+   '\\'*)
+      PATH="`tr '\\' '/' <<< "${PATH}"`"
+   ;;
+esac
 
 
 # sometimes passed in

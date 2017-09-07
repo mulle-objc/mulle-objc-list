@@ -33,6 +33,10 @@ shlib_extension()
          echo "dylib"
       ;;
 
+      mingw*)
+         echo "dll"
+      ;;
+
       *)
          echo "so"
        ;;
@@ -43,7 +47,7 @@ shlib_extension()
 shlib_cflags()
 {
    case "${UNAME}" in
-      darwin)
+      darwin|mingw*)
          echo "-fno-common"
       ;;
 
@@ -61,7 +65,7 @@ shlib_ldflags()
          echo "-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
       ;;
 
-      *)
+      linux|mingw*|*)
          echo "-shared"
        ;;
    esac
@@ -79,11 +83,25 @@ _nm_global_defined_names()
             sed 's/^_//'
       ;;
 
+      mingw*)
+         #
+         # -p no sort, -P posix style (name first)
+         # get rid of ??_C@_07DPFPOHBA@atexit?3?$AA@ and stuff like that
+         # 
+         exekutor nm -g --defined-only -p -P "${filename}" \
+            | awk '{ print $1} ' \
+            | grep -v '@_' \
+            | sed 's/^__imp_//' \
+            | sed 's/@[0-9][0-9]*//' \
+            | sed 's/^_//'  \
+            | egrep -v ':$|^$'
+      ;;
+
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor nm -g --defined-only -p -P "${filename}" | \
-            awk '{ print $1} ' | \
-            egrep -v ':$|^$'
+         exekutor nm -g --defined-only -p -P "${filename}" \
+            | awk '{ print $1} ' \
+            | egrep -v ':$|^$'
       ;;
    esac
 }
@@ -100,11 +118,22 @@ _nm_global_undefined_names()
             sed 's/^_//'
       ;;
 
+      mingw*)
+         # -p no sort, -P posix style (name first)
+         exekutor nm -g --undefined-only -p -P "${filename}" \
+            | awk '{ print $1} ' \
+            | grep -v '@_' \
+            | sed 's/^__imp_//' \
+            | sed 's/@[0-9][0-9]*//' \
+            | sed 's/^_//'  \
+            | egrep -v ':$|^$'
+      ;;
+
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor nm -g --undefined-only -p -P "${filename}" | \
-            awk '{ print $1}' | \
-            egrep -v ':$|^$'
+         exekutor nm -g --undefined-only -p -P "${filename}" \
+            | awk '{ print $1} ' \
+            | egrep -v ':$|^$'
       ;;
    esac
 }
