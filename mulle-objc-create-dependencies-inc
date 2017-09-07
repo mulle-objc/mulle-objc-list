@@ -83,7 +83,7 @@ _dump_loader_dependencies()
          ;;
 
          *)
-            depfile="${DEPENDENCIES}/include/$1/dependencies.inc"
+            depfile="${DEPENDENCIES_DIR}/include/$1/dependencies.inc"
             depname="$1"
          ;;
       esac
@@ -121,7 +121,7 @@ _combine_dependencies_inc()
 
    while [ $# -ne 0 ]
    do
-      depfile="${DEPENDENCIES}/include/$1/dependencies.inc"
+      depfile="${DEPENDENCIES_DIR}/include/$1/dependencies.inc"
 
       if [ ! -f "${depfile}" ]
       then
@@ -182,13 +182,15 @@ _do_dump_static_dependencies()
 
 _dump_dependencies()
 {
-   DEPENDENCIES="`mulle-bootstrap paths dependencies`"
-   if [ -z "${DEPENDENCIES}" ]
+   DEPENDENCIES_DIR="`mulle-bootstrap paths --sdk "${OPTION_SDK}" \
+                                            --configuration "${OPTION_CONFIGURATION}" \
+                                            dependencies`"
+   if [ -z "${DEPENDENCIES_DIR}" ]
    then
       fail "Could not get the dependencies path via mulle-boostrap paths"
    fi
 
-   log_fluff "DEPENDENCIES : $PWD"
+   log_fluff "DEPENDENCIES_DIR : $PWD"
 
    _dump_loader_dependencies "$@" | sort | sort -u
    if [ ! -z "${LIBRARYFILE}" ]
@@ -217,6 +219,9 @@ main()
    local BUILDPATH="${BUILDPATH:-.}"
    local OPTION_REMOVE_TMP="YES"
    local OPTION_FORCE="NO"
+   local OPTION_CONFIGURATION="Release"
+   local OPTION_SDK="Default"
+   local OPTION_FORCE="NO"
    local OUTPUT
 
    while [ $# -ne 0 ]
@@ -239,6 +244,13 @@ main()
             BUILDPATH="$1"
          ;;
 
+         -c|--configuration)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OPTION_CONFIGURATION="$1"
+         ;;
+
          -f|--force)
             OPTION_FORCE="YES"
          ;;
@@ -252,10 +264,17 @@ main()
          ;;
 
          -o|--output)
-            [ $# -eq 1 ] && usage
+            [ $# -eq 1 ] && echo "missing argument to $1"
             shift
 
             OUTPUT="$1"
+         ;;
+
+         -s|--sdk)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OPTION_SDK="$1"
          ;;
 
          -)
@@ -310,7 +329,7 @@ main()
 
    pathcmd="`mulle-bootstrap paths -s ':' -q "'" path`" || fail "mulle-bootstrap not found in PATH ($PATH)"
 
-   eval "${pathcmd}" 
+   eval "${pathcmd}"
 
    if [ -z "`command -v "mulle-objc-list"`" ]
    then
@@ -333,7 +352,7 @@ mulle-build first or specify build directory with -b"
 
    local result
 
-   result="`dump_dependencies "$@"`"
+   result="`dump_dependencies "$@"`" || exit 1
 
    if [ -z "${OUTPUT}" ]
    then
@@ -360,10 +379,18 @@ mulle-build first or specify build directory with -b"
 
 _init()
 {
+   local libexecpath
+
    libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
    if [ -z "${libexecpath}" ]
    then
-      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
+      if [ -z "`command -v "mulle-bootstrap"`" ]
+      then
+         echo "${MULLE_EXECUTABLE} fatal error: Could not find mulle-bootstrap for \"${MULLE_EXECUTABLE}\" in \"$PATH\"" >&2
+         exit 1
+      fi
+
+      echo "${MULLE_EXECUTABLE} fatal error: `which mulle-bootstrap` is incompatible" >&2
       exit 1
    fi
 

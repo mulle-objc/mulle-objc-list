@@ -38,6 +38,7 @@
 
 #define __MULLE_OBJC_NO_TPS__ 1
 #define __MULLE_OBJC_NO_TRT__ 1
+#define __MULLE_OBJC_NO_FMC__ 1
 
 #include <mulle_objc_runtime/mulle_objc_runtime.h>
 #include <mulle_objc_runtime/mulle_objc_csvdump.h>
@@ -350,11 +351,11 @@ static void  hackish_emit_dependencies( struct _mulle_objc_method *method,
                                         struct _mulle_objc_loadcategory *category)
 {
    struct _mulle_objc_dependency   *dependencies;
-   
+
    dependencies = (struct _mulle_objc_dependency *) (*method->value)( NULL, MULLE_OBJC_DEPENDENCIES_METHODID, NULL);
    if( ! dependencies)
       return;
-   
+
    while( dependencies->classid != MULLE_OBJC_NO_CLASSID)
    {
       printf( "%08x;;%08x;\n",
@@ -446,11 +447,11 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
    {
       if( method->descriptor.methodid != MULLE_OBJC_DEPENDENCIES_METHODID)
          return;
-      
+
       hackish_emit_dependencies( method, p);
       return;
    }
-   
+
    printf( "%08x",  p->classid);
    printf( ";%s",   p->classname);
    printf( ";%08x", p->categoryid);
@@ -516,7 +517,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    case dump_search :
       printf( "%08x;%s\n", p->classid, p->classname);
       break;
-      
+
    case dump_classes :
       printf( "%08x;%s;", p->classid, p->classname);
       if( p->superclassid == MULLE_OBJC_NO_CLASSID)
@@ -524,7 +525,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
       else
          printf( "%08x;%s\n", p->superclassid, p->superclassname);
       break;
-      
+
    case dump_dependencies :
       if( p->classid != loader_classid)
          printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
@@ -534,8 +535,8 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                 p->classname);
       break;
    }
-   
-   
+
+
    switch( mode)
    {
    case dump_callable_coverage :
@@ -562,7 +563,7 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
       printf( "%08x;%s;%08x;%s\n",
              p->classid, p->classname, p->categoryid, p->categoryname);
       break;
-      
+
    case dump_dependencies :
       if( p->classid != loader_classid)
       {
@@ -576,7 +577,7 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
                 p->categoryname);
       }
       break;
-         
+
    case dump_loader :
       if( p->classid == loader_classid)
          methodlist_loadcategory_dump( p->classmethods, '+', p, universe, info);
@@ -680,7 +681,7 @@ static char   *concat( char *a, char *b)
    size_t   len_a;
    size_t   len_b;
    char      *s;
-   
+
    len_a = strlen( a);
    len_b = strlen( b);
    s = malloc(  len_a + len_b + 1);
@@ -699,7 +700,7 @@ int  main( int argc, char *argv[])
    int    i;
    int    dlmode;
    char   *path;
-   
+
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
    {
@@ -799,7 +800,7 @@ int  main( int argc, char *argv[])
       case 's':
          mode = dump_search;
          break;
-            
+
       case 't':
          mode = dump_coverage;
          break;
@@ -828,7 +829,7 @@ int  main( int argc, char *argv[])
    {
       if( i == argc - 1)  // dump the last one
          dump = 1;
-      
+
       path = argv[ i];
       if( verbose)
          fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
@@ -838,16 +839,16 @@ int  main( int argc, char *argv[])
       case '/' :
       case '.' :
          break;
-      
+
       default :
          path = concat( "./", argv[ i]);
       }
-      
+
       handle = dlopen( path, RTLD_NOW|dlmode);
       if( ! handle)
       {
          char   *pwd;
-         
+
          pwd = getenv( "PWD");
          fprintf( stderr, "mulle-objc-list error: failed to open \"%s\" (%s) %s\n",
                      argv[ i],
@@ -855,10 +856,10 @@ int  main( int argc, char *argv[])
                      dlerror());
          return( 1);
       }
-      
+
       if( path != argv[ i])
          free( path);
-      
+
       adr = dlsym( handle, "mulle_objc_global_universe");
       if( adr)
          adr = dlsym( handle, "_mulle_objc_global_universe");

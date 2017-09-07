@@ -1,15 +1,28 @@
-message( STATUS "# Include mulle-objc-list CMakeDependencies.txt")
+if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
+   set( __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__ ON)
 
-include( ${DEPENDENCIES_DIR}/include/mulle_objc_runtime/CMakeDependencies.txt)
+   message( STATUS "# Include mulle-objc-list CMakeDependencies.txt")
 
+   include( ${DEPENDENCIES_DIR}/include/mulle_objc_runtime/CMakeDependencies.txt)
 
-if( NOT DLFCN_LIBRARY)
-   find_library( DLFCN_LIBRARY NAMES dl dlfcn)
-   message(STATUS "DLFCN_LIBRARY is ${DLFCN_LIBRARY}")
-   set( C_DEPENDENCY_LIBRARIES
-${DLFCN_LIBRARY}
-${C_DEPENDENCY_LIBRARIES}
-CACHE INTERNAL "need to cache this"
-)
+   if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
+      find_library( MULLE_OBJC_RUNTIME_LIBRARY NAMES mulle_objc_runtime)
+      message(STATUS "MULLE_OBJC_RUNTIME_LIBRARY is ${MULLE_OBJC_RUNTIME_LIBRARY}")
+      set( C_DEPENDENCY_LIBRARIES
+         ${MULLE_OBJC_RUNTIME_LIBRARY}
+         ${C_DEPENDENCY_LIBRARIES}
+         CACHE INTERNAL "need to cache this"
+      )
+   endif()
+
+   if( NOT DLFCN_LIBRARY)
+      find_library( DLFCN_LIBRARY NAMES dl dlfcn)
+      message(STATUS "DLFCN_LIBRARY is ${DLFCN_LIBRARY}")
+      set( C_DEPENDENCY_LIBRARIES
+         ${DLFCN_LIBRARY}
+         ${C_DEPENDENCY_LIBRARIES}
+         CACHE INTERNAL "need to cache this"
+      )
+   endif()
 endif()
 
