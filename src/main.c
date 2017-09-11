@@ -53,7 +53,7 @@
 #include "version.h"
 
 
-#define MULLE_OBJC_LOADER_CLASSID  0x58bd58d3
+#define MULLE_OBJC_LOADER_CLASSID  0x47a9beb6
 
 // #define STANDALONE_MULLE_OBJC
 
