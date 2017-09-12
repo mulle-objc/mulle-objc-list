@@ -187,7 +187,7 @@ _dump_dependencies()
                                             dependencies`"
    if [ -z "${DEPENDENCIES_DIR}" ]
    then
-      fail "Could not get the dependencies path via mulle-boostrap paths"
+      fail "Could not get the dependencies path via \"mulle-bootstrap paths\""
    fi
 
    log_fluff "DEPENDENCIES_DIR : $PWD"
