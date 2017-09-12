@@ -26,6 +26,35 @@ EOF
 }
 
 
+setup_cc_environment()
+{
+   case "${UNAME}" in
+      mingw*)
+         CC="mulle-clang-cl"
+         LD="link"
+
+         # find the ms linker
+         IFS=":"
+         for item in $PATH
+         do
+            if [ -x "${item}/cl.exe" -a -x "${item}/link.exe" ]
+            then
+               LD="${item}/link.exe"
+               break
+            fi
+         done
+         IFS="
+"
+      ;;
+
+      *)
+         CC="mulle-clang"
+         LD="mulle-clang"
+      ;;
+   esac
+}
+
+
 shlib_extension()
 {
    case "${UNAME}" in
@@ -47,9 +76,13 @@ shlib_extension()
 shlib_cflags()
 {
    case "${UNAME}" in
-      darwin|mingw*)
+      darwin)
          echo "-fno-common"
       ;;
+
+      mingw*)
+         # echo "-ld"
+       ;;
 
       *)
          echo "-fPIC -fno-common"
@@ -65,9 +98,13 @@ shlib_ldflags()
          echo "-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
       ;;
 
-      linux|mingw*|*)
+      mingw)
+         echo "-DLL" "-NODEFAULTLIB"
+      ;;
+
+      *)
          echo "-shared"
-       ;;
+      ;;
    esac
 }
 
@@ -195,6 +232,14 @@ create_undefined_linkage_c()
          "") ;;
 #         NSLog) ;;
 #         NSLogv) ;;
+
+#
+# some windows stuff
+#
+#
+         __security_cookie) ;;
+         _errno) ;;
+
          _Block_object_assign) ;;
          _Block_object_dispose) ;;
          _Exit) ;;
@@ -570,6 +615,18 @@ create_undefined_linkage_c()
 }
 
 
+emit_dllmain()
+{
+   echo 'int __stdcall _DllMainCRTStartup( int hModule,
+                                  long ul_reason_for_call,
+                                  void *lpReserved)
+{  
+    return 1;
+}'
+
+
+}
+
 #
 # create a  .o file with (almost) all the symbols that
 # are missing from "$1"
@@ -589,6 +646,16 @@ create_undefined_linkage()
       return 1
    fi
 
+   local prelude
+
+   case "${UNAME}" in
+      mingw)
+         prelude="`emit_dllmain`"
+         text="${prelude}
+${text}"
+      ;;
+   esac
+
    local cfile
    local folder
 
@@ -601,9 +668,50 @@ create_undefined_linkage()
    cflags="`shlib_cflags`"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor mulle-clang ${cflags} -c -o "${outfile}" "${cfile}" || exit 1
+   exekutor ${CC} ${cflags} -c -o "${outfile}" "${cfile}" || exit 1
 }
 
+
+_create_shlib()
+{
+   local shlib="$1"
+   local library="$2"
+   local undefined="$3"
+   local tmpdir="$4"
+
+   local files
+   local ldflags
+
+   ldflags="`shlib_ldflags`"
+
+   case "${UNAME}" in
+      mingw*)
+         exekutor cp "${library}" "${tmpdir}"
+         files="`basename -- "${library}"`"
+         if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
+         then
+            files="`basename -- "${undefined}"` ${files}"
+         fi
+         (
+            shlib="`basename -- "${shlib}"`"
+
+            exekutor cd "${tmpdir}" &&
+            eval_exekutor "'${LD}'" ${ldflags} ${files} -nologo "-OUT:'${shlib}'"
+         ) >&2 || exit 1
+      ;;
+
+      *)
+         # just a bit faster than mingw needing to copy the library
+         # for path reasons
+         files="${library}"
+         if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
+         then
+            files="${undefined} ${files}"
+         fi
+         eval_exekutor "'${LD}'" ${ldflags} ${files} -o "'${shlib}'" || exit 1
+      ;;
+   esac
+}
 
 #
 # create a shared library for the .a file
@@ -621,7 +729,6 @@ create_shlib()
    local ldflags
 
    ext="`shlib_extension`"
-   ldflags="`shlib_ldflags`"
 
    tmpdir="`mktemp -d -t "mulle-objc-list-a.XXXXXX"`"
 
@@ -629,16 +736,8 @@ create_shlib()
    undefined="${tmpdir}/${name}.undef.o"
    shlib="${tmpdir}/${name}.${ext}"
 
-   files="${library}"
-
-   if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
-   then
-      files="${undefined} ${library}"
-   fi
-
    log_fluff "Create shlib \"${shlib}\"..."
-
-   exekutor mulle-clang ${ldflags} ${files} -o "${shlib}" || exit 1
+   _create_shlib "${shlib}" "${library}" "${undefined}" "${tmpdir}"
 
    echo "${shlib}"
 }
@@ -690,14 +789,24 @@ main()
       usage
    fi
 
+   setup_cc_environment
+
    log_verbose "Create shared libs (if needed)..."
 
    shlib="`create_shlib "${library}"`" || exit 1
+
+   local directory
+
+   directory="`dirname -- "${shlib}"`"
+   shlib="`basename -- "${shlib}"`"
+
    cmdline="${cmdline} '${shlib}'"
 
-   log_verbose "Run mulle-objc-list on shared library..."
-
-   eval_exekutor ${cmdline}
+   log_verbose "Run mulle-objc-list on shared library \"${shlib}\" ..."
+   (
+      exekutor cd "${directory}" &&
+      eval_exekutor ${cmdline}
+   ) 
 }
 
 
