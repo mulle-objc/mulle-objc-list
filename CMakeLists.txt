@@ -28,6 +28,8 @@ if( MSVC)
 ${SCRIPTS}
 mulle-objc-create-dependencies-inc.bat
 )
+   add_definitions( -DMULLE_ALLOCATOR_EXTERN_GLOBAL=extern)
+   add_definitions( -DMULLE_OBJC_RUNTIME_EXTERN_GLOBAL=extern)
 endif()
 
 

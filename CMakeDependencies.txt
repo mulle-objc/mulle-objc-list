@@ -24,5 +24,12 @@ if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
          CACHE INTERNAL "need to cache this"
       )
    endif()
+
+   if( MSVC)
+     set( OS_SPECIFIC_LIBRARIES
+${OS_SPECIFIC_LIBRARIES}
+psapi.lib
+)
+   endif()
 endif()
 
