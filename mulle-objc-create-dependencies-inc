@@ -182,9 +182,19 @@ _do_dump_static_dependencies()
 
 _dump_dependencies()
 {
-   DEPENDENCIES_DIR="`mulle-bootstrap paths --sdk "${OPTION_SDK}" \
-                                            --configuration "${OPTION_CONFIGURATION}" \
-                                            dependencies`"
+   local params
+   
+   if [ "${OPTION_SDK}" != "Default" ]
+   then
+      params="--sdk '${OPTION_SDK}'"
+   fi
+
+   if [ "${OPTION_CONFIGURATION}" != "Release" ]
+   then
+      params="${params} --configuration '${OPTION_CONFIGURATION}'"
+   fi
+
+   DEPENDENCIES_DIR="`eval_exekutor mulle-bootstrap paths ${params} dependencies`"
    if [ -z "${DEPENDENCIES_DIR}" ]
    then
       fail "Could not get the dependencies path via \"mulle-bootstrap paths\""
