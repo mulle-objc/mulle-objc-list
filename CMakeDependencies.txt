@@ -5,14 +5,24 @@ if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
 
    include( ${DEPENDENCIES_DIR}/include/mulle_objc_runtime/CMakeDependencies.txt)
 
+
    if( NOT DLFCN_LIBRARY)
-      find_library( DLFCN_LIBRARY NAMES libdlfcn.a libdl.a dl)
+      if( MSVC)
+         find_library( DLFCN_LIBRARY NAMES libdl.a)
+         set( C_DEPENDENCY_LIBRARIES
+            ${DLFCN_LIBRARY}
+            ${C_DEPENDENCY_LIBRARIES}
+            CACHE INTERNAL "need to cache this"
+         )
+      else()
+         find_library( DLFCN_LIBRARY NAMES dl)
+         set( OS_SPECIFIC_LIBRARIES
+            ${DLFCN_LIBRARY}
+            ${OS_SPECIFIC_LIBRARIES}
+            CACHE INTERNAL "need to cache this"
+         )
+      endif()
       message(STATUS "DLFCN_LIBRARY is ${DLFCN_LIBRARY}")
-      set( OS_SPECIFIC_LIBRARIES
-         ${DLFCN_LIBRARY}
-         ${OS_SPECIFIC_LIBRARIES}
-         CACHE INTERNAL "need to cache this"
-      )
    endif()
 
    if( MSVC)
