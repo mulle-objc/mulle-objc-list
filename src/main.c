@@ -637,6 +637,7 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
                                      struct _mulle_objc_loadinfo *info)
 {
    static int   done;
+   char         *s;
 
    if( verbose && ! done)
    {
@@ -660,7 +661,9 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
          return(0);
       }
 
-      log_printf( "Dumping loadinfo %s ...\n", mulle_objc_loadinfo_get_originator( info));
+      s = mulle_objc_loadinfo_get_originator( info);
+      if( s)
+         log_printf( "Dumping loadinfo %s ...\n", s);
 
       switch( mode)
       {

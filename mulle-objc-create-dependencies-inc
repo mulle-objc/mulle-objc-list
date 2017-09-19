@@ -252,7 +252,12 @@ main()
    do
       if core_technical_flags "$1"
       then
-         MULLE_OBJC_LIST_FLAGS="`concat "${MULLE_OBJC_LIST_FLAGS}" "$1"`"
+         case "$1" in
+            -vv)
+               MULLE_OBJC_LIST_FLAGS="`concat "${MULLE_OBJC_LIST_FLAGS}" "-v"`"
+            ;;
+         esac
+
          shift
          continue
       fi
