@@ -67,6 +67,8 @@ EOF
 #
 _dump_loader_dependencies()
 {
+   log_debug "${MULLE_EXECUTABLE}:_dump_loader_dependencies" "$@"
+
    local depfile
    local depname
 
@@ -117,6 +119,8 @@ _dump_loader_dependencies()
 
 _combine_dependencies_inc()
 {
+   log_debug "${MULLE_EXECUTABLE}:_combine_dependencies_inc" "$@"
+
    local depfile
 
    while [ $# -ne 0 ]
@@ -140,6 +144,8 @@ _combine_dependencies_inc()
 #
 _do_dump_dylib_dependencies()
 {
+   log_debug "${MULLE_EXECUTABLE}:_do_dump_dylib_dependencies" "$@"
+
    #
    # First get all classes and categories "below" OS for later removal
    # Then get all standalone classes, but remove Posix classes and
@@ -152,7 +158,7 @@ _do_dump_dylib_dependencies()
    tmpminus="`mktemp "/tmp/minus-XXXXXX"`"
 
    redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
-   redirect_exekutor "${tmpplus}" mulle-objc-list -d "${LIBRARYFILE}" || fail "mulle-objc-list failed"
+   redirect_exekutor "${tmpplus}" mulle-objc-list ${MULLE_OBJC_LIST_FLAGS} -d "${LIBRARYFILE}" || fail "mulle-objc-list failed"
 
    #
    # remove inherited dependencies from standalone dependencies
@@ -176,14 +182,18 @@ _do_dump_dylib_dependencies()
 
 _do_dump_static_dependencies()
 {
-   exekutor mulle-objc-lista -d "${LIBRARYFILE}" || fail "mulle-objc-lista failed"
+   log_debug "${MULLE_EXECUTABLE}:_do_dump_static_dependencies" "$@"
+
+   exekutor mulle-objc-lista ${MULLE_OBJC_LIST_FLAGS} -d "${LIBRARYFILE}" || fail "mulle-objc-lista failed"
 }
 
 
 _dump_dependencies()
 {
+   log_debug "${MULLE_EXECUTABLE}:_dump_dependencies" "$@"
+
    local params
-   
+
    if [ "${OPTION_SDK}" != "Default" ]
    then
       params="--sdk '${OPTION_SDK}'"
@@ -212,12 +222,16 @@ _dump_dependencies()
 
 dump_dependencies()
 {
+   log_debug "${MULLE_EXECUTABLE}:dump_dependencies" "$@"
+
    log_fluff "PWD          : $PWD"
    log_fluff "ARGV         : $*"
    log_fluff "BUILDPATH    : ${BUILDPATH}"
 
    _dump_dependencies "$@" |
       fgrep -v '{ @selector( MulleObjCLoader), MULLE_OBJC_NO_CATEGORYID }'
+
+   return 0
 }
 
 
@@ -238,6 +252,7 @@ main()
    do
       if core_technical_flags "$1"
       then
+         MULLE_OBJC_LIST_FLAGS="`concat "${MULLE_OBJC_LIST_FLAGS}" "$1"`"
          shift
          continue
       fi
@@ -292,6 +307,7 @@ main()
          ;;
 
          -*)
+            log_error "unknown option \"$1\""
             usage
          ;;
 
@@ -369,6 +385,12 @@ mulle-build first or specify build directory with -b"
    local result
 
    result="`dump_dependencies "$@"`" || exit 1
+
+   if [ -z "${result}" ]
+   then
+      log_warning "Did not find any dependencies. \
+Is whole archive load working on this platform ?"
+   fi
 
    if [ -z "${OUTPUT}" ]
    then

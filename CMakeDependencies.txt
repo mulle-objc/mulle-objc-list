@@ -5,31 +5,26 @@ if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
 
    include( ${DEPENDENCIES_DIR}/include/mulle_objc_runtime/CMakeDependencies.txt)
 
-   if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
-      find_library( MULLE_OBJC_RUNTIME_LIBRARY NAMES mulle_objc_runtime)
-      message(STATUS "MULLE_OBJC_RUNTIME_LIBRARY is ${MULLE_OBJC_RUNTIME_LIBRARY}")
-      set( C_DEPENDENCY_LIBRARIES
-         ${MULLE_OBJC_RUNTIME_LIBRARY}
-         ${C_DEPENDENCY_LIBRARIES}
-         CACHE INTERNAL "need to cache this"
-      )
-   endif()
-
    if( NOT DLFCN_LIBRARY)
-      find_library( DLFCN_LIBRARY NAMES dl dlfcn)
+      find_library( DLFCN_LIBRARY NAMES libdlfcn.a libdl.a dl)
       message(STATUS "DLFCN_LIBRARY is ${DLFCN_LIBRARY}")
-      set( C_DEPENDENCY_LIBRARIES
+      set( OS_SPECIFIC_LIBRARIES
          ${DLFCN_LIBRARY}
-         ${C_DEPENDENCY_LIBRARIES}
+         ${OS_SPECIFIC_LIBRARIES}
          CACHE INTERNAL "need to cache this"
       )
    endif()
 
    if( MSVC)
-     set( OS_SPECIFIC_LIBRARIES
-${OS_SPECIFIC_LIBRARIES}
-psapi.lib
-)
+      set( OS_SPECIFIC_LIBRARIES
+         ${OS_SPECIFIC_LIBRARIES}
+         psapi.lib
+         CACHE INTERNAL "need to cache this"
+      )
    endif()
+
+   # no definition, since we just export a header and
+   # have no linkage
+
 endif()
 

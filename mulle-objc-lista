@@ -95,7 +95,7 @@ shlib_ldflags()
 {
    case "${UNAME}" in
       darwin)
-         echo "-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
+         echo "-dynamiclib -Os -flat_namespace -undefined suppress"
       ;;
 
       mingw)
@@ -104,6 +104,26 @@ shlib_ldflags()
 
       *)
          echo "-shared"
+      ;;
+   esac
+}
+
+
+shlib_load_all_library()
+{
+   local library="$1"
+
+   case "${UNAME}" in
+      darwin)
+         echo "-force_load '${library}'"
+      ;;
+
+      mingw)
+         echo "'-WHOLEARCHIVE:${library}'"
+      ;;
+
+      *)
+         echo "-Wl,--whole-archive" "'${library}'" "-Wl,--no-whole-archive"
       ;;
    esac
 }
@@ -124,7 +144,7 @@ _nm_global_defined_names()
          #
          # -p no sort, -P posix style (name first)
          # get rid of ??_C@_07DPFPOHBA@atexit?3?$AA@ and stuff like that
-         # 
+         #
          exekutor nm -g --defined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | grep -v '@_' \
@@ -620,7 +640,7 @@ emit_dllmain()
    echo 'int __stdcall _DllMainCRTStartup( int hModule,
                                   long ul_reason_for_call,
                                   void *lpReserved)
-{  
+{
     return 1;
 }'
 
@@ -681,13 +701,17 @@ _create_shlib()
 
    local files
    local ldflags
+   local wholelibrary
 
    ldflags="`shlib_ldflags`"
+
+   wholelibrary="`shlib_load_all_library "${library}"`"
 
    case "${UNAME}" in
       mingw*)
          exekutor cp "${library}" "${tmpdir}"
-         files="`basename -- "${library}"`"
+         files="`basename -- "${wholelibrary}"`"
+
          if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
          then
             files="`basename -- "${undefined}"` ${files}"
@@ -703,7 +727,8 @@ _create_shlib()
       *)
          # just a bit faster than mingw needing to copy the library
          # for path reasons
-         files="${library}"
+         files="${wholelibrary}"
+
          if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
          then
             files="${undefined} ${files}"
@@ -806,7 +831,7 @@ main()
    (
       exekutor cd "${directory}" &&
       eval_exekutor ${cmdline}
-   ) 
+   )
 }
 
 
