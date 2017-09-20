@@ -8,7 +8,7 @@ if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
 
    if( NOT DLFCN_LIBRARY)
       if( MSVC)
-         find_library( DLFCN_LIBRARY NAMES libdl.a)
+         find_library( DLFCN_LIBRARY NAMES dl.lib)
          set( C_DEPENDENCY_LIBRARIES
             ${DLFCN_LIBRARY}
             ${C_DEPENDENCY_LIBRARIES}
