@@ -25,11 +25,9 @@ include( CMakeDependencies.txt)
 
 if( MSVC)
    set( SCRIPTS
-${SCRIPTS}
-mulle-objc-create-dependencies-inc.bat
-)
-   add_definitions( -DMULLE_ALLOCATOR_EXTERN_GLOBAL=extern)
-   add_definitions( -DMULLE_OBJC_RUNTIME_EXTERN_GLOBAL=extern)
+	${SCRIPTS}
+	mulle-objc-create-dependencies-inc.bat
+   )
 endif()
 
 
@@ -43,11 +41,16 @@ ${C_DEPENDENCY_LIBRARIES}
 ${OS_SPECIFIC_LIBRARIES}
 )
 
+# PRIVATE is a guess
+target_compile_definitions( "mulle-objc-list"
+PRIVATE ${MULLE_OBJC_LIST_DEFINITIONS}
+)
 
 install( TARGETS "mulle-objc-list" DESTINATION "bin")
 install( FILES "mulle-objc-uncovered-methods" DESTINATION "bin")
 install( FILES ${PUBLIC_HEADERS} DESTINATION "include/mulle_objc_list")
 install( FILES CMakeDependencies.txt DESTINATION "include/mulle_objc_list")
+
 
 INSTALL( FILES ${SCRIPTS}
 PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ

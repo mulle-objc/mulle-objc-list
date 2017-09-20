@@ -30,6 +30,10 @@ if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
          psapi.lib
          CACHE INTERNAL "need to cache this"
       )
+      list( REMOVE_DUPLICATES OS_SPECIFIC_LIBRARIES)
+
+      set( MULLE_OBJC_LIST_DEFINITIONS ${MULLE_OBJC_RUNTIME_DEFINITIONS})
+      message( STATUS "MULLE_OBJC_LIST_DEFINITIONS = ${MULLE_OBJC_LIST_DEFINITIONS}")
    endif()
 
    # no definition, since we just export a header and
