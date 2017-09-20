@@ -7,15 +7,14 @@ if( NOT __MULLE_OBJC_LIST_CMAKE_DEPENDENCIES_TXT__)
 
 
    if( NOT DLFCN_LIBRARY)
+      find_library( DLFCN_LIBRARY NAMES dl)
       if( MSVC)
-         find_library( DLFCN_LIBRARY NAMES dl.lib)
          set( C_DEPENDENCY_LIBRARIES
             ${DLFCN_LIBRARY}
             ${C_DEPENDENCY_LIBRARIES}
             CACHE INTERNAL "need to cache this"
          )
       else()
-         find_library( DLFCN_LIBRARY NAMES dl)
          set( OS_SPECIFIC_LIBRARIES
             ${DLFCN_LIBRARY}
             ${OS_SPECIFIC_LIBRARIES}
