@@ -310,6 +310,35 @@ emit()
 }
 
 
+emit_no_return()
+{
+   local symbol="$1"
+
+   case "${UNAME}" in
+      mingw)
+         case "$1" in
+            __imp__*)
+            ;;
+
+            *)
+               echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+            ;;
+         esac
+         echo "__attribute__(( noreturn)) void  ${symbol}() {}"
+      ;;
+
+      *)
+         echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+         if [ ! -z "${EXTERN_GLOBAL_PREFIX}" -o ! -z "${EXTERN_SYMBOL_PREFIX}" ]
+         then
+            echo "__attribute__(( noreturn)) void  ${symbol}() {}"
+         fi
+      ;;
+   esac
+}
+
+
+
 #
 # read symbols from .a file, figure out the ones that we need to "spoof"
 # so that we can dummy link it
@@ -361,7 +390,7 @@ create_undefined_linkage_c()
 # some windows stuff
 #
 #
-         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi|getenv|_getenv|__acrt_iob_func|free|_free|abort|_abort|exit|_exit|atexit|_atexit|_beginthreadex|_endthreadex)
+         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi|getenv|_getenv|__acrt_iob_func|free|_free|atexit|_atexit|_beginthreadex|_endthreadex)
             case "${UNAME}" in
                mingw)
                ;;
@@ -371,6 +400,29 @@ create_undefined_linkage_c()
                ;;
             esac
          ;;
+
+         exit|_exit)
+            case "${UNAME}" in
+               mingw)
+               ;;
+
+               *)
+                  emit_no_return "$i"
+               ;;
+            esac
+         ;;
+
+         abort|_abort)
+            case "${UNAME}" in
+               mingw)
+               ;;
+
+               *)
+               # ignore
+               ;;
+            esac
+         ;;
+
 #
 # Clang stuff
 #
@@ -392,11 +444,9 @@ create_undefined_linkage_c()
          _byteswap_uint64) ;;
          _byteswap_ulong) ;;
          _byteswap_ushort) ;;
-         _exit) ;;
          _longjmp) ;;
          _setjmp) ;;
          _setjmpex) ;;
-         abort) ;;
          abs) ;;
          acos) ;;
          acosf) ;;
@@ -509,7 +559,6 @@ create_undefined_linkage_c()
          erfcl) ;;
          erff) ;;
          erfl) ;;
-         exit) ;;
          exp) ;;
          exp2) ;;
          exp2f) ;;
@@ -743,7 +792,7 @@ create_undefined_linkage_c()
 #         mulle_objc_loadinfo_unfailingenqueue) ;;
 #         ;;
 
-         mulle_objc_loadinfo_unfailingenqueue) 
+         mulle_objc_loadinfo_unfailingenqueue)
             case "${UNAME}" in
                mingw)
                ;;
@@ -876,10 +925,10 @@ _create_shlib()
          (
             exekutor cd "${tmpdir}" || exit 1
 
-            libraryname="`basename -- "${library}"`" 
+            libraryname="`basename -- "${library}"`"
             wholelibrary="`shlib_load_all_library "${libraryname}"`" || exit 1
 
-            files="${wholelibrary}" 
+            files="${wholelibrary}"
 
             create_mingw_aux_linkage "auxiliary.o" || exit 1
             files="${files} auxiliary.o" &&
