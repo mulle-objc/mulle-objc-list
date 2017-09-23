@@ -219,10 +219,10 @@ _dump_dependencies()
 
    log_fluff "DEPENDENCIES_DIR : $PWD"
 
-   _dump_loader_dependencies "$@" | sort | sort -u
+   _dump_loader_dependencies "$@" | LC_ALL=C sort | LC_ALL=C sort -u
    if [ ! -z "${LIBRARYFILE}" ]
    then
-      _do_dump_static_dependencies | sort | sort -u
+      _do_dump_static_dependencies | LC_ALL=C sort | LC_ALL=C sort -u
    fi
 }
 

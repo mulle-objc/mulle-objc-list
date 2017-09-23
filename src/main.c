@@ -422,7 +422,6 @@ static void   loadmethod_dump( struct _mulle_objc_method *method,
 static void   loadmethod_class_dump( struct _mulle_objc_method *method,
                                      int type,
                                      struct _mulle_objc_loadclass *p,
-                                     struct _mulle_objc_universe *universe,
                                      struct _mulle_objc_loadinfo *info)
 {
    printf( "%08x", p->classid);
@@ -433,14 +432,13 @@ static void   loadmethod_class_dump( struct _mulle_objc_method *method,
    loadmethod_dump( method, type, p->classname);
    if( mode == dump_callable_methods || mode == dump_callable_coverage)
       if( type == '-' && p->superclassid == MULLE_OBJC_NO_CLASSID)
-         loadmethod_class_dump( method, '+', p, universe, info);
+         loadmethod_class_dump( method, '+', p, info);
 }
 
 
 static void   loadmethod_category_dump( struct _mulle_objc_method *method,
                                         int type,
                                         struct _mulle_objc_loadcategory *p,
-                                        struct _mulle_objc_universe *universe,
                                         struct _mulle_objc_loadinfo *info)
 {
    if( mode == dump_loader)
@@ -464,7 +462,6 @@ static void   loadmethod_category_dump( struct _mulle_objc_method *method,
 static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
                                          int type,
                                          struct _mulle_objc_loadclass *p,
-                                         struct _mulle_objc_universe *universe,
                                          struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_method   *method;
@@ -477,7 +474,7 @@ static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
    {
-      loadmethod_class_dump( method, type, p, universe, info);
+      loadmethod_class_dump( method, type, p, info);
       ++method;
    }
 }
@@ -486,7 +483,6 @@ static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
 static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
                                             int type,
                                             struct _mulle_objc_loadcategory *p,
-                                            struct _mulle_objc_universe *universe,
                                             struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_method   *method;
@@ -499,14 +495,13 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
    {
-      loadmethod_category_dump( method, type, p, universe, info);
+      loadmethod_category_dump( method, type, p, info);
       ++method;
    }
 }
 
 
 static void   loadclass_walk( struct _mulle_objc_loadclass *p,
-                              struct _mulle_objc_universe *universe,
                               struct _mulle_objc_loadinfo *info)
 {
    log_printf( "Dumping class %s ...\n", p->classname);
@@ -543,15 +538,14 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    case dump_search :
    case dump_methods :
    case dump_coverage :
-      methodlist_loadclass_dump( p->classmethods, '+', p, universe, info);
-      methodlist_loadclass_dump( p->instancemethods, '-', p, universe, info);
+      methodlist_loadclass_dump( p->classmethods, '+', p, info);
+      methodlist_loadclass_dump( p->instancemethods, '-', p, info);
       break;
    }
 }
 
 
 static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
-                                 struct _mulle_objc_universe *universe,
                                  struct _mulle_objc_loadinfo *info)
 {
    log_printf( "Dumping category %s( %s) ...\n", p->classname, p->categoryname);
@@ -580,7 +574,7 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
 
    case dump_loader :
       if( p->classid == loader_classid)
-         methodlist_loadcategory_dump( p->classmethods, '+', p, universe, info);
+         methodlist_loadcategory_dump( p->classmethods, '+', p, info);
       break;
    }
 
@@ -590,8 +584,8 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
    case dump_search  :
    case dump_callable_coverage :
    case dump_coverage :
-      methodlist_loadcategory_dump( p->classmethods, '+', p, universe, info);
-      methodlist_loadcategory_dump( p->instancemethods, '-', p, universe, info);
+      methodlist_loadcategory_dump( p->classmethods, '+', p, info);
+      methodlist_loadcategory_dump( p->instancemethods, '-', p, info);
       return;
    }
 }
@@ -600,7 +594,6 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
 #pragma mark - list walkers
 
 static void   loadclasslist_walk( struct _mulle_objc_loadclasslist *list,
-                                  struct _mulle_objc_universe *universe,
                                   struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_loadclass   **p;
@@ -612,12 +605,11 @@ static void   loadclasslist_walk( struct _mulle_objc_loadclasslist *list,
    p        = list->loadclasses;
    sentinel = &p[ list->n_loadclasses];
    while( p < sentinel)
-      loadclass_walk( *p++, universe, info);
+      loadclass_walk( *p++, info);
 }
 
 
 static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
-                                     struct _mulle_objc_universe *universe,
                                      struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_loadcategory   **p;
@@ -629,29 +621,13 @@ static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
    p        = list->loadcategories;
    sentinel = &p[ list->n_loadcategories];
    while( p < sentinel)
-      loadcategory_walk( *p++, universe, info);
+      loadcategory_walk( *p++, info);
 }
 
 
-int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
-                                     struct _mulle_objc_loadinfo *info)
+int  __mulle_objc_list_callback( struct _mulle_objc_loadinfo *info)
 {
-   static int   done;
-   char         *s;
-
-   if( verbose && ! done)
-   {
-      log_printf( "The loaded universe is %u.%u.%u at %p",
-                     mulle_objc_version_get_major( _mulle_objc_universe_get_version( universe)),
-                     mulle_objc_version_get_minor( _mulle_objc_universe_get_version( universe)),
-                     mulle_objc_version_get_patch( _mulle_objc_universe_get_version( universe)),
-                     universe);
-      if( _mulle_objc_universe_get_path( universe))
-         log_printf( " (%s)", _mulle_objc_universe_get_path( universe));
-      log_printf( "\n");
-
-      done = 1;
-   }
+   char   *s;
 
    if( dump)
    {
@@ -673,9 +649,33 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
          return( 0);
       }
 
-      loadclasslist_walk( info->loadclasslist, universe, info);
-      loadcategorylist_walk( info->loadcategorylist, universe, info);
+      loadclasslist_walk( info->loadclasslist, info);
+      loadcategorylist_walk( info->loadcategorylist, info);
    }
+}
+
+
+int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
+                                     struct _mulle_objc_loadinfo *info)
+{
+   static int   done;
+
+   if( verbose && ! done)
+   {
+      log_printf( "The loaded universe is %u.%u.%u at %p",
+                     mulle_objc_version_get_major( _mulle_objc_universe_get_version( universe)),
+                     mulle_objc_version_get_minor( _mulle_objc_universe_get_version( universe)),
+                     mulle_objc_version_get_patch( _mulle_objc_universe_get_version( universe)),
+                     universe);
+      if( _mulle_objc_universe_get_path( universe))
+         log_printf( " (%s)", _mulle_objc_universe_get_path( universe));
+      log_printf( "\n");
+
+      done = 1;
+   }
+
+   __mulle_objc_list_callback( info);
+
    return( 0); // don't add to universe
 }
 

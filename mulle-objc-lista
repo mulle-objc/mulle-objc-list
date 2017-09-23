@@ -16,7 +16,8 @@ usage()
 Usage:
    ${MULLE_EXECUTABLE} [options] <library>
 
-   Use mulle-objc-list on a static library.
+   Use mulle-objc-list on a static library to create ObjC dependencies information
+   and other information types.
 
 Options:
    See mulle-objc-list
@@ -41,14 +42,14 @@ setup_cc_environment()
                # MT
                #LIBRARIES="kernel32.lib libcmt.lib libvcruntime.lib libucrt.lib"
                # MD (kernel32.lib)
-               LIBRARIES="kernel32.lib msvcrt.lib ucrt.lib vcruntime.lib"
+               LIBRARIES="kernel32.lib msvcrt.lib ucrt.lib vcruntime.lib psapi.lib"
             ;;
 
             Debug)
                # MTd
                #LIBRARIES="kernel32.lib libcmtd.lib libvcruntimed.lib libucrtd.lib"
                # MDd
-               LIBRARIES="kernel32.lib msvcrtd.lib ucrtd.lib vcruntimed.lib"
+               LIBRARIES="kernel32.lib msvcrtd.lib ucrtd.lib vcruntimed.lib psapi.lib"
             ;;
          esac
 
@@ -244,17 +245,70 @@ nm_global_undefined_names()
 }
 
 
+emit_enqueue()
+{
+   cat <<EOF
+#define PSAPI_VERSION 1
+#include <windows.h>
+#include <psapi.h>
+#include <stdio.h>
+
+
+static void   nop( void *unused)
+{
+}
+
+
+__declspec( dllexport)
+void   mulle_objc_loadinfo_unfailingenqueue( void *info)
+{
+   static void  (*__mulle_objc_list_callback)( void *);
+
+   if( ! __mulle_objc_list_callback)
+   {
+      __mulle_objc_list_callback = (void (*)( void *)) GetProcAddress( (HMODULE) 0, "__mulle_objc_list_callback");
+
+      if( ! __mulle_objc_list_callback)
+      {
+         __mulle_objc_list_callback = nop;
+         fprintf( stderr, "mulle-objc-lista: fail! Could not find __mulle_objc_list_callback\n");
+         return;
+      }
+   }
+
+   (*__mulle_objc_list_callback)( info);
+}
+EOF
+}
+
+
 emit()
 {
    local symbol="$1"
 
-   echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+   case "${UNAME}" in
+      mingw)
+         case "$1" in
+            __imp__*)
+            ;;
 
-   if [ ! -z "${EXTERN_GLOBAL_PREFIX}" -o ! -z "${EXTERN_SYMBOL_PREFIX}" ]
-   then
-      echo "void  ${symbol}() {}"
-   fi
+            *)
+               echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+            ;;
+         esac
+         echo "void  ${symbol}() {}"
+      ;;
+
+      *)
+         echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+         if [ ! -z "${EXTERN_GLOBAL_PREFIX}" -o ! -z "${EXTERN_SYMBOL_PREFIX}" ]
+         then
+            echo "void  ${symbol}() {}"
+         fi
+      ;;
+   esac
 }
+
 
 #
 # read symbols from .a file, figure out the ones that we need to "spoof"
@@ -685,7 +739,20 @@ create_undefined_linkage_c()
          wmemchr) ;;
          wmemcmp) ;;
 
-         mulle_objc_loadinfo_unfailing_enqueue) ;;
+
+#         mulle_objc_loadinfo_unfailingenqueue) ;;
+#         ;;
+
+         mulle_objc_loadinfo_unfailingenqueue) 
+            case "${UNAME}" in
+               mingw)
+               ;;
+
+               *)
+                  emit "$i"
+               ;;
+            esac
+         ;;
 
          *)
             emit "$i"
@@ -766,6 +833,27 @@ ${text}"
 }
 
 
+# always running in tmp for mingw only
+create_mingw_aux_linkage()
+{
+   log_debug "${MULLE_EXECUTABLE}:create_mingw_aux_linkage" $*
+
+   local outfile="$1"
+
+   local auxfile
+
+   auxfile="`basename -- "${outfile}" .o`".c
+   redirect_exekutor "${auxfile}" emit_enqueue
+
+   local cflags
+
+   cflags="`shlib_cflags`"
+
+   log_fluff "Compile auxiliary linkage \"${auxfile}\"..."
+   exekutor ${CC} ${cflags} -c -o "${outfile}" "${auxfile}" || exit 1
+}
+
+
 _create_shlib()
 {
    log_debug "${MULLE_EXECUTABLE}:_create_shlib" $*
@@ -785,18 +873,23 @@ _create_shlib()
    case "${UNAME}" in
       mingw*)
          exekutor cp "${library}" "${tmpdir}"
-         libraryname="`basename -- "${library}"`"
-         wholelibrary="`shlib_load_all_library "${libraryname}"`"
-
-         files="${wholelibrary}"
-         if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
-         then
-            files="`basename -- "${undefined}"` ${files}"
-         fi
          (
+            exekutor cd "${tmpdir}" || exit 1
+
+            libraryname="`basename -- "${library}"`" 
+            wholelibrary="`shlib_load_all_library "${libraryname}"`" || exit 1
+
+            files="${wholelibrary}" 
+
+            create_mingw_aux_linkage "auxiliary.o" || exit 1
+            files="${files} auxiliary.o" &&
+
+            if create_undefined_linkage "${library}" "${undefined}" "."
+            then
+               files="`basename -- "${undefined}"` ${files}"
+            fi
             shlib="`basename -- "${shlib}"`"
 
-            exekutor cd "${tmpdir}" &&
             eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -nologo "-OUT:'${shlib}'"
          ) >&2 || exit 1
       ;;

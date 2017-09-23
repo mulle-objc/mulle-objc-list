@@ -48,7 +48,7 @@ ${OS_SPECIFIC_LIBRARIES}
 if( MSVC)
    target_link_libraries( "mulle-objc-list" 
       "-export:__mulle_objc_loadinfo_callback"
-      #      "-export:mulle_objc_loadinfo_unfailing_enqueue"
+      "-export:__mulle_objc_list_callback"
    )
 endif()
 
