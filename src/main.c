@@ -641,10 +641,11 @@ int  __mulle_objc_loadinfo_callback( struct _mulle_objc_universe *universe,
 
    if( verbose && ! done)
    {
-      log_printf( "The loading universe is %u.%u.%u",
+      log_printf( "The loaded universe is %u.%u.%u at %p",
                      mulle_objc_version_get_major( _mulle_objc_universe_get_version( universe)),
                      mulle_objc_version_get_minor( _mulle_objc_universe_get_version( universe)),
-                     mulle_objc_version_get_patch( _mulle_objc_universe_get_version( universe)));
+                     mulle_objc_version_get_patch( _mulle_objc_universe_get_version( universe)),
+                     universe);
       if( _mulle_objc_universe_get_path( universe))
          log_printf( " (%s)", _mulle_objc_universe_get_path( universe));
       log_printf( "\n");
@@ -703,6 +704,8 @@ int  main( int argc, char *argv[])
    int    i;
    int    dlmode;
    char   *path;
+   struct _mulle_objc_universe   *(*p_mulle_objc_get_universe)( void);
+   struct _mulle_objc_universe   *universe;
 
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
    if( mulle_objc_check_runtime())
@@ -781,7 +784,7 @@ int  main( int argc, char *argv[])
          break;
 
       case 'g' :
-         mode = RTLD_GLOBAL;
+         dlmode = RTLD_GLOBAL;
          break;
 
       case 'i':
@@ -828,6 +831,7 @@ int  main( int argc, char *argv[])
    if( i >= argc)
       usage();
 
+   dlmode |= RTLD_NOW;
    for(; i < argc ; i++)
    {
       if( i == argc - 1)  // dump the last one
@@ -847,7 +851,7 @@ int  main( int argc, char *argv[])
          path = concat( "./", argv[ i]);
       }
 
-      handle = dlopen( path, RTLD_NOW|dlmode);
+      handle = dlopen( path, dlmode);
       if( ! handle)
       {
          char   *pwd;
@@ -863,18 +867,34 @@ int  main( int argc, char *argv[])
       if( path != argv[ i])
          free( path);
 
-      adr = dlsym( handle, "mulle_objc_global_universe");
+      // get a global function
+      universe = NULL;
+      adr      = dlsym( handle, "mulle_objc_get_or_create_universe");
       if( adr)
-         adr = dlsym( handle, "_mulle_objc_global_universe");
+      {
+         p_mulle_objc_get_universe = adr;
+         universe = (*p_mulle_objc_get_universe)();
+      }
 
       if( verbose)
-         fprintf( stderr, "Loaded \"%s\". (%p)\n", argv[ i], adr);
+         fprintf( stderr, "Loaded \"%s\". (universe: %p, dlmode: %u)\n", argv[ i], universe, dlmode);
    }
 
    if( mode == dump_dependencies)
    {
       if( emit_sentinel)
          printf( "      { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }\n");
+   }
+
+   // get a global function
+   if( verbose)
+   {
+      //
+      // only use __mulle_objc_get_universe because we want an address
+      // and don't access it otherwise
+      //
+      universe = __mulle_objc_get_universe();
+      fprintf( stderr, "The mulle_objc_list universe is at %p\n", universe);
    }
 
    return( 0);

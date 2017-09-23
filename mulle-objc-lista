@@ -32,8 +32,28 @@ setup_cc_environment()
       mingw*)
          CC="mulle-clang-cl"
          LD="link"
+         NM="mulle-nm"
+         EXTERN_GLOBAL_PREFIX="__declspec( dllexport) "
+         EXTERN_SYMBOL_PREFIX="__imp__"
 
-         # find the ms linker
+         case "${OPTION_CONFIGURATION}" in
+            Release)
+               # MT
+               #LIBRARIES="kernel32.lib libcmt.lib libvcruntime.lib libucrt.lib"
+               # MD (kernel32.lib)
+               LIBRARIES="kernel32.lib msvcrt.lib ucrt.lib vcruntime.lib"
+            ;;
+
+            Debug)
+               # MTd
+               #LIBRARIES="kernel32.lib libcmtd.lib libvcruntimed.lib libucrtd.lib"
+               # MDd
+               LIBRARIES="kernel32.lib msvcrtd.lib ucrtd.lib vcruntimed.lib"
+            ;;
+         esac
+
+
+         # filnd the ms linker
          IFS=":"
          for item in $PATH
          do
@@ -50,9 +70,14 @@ setup_cc_environment()
       *)
          CC="mulle-clang"
          LD="mulle-clang"
+         NM="mulle-nm"
       ;;
    esac
-}
+ 
+   verify_binary "${CC}" "compiler" > /dev/null
+   verify_binary "${LD}" "linker"  > /dev/null
+   verify_binary "${NM}" "nm"  > /dev/null
+} 
 
 
 shlib_extension()
@@ -81,7 +106,18 @@ shlib_cflags()
       ;;
 
       mingw*)
-         # echo "-ld"
+         case "${OPTION_CONFIGURATION}" in
+            Release)
+               # MD (kernel32.lib)
+               echo "-MD"
+            ;;
+
+            Debug)
+               # MDd
+               echo "-MDd"
+            ;;
+         esac
+
        ;;
 
       *)
@@ -99,7 +135,7 @@ shlib_ldflags()
       ;;
 
       mingw)
-         echo "-DLL" "-NODEFAULTLIB"
+         echo "-DLL" # "-NODEFAULTLIB"
       ;;
 
       *)
@@ -135,7 +171,7 @@ _nm_global_defined_names()
 
    case "${UNAME}" in
       darwin)
-         exekutor nm -g -U -j "${filename}" | \
+         exekutor ${NM} -g -U -j "${filename}" | \
             egrep -v ':$|^$' | \
             sed 's/^_//'
       ;;
@@ -145,7 +181,7 @@ _nm_global_defined_names()
          # -p no sort, -P posix style (name first)
          # get rid of ??_C@_07DPFPOHBA@atexit?3?$AA@ and stuff like that
          #
-         exekutor nm -g --defined-only -p -P "${filename}" \
+         exekutor ${NM} -g --defined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | grep -v '@_' \
             | sed 's/^__imp_//' \
@@ -156,7 +192,7 @@ _nm_global_defined_names()
 
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor nm -g --defined-only -p -P "${filename}" \
+         exekutor ${NM} -g --defined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | egrep -v ':$|^$'
       ;;
@@ -170,14 +206,14 @@ _nm_global_undefined_names()
 
    case "${UNAME}" in
       darwin)
-         exekutor nm -g -u -j "${filename}" | \
+         exekutor ${NM} -g -u -j "${filename}" | \
             egrep -v ':$|^$' | \
             sed 's/^_//'
       ;;
 
       mingw*)
          # -p no sort, -P posix style (name first)
-         exekutor nm -g --undefined-only -p -P "${filename}" \
+         exekutor ${NM} -g --undefined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | grep -v '@_' \
             | sed 's/^__imp_//' \
@@ -188,7 +224,7 @@ _nm_global_undefined_names()
 
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor nm -g --undefined-only -p -P "${filename}" \
+         exekutor ${NM} -g --undefined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | egrep -v ':$|^$'
       ;;
@@ -208,12 +244,26 @@ nm_global_undefined_names()
 }
 
 
+emit()
+{
+   local symbol="$1"
+
+   echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+
+   if [ ! -z "${EXTERN_GLOBAL_PREFIX}" -o ! -z "${EXTERN_SYMBOL_PREFIX}" ]
+   then
+      echo "void  ${symbol}() {}"
+   fi
+}
+
 #
 # read symbols from .a file, figure out the ones that we need to "spoof"
 # so that we can dummy link it
 #
 create_undefined_linkage_c()
 {
+   log_debug "${MULLE_EXECUTABLE}:create_undefined_linkage_c" $*
+
    local infile="$1"
    local tmpdir="$2"
 
@@ -257,9 +307,19 @@ create_undefined_linkage_c()
 # some windows stuff
 #
 #
-         __security_cookie) ;;
-         _errno) ;;
+         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi|getenv|_getenv|__acrt_iob_func|free|_free|abort|_abort|exit|_exit|atexit|_atexit|_beginthreadex|_endthreadex) 
+            case "${UNAME}" in
+               mingw)
+               ;;
 
+               *)
+                  emit "$i"
+               ;;
+            esac
+         ;;
+#
+# Clang stuff
+#
          _Block_object_assign) ;;
          _Block_object_dispose) ;;
          _Exit) ;;
@@ -628,7 +688,7 @@ create_undefined_linkage_c()
          mulle_objc_loadinfo_unfailing_enqueue) ;;
 
          *)
-            echo "void  $i() {}"
+            emit "$i"
          ;;
       esac
    done
@@ -637,11 +697,23 @@ create_undefined_linkage_c()
 
 emit_dllmain()
 {
-   echo 'int __stdcall _DllMainCRTStartup( int hModule,
+   return 0
+
+   echo '#define DLL_PROCESS_ATTACH      1
+#define DLL_THREAD_ATTACH       2
+#define DLL_THREAD_DETACH       3
+#define DLL_PROCESS_DETACH      0
+
+
+int __stdcall _DllMainCRTStartup( int hModule,
                                   long ul_reason_for_call,
                                   void *lpReserved)
 {
-    return 1;
+   extern int __stdcall _CRT_INIT( int hinstDLL, long fdwReason, void *lpReserved);
+
+   if( ul_reason_for_call == DLL_PROCESS_ATTACH || ul_reason_for_call == DLL_THREAD_ATTACH)
+      _CRT_INIT( hModule, ul_reason_for_call, lpReserved);
+   return 1;
 }'
 
 
@@ -653,6 +725,8 @@ emit_dllmain()
 #
 create_undefined_linkage()
 {
+   log_debug "${MULLE_EXECUTABLE}:create_undefined_linkage" $*
+
    local infile="$1"
    local outfile="$2"
    local tmpdir="$3"
@@ -694,6 +768,8 @@ ${text}"
 
 _create_shlib()
 {
+   log_debug "${MULLE_EXECUTABLE}:_create_shlib" $*
+
    local shlib="$1"
    local library="$2"
    local undefined="$3"
@@ -702,16 +778,17 @@ _create_shlib()
    local files
    local ldflags
    local wholelibrary
+   local libraryname
 
    ldflags="`shlib_ldflags`"
-
-   wholelibrary="`shlib_load_all_library "${library}"`"
 
    case "${UNAME}" in
       mingw*)
          exekutor cp "${library}" "${tmpdir}"
-         files="`basename -- "${wholelibrary}"`"
+         libraryname="`basename -- "${library}"`"
+         wholelibrary="`shlib_load_all_library "${libraryname}"`"
 
+         files="${wholelibrary}"
          if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
          then
             files="`basename -- "${undefined}"` ${files}"
@@ -720,20 +797,21 @@ _create_shlib()
             shlib="`basename -- "${shlib}"`"
 
             exekutor cd "${tmpdir}" &&
-            eval_exekutor "'${LD}'" ${ldflags} ${files} -nologo "-OUT:'${shlib}'"
+            eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -nologo "-OUT:'${shlib}'"
          ) >&2 || exit 1
       ;;
 
       *)
          # just a bit faster than mingw needing to copy the library
          # for path reasons
+         wholelibrary="`shlib_load_all_library "${library}"`"
          files="${wholelibrary}"
 
          if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
          then
             files="${undefined} ${files}"
          fi
-         eval_exekutor "'${LD}'" ${ldflags} ${files} -o "'${shlib}'" || exit 1
+         eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -o "'${shlib}'" || exit 1
       ;;
    esac
 }
@@ -743,6 +821,8 @@ _create_shlib()
 #
 create_shlib()
 {
+   log_debug "${MULLE_EXECUTABLE}:create_shlib" $*
+
    local library="$1"
 
    local name
@@ -755,7 +835,7 @@ create_shlib()
 
    ext="`shlib_extension`"
 
-   tmpdir="`mktemp -d -t "mulle-objc-list-a.XXXXXX"`"
+   tmpdir="`mktemp -d -t "mulle-objc-lista.XXXXXX"`"
 
    name="`basename "${library}" .a`"
    undefined="${tmpdir}/${name}.undef.o"
@@ -777,29 +857,41 @@ _init()
       exit 1
    fi
 
-   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
-   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
+   . ${libexecpath}/mulle-bootstrap-logging.sh      || internal_fail "mulle-bootstrap-logging.sh not found"
+   . ${libexecpath}/mulle-bootstrap-functions.sh    || internal_fail "mulle-bootstrap-functions.sh not found"
    . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+   . ${libexecpath}/mulle-bootstrap-command.sh      || internal_fail "mulle-bootstrap-command.sh not found"
 }
 
 
 main()
 {
    # your code follows here
+
+   local cmdline
+   local library
+   local shlib
+   local OPTION_CONFIGURATION="Release"
+
+   cmdline="mulle-objc-list"  
    if [ -z "`command -v mulle-objc-list`" ]
    then
       fail "mulle-objc-list not in PATH"
    fi
 
-   local cmdline
-   local library
-   local shlib
-
-   cmdline="mulle-objc-list"
-
    # collect options for mulle-objc-list
    while [ $# -gt 1 ]
    do
+      case "$1" in
+         -c|--configuration)
+            shift
+
+            OPTION_CONFIGURATION="$1"
+            shift
+            continue
+         ;;
+      esac
+
       cmdline="${cmdline} '$1'"
 
       shift

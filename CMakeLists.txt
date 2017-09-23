@@ -27,6 +27,7 @@ if( MSVC)
    set( SCRIPTS
 	${SCRIPTS}
 	mulle-objc-create-dependencies-inc.bat
+  mulle-objc-list.bat
    )
 endif()
 
@@ -40,6 +41,17 @@ target_link_libraries( "mulle-objc-list"
 ${C_DEPENDENCY_LIBRARIES}
 ${OS_SPECIFIC_LIBRARIES}
 )
+
+#
+# see: https://john.nachtimwald.com/2012/07/15/calling-functions-in-exe-from-plugins-in-windows/
+#
+if( MSVC)
+   target_link_libraries( "mulle-objc-list" 
+      "-export:__mulle_objc_loadinfo_callback"
+      #      "-export:mulle_objc_loadinfo_unfailing_enqueue"
+   )
+endif()
+
 
 # PRIVATE is a guess
 target_compile_definitions( "mulle-objc-list"

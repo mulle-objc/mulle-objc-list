@@ -39,7 +39,7 @@ MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
 #
 # environment
 #
-
+set -o pipefail
 
 usage()
 {
@@ -158,8 +158,12 @@ _do_dump_dylib_dependencies()
    tmpminus="`mktemp "/tmp/minus-XXXXXX"`"
 
    redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
-   redirect_exekutor "${tmpplus}" mulle-objc-list ${MULLE_OBJC_LIST_FLAGS} -d "${LIBRARYFILE}" || fail "mulle-objc-list failed"
 
+   # inside cd for mingw, fixed path problems
+   (
+      exekutor cd "`dirname -- "${LIBRARYFILE}"`" &&
+      redirect_exekutor "${tmpplus}" mulle-objc-list ${MULLE_OBJC_LIST_FLAGS} -d "`basename -- "${LIBRARYFILE}"`" || fail "mulle-objc-list failed"
+   ) || exit 1
    #
    # remove inherited dependencies from standalone dependencies
    # also remove MulleObjCLoader class as dependency
@@ -184,7 +188,10 @@ _do_dump_static_dependencies()
 {
    log_debug "${MULLE_EXECUTABLE}:_do_dump_static_dependencies" "$@"
 
-   exekutor mulle-objc-lista ${MULLE_OBJC_LIST_FLAGS} -d "${LIBRARYFILE}" || fail "mulle-objc-lista failed"
+   (
+      exekutor cd "`dirname -- "${LIBRARYFILE}"`" &&
+      exekutor mulle-objc-lista --configuration "${OPTION_CONFIGURATION}" ${MULLE_OBJC_LIST_FLAGS} -d "`basename -- "${LIBRARYFILE}"`" 
+   ) || fail "mulle-objc-lista failed"
 }
 
 
@@ -230,8 +237,6 @@ dump_dependencies()
 
    _dump_dependencies "$@" |
       fgrep -v '{ @selector( MulleObjCLoader), MULLE_OBJC_NO_CATEGORYID }'
-
-   return 0
 }
 
 
