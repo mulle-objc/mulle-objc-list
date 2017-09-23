@@ -831,6 +831,10 @@ int  main( int argc, char *argv[])
    if( i >= argc)
       usage();
 
+
+   // ensure linker doesn't strip it out
+   mulle_objc_loadinfo_unfailingenqueue( NULL);
+
    dlmode |= RTLD_NOW;
    for(; i < argc ; i++)
    {

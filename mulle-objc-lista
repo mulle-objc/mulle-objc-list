@@ -70,14 +70,14 @@ setup_cc_environment()
       *)
          CC="mulle-clang"
          LD="mulle-clang"
-         NM="mulle-nm"
+         NM="nm"  # will do
       ;;
    esac
- 
+
    verify_binary "${CC}" "compiler" > /dev/null
    verify_binary "${LD}" "linker"  > /dev/null
    verify_binary "${NM}" "nm"  > /dev/null
-} 
+}
 
 
 shlib_extension()
@@ -307,7 +307,7 @@ create_undefined_linkage_c()
 # some windows stuff
 #
 #
-         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi|getenv|_getenv|__acrt_iob_func|free|_free|abort|_abort|exit|_exit|atexit|_atexit|_beginthreadex|_endthreadex) 
+         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi|getenv|_getenv|__acrt_iob_func|free|_free|abort|_abort|exit|_exit|atexit|_atexit|_beginthreadex|_endthreadex)
             case "${UNAME}" in
                mingw)
                ;;
@@ -873,7 +873,7 @@ main()
    local shlib
    local OPTION_CONFIGURATION="Release"
 
-   cmdline="mulle-objc-list"  
+   cmdline="mulle-objc-list"
    if [ -z "`command -v mulle-objc-list`" ]
    then
       fail "mulle-objc-list not in PATH"
