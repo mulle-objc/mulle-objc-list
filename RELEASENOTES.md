@@ -1,3 +1,7 @@
+### 0.12.2
+
+* community release
+
 ### 0.11.3
 
 * try to fix stuff for linux and windows

@@ -1,0 +1,1 @@
+${MULLE_EMBEDDED_REPOSITORIES:-https://github.com/{{PUBLISHER}}}/mulle-configuration;;${MULLE_CONFIGURATION_BRANCH:-release}
