@@ -7,4 +7,4 @@ ${MULLE_OBJC_REPOSITORIES:-https://github.com/mulle-objc}/mulle-objc-runtime;;${
 # library!
 #
 ${MULLE_BOOTSTRAP_REPOSITORIES:-https://github.com/mulle-nat}/mulle-bootstrap/archive/3.14.0.tar.gz;;;tar
-${MULLE_BOOTSTRAP_REPOSITORIES:-https://github.com/mulle-nat}/mulle-build/archive/3.14.1.tar.gz;;;tar
+${MULLE_BOOTSTRAP_REPOSITORIES:-https://github.com/mulle-nat}/mulle-build/archive/3.14.2.tar.gz;;;tar
