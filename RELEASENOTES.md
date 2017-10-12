@@ -1,5 +1,7 @@
 ### 0.12.2
 
+* always pull bootstrap from mulle-nat
+* need fresher mulle-bootstrap version for docker container
 * community release
 
 ### 0.11.3

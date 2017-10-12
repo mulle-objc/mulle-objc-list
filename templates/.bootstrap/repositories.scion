@@ -6,5 +6,5 @@ ${MULLE_OBJC_REPOSITORIES:-https://github.com/{{PUBLISHER}}}/mulle-objc-runtime;
 # build tools change. mulle-objc-list is dependent on the mulle-bootstrap
 # library!
 #
-${MULLE_OBJC_REPOSITORIES:-https://github.com/{{PUBLISHER}}}/mulle-bootstrap/archive/3.14.0.tar.gz;;;tar
-${MULLE_OBJC_REPOSITORIES:-https://github.com/{{PUBLISHER}}}/mulle-build/archive/3.14.1.tar.gz;;;tar
+${MULLE_BOOTSTRAP_REPOSITORIES:-https://github.com/mulle-nat/mulle-bootstrap/archive/3.14.0.tar.gz;;;tar
+${MULLE_BOOTSTRAP_REPOSITORIES:-https://github.com/mulle-nat/mulle-build/archive/3.14.1.tar.gz;;;tar
