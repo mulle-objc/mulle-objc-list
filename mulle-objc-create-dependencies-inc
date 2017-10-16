@@ -61,6 +61,34 @@ EOF
 }
 
 
+make_tmp()
+{
+   local name="${1:-mctmp}"
+   local type="${2}"
+
+   case "${UNAME}" in
+      darwin|freebsd)
+         mktemp ${type} "/tmp/${name}.XXXXXX"
+      ;;
+
+      *)
+         mktemp ${type} -t "${name}.XXXXXX"
+      ;;
+   esac
+}
+
+
+make_tmp_file()
+{
+   make_tmp "$1"
+}
+
+
+make_tmp_directory()
+{
+   make_tmp "$1" "-d"
+}
+
 #
 # For each dependency, emit the necessary dependency on the loader
 # except for MulleObjC
@@ -154,8 +182,8 @@ _do_dump_dylib_dependencies()
    local tmpplus
    local tmpminus
 
-   tmpplus="`mktemp "/tmp/plus-XXXXXX"`"
-   tmpminus="`mktemp "/tmp/minus-XXXXXX"`"
+   tmpplus="`make_tmp_file "plus"`"
+   tmpminus="`make_tmp_file "minus"`"
 
    redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
 
@@ -190,7 +218,7 @@ _do_dump_static_dependencies()
 
    (
       exekutor cd "`dirname -- "${LIBRARYFILE}"`" &&
-      exekutor mulle-objc-lista --configuration "${OPTION_CONFIGURATION}" ${MULLE_OBJC_LIST_FLAGS} -d "`basename -- "${LIBRARYFILE}"`" 
+      exekutor mulle-objc-lista --configuration "${OPTION_CONFIGURATION}" ${MULLE_OBJC_LIST_FLAGS} -d "`basename -- "${LIBRARYFILE}"`"
    ) || fail "mulle-objc-lista failed"
 }
 

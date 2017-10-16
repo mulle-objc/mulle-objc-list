@@ -79,7 +79,15 @@ remove_first_two_columns()
 }
 
 
-tmpcoverage="`mktemp "/tmp/coverage.XXXXXXXX"`" || exit 1
+case "`uname -s`" in
+   Darwin|FreeBSD)
+      tmpcoverage="`mktemp "/tmp/coverage.XXXXXXXX"`" || exit 1
+   ;;
+
+   *)
+      tmpcoverage="`mktemp -t "coverage.XXXXXXXX"`" || exit 1
+   ;;
+esac
 
 
 cat "${COVERAGE}" | \

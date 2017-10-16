@@ -324,14 +324,14 @@ emit_no_return()
                echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
             ;;
          esac
-         echo "__attribute__(( noreturn)) void  ${symbol}() {}"
+         echo "__attribute__(( noreturn)) void  ${symbol}() { while(1); }"
       ;;
 
       *)
-         echo "${EXTERN_GLOBAL_PREFIX}void  ${EXTERN_SYMBOL_PREFIX}${symbol}() {}"
+         echo "${EXTERN_GLOBAL_PREFIX}__attribute__(( noreturn)) void  ${EXTERN_SYMBOL_PREFIX}${symbol}() { while(1); }"
          if [ ! -z "${EXTERN_GLOBAL_PREFIX}" -o ! -z "${EXTERN_SYMBOL_PREFIX}" ]
          then
-            echo "__attribute__(( noreturn)) void  ${symbol}() {}"
+            echo "__attribute__(( noreturn)) void  ${symbol}() { while(1); }"
          fi
       ;;
    esac
@@ -958,6 +958,35 @@ _create_shlib()
    esac
 }
 
+
+make_tmp()
+{
+   local name="${1:-mctmp}"
+   local type="${2}"
+
+   case "${UNAME}" in
+      darwin|freebsd)
+         mktemp ${type} "/tmp/${name}.XXXXXX"
+      ;;
+
+      *)
+         mktemp ${type} -t "${name}.XXXXXX"
+      ;;
+   esac
+}
+
+
+make_tmp_file()
+{
+   make_tmp "$1"
+}
+
+
+make_tmp_directory()
+{
+   make_tmp "$1" "-d"
+}
+
 #
 # create a shared library for the .a file
 #
@@ -977,7 +1006,7 @@ create_shlib()
 
    ext="`shlib_extension`"
 
-   tmpdir="`mktemp -d -t "mulle-objc-lista.XXXXXX"`"
+   tmpdir="`make_tmp_directory "lista"`"
 
    name="`basename "${library}" .a`"
    undefined="${tmpdir}/${name}.undef.o"
