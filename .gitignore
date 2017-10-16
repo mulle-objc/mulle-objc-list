@@ -1,7 +1,13 @@
+.DS_Store
+*.bak
+*.old
+tmp.*
+
+build*.d/
+build/
+
 /.bootstrap.auto
 /.bootstrap.local
-/dependencies
-/addictions
 /.bootstrap.repos
 /stashes
 build*.d/

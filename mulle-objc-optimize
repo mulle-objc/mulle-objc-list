@@ -80,6 +80,40 @@ EOF
 }
 
 
+#
+# different on platform. Also I really dont like the
+# /var/tmp/x/y/z stuff on OS X
+#
+
+make_tmp()
+{
+   local name="${1:-mctmp}"
+   local type="${2}"
+
+   case "${UNAME}" in
+      darwin|freebsd)
+         mktemp ${type} "/tmp/${name}.XXXXXX"
+      ;;
+
+      *)
+         mktemp ${type} -t "${name}.XXXXXX"
+      ;;
+   esac
+}
+
+
+make_tmp_file()
+{
+   make_tmp "$1"
+}
+
+
+make_tmp_directory()
+{
+   make_tmp "$1" "-d"
+}
+
+
 name_from_library()
 {
    local library="$1"
@@ -142,7 +176,7 @@ create_empty_library()
 
    while :
    do
-      ofile="`mktemp unused.XXXXXXXX`"
+      ofile="`make_tmp_file "unused"`"
       if mv "${ofile}" "${ofile}.o"
       then
          ofile="${ofile}.o"
@@ -597,7 +631,7 @@ main()
 
    if [ -z "${OPTIMIZE_DIR}" ]
    then
-      OPTIMIZE_DIR="`mktemp -d -t mulle-objc-optimize.XXXXXXX`"
+      OPTIMIZE_DIR="`make_tmp_directory "optimize"`"
       log_fluff "OPTIMIZE_DIR is ${OPTIMIZE_DIR}"
       CLEANUP="${OPTION_CLEANUP_TMP:-YES}"
    fi
