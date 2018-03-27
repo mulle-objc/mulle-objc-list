@@ -40,8 +40,9 @@
 #define __MULLE_OBJC_NO_TRT__ 1
 #define __MULLE_OBJC_NO_FMC__ 1
 
-#include <mulle_objc_runtime/mulle_objc_runtime.h>
-#include <mulle_objc_runtime/mulle_objc_csvdump.h>
+#include "dependencies.h"
+// direct load instead of dependencies.h because its a debug header
+#include <mulle-objc-runtime/mulle-objc-csvdump.h>
 
 #include <ctype.h>
 #include <string.h>

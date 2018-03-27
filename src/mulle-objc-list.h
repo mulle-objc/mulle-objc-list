@@ -1,7 +1,7 @@
 #ifndef mulle_objc_list_h__
 #define mulle_objc_list_h__
 
-#include <mulle_objc_runtime/mulle_objc_universe.h>
+#include "dependencies.h"
 #include <stdio.h>
 
 
@@ -25,7 +25,11 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
 #if __APPLE__
 # define MULLE_OBJC_DLSYM_HANDLE   RTLD_MAIN_ONLY
 #else
-# define MULLE_OBJC_DLSYM_HANDLE   RTLD_DEFAULT
+# if __linux__
+#  define MULLE_OBJC_DLSYM_HANDLE  0  // RTLD_DEFAULT (often), but don't want to force GNUSOURCE YET
+# else
+#  error "figure out a good value for main handle"
+# endif
 #endif
       void   *function;
 
@@ -42,7 +46,7 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
 
      // set path of universe for debugging
 #if __APPLE__
-      { 
+      {
          Dl_info   info;
 
          if( dladdr( (void *) __mulle_objc_universe_setup, &info))
