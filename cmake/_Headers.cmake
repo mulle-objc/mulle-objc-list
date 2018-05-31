@@ -8,7 +8,7 @@ set( INCLUDE_DIRS
 src
 ) 
 
-set( PUBLIC_HEADERS
+      set( PUBLIC_HEADERS
 src/dependencies.h
 src/mulle-objc-list.h
 src/version.h

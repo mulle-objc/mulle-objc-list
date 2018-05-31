@@ -5,41 +5,41 @@ if( MULLE_TRACE_INCLUDE)
 endif()
 
 if( NOT MINGW)
-   if( NOT DLFCN_LIBRARY)
-      find_library( DLFCN_LIBRARY NAMES dlfcn dl)
-      message( STATUS "DLFCN_LIBRARY is ${DLFCN_LIBRARY}")
+   if( NOT DL_LIBRARY)
+      find_library( DL_LIBRARY NAMES dl dlfcn)
+      message( STATUS "DL_LIBRARY is ${DL_LIBRARY}")
    
       # the order looks ascending, but due to the way this file is read
       # it ends up being descending, which is what we need
-      if( DLFCN_LIBRARY)
+      if( DL_LIBRARY)
          set( OS_SPECIFIC_LIBRARIES
             ${OS_SPECIFIC_LIBRARIES}
-            ${DLFCN_LIBRARY}
+            ${DL_LIBRARY}
             CACHE INTERNAL "need to cache this"
          )
          # temporarily expand CMAKE_MODULE_PATH
-         get_filename_component( _TMP_DLFCN_ROOT "${DLFCN_LIBRARY}" DIRECTORY)
-         get_filename_component( _TMP_DLFCN_ROOT "${_TMP_DLFCN_ROOT}" DIRECTORY)
+         get_filename_component( _TMP_DL_ROOT "${DL_LIBRARY}" DIRECTORY)
+         get_filename_component( _TMP_DL_ROOT "${_TMP_DL_ROOT}" DIRECTORY)
    
          # search for DependenciesAndLibraries.cmake to include
-         foreach( _TMP_DLFCN_NAME in dlfcn dl)
-            set( _TMP_DLFCN_DIR "${_TMP_DLFCN_ROOT}/include/${_TMP_DLFCN_NAME}/cmake")
+         foreach( _TMP_DL_NAME in dl,dlfcn)
+            set( _TMP_DL_DIR "${_TMP_DL_ROOT}/include/${_TMP_DL_NAME}/cmake")
             # use explicit path to avoid "surprises"
-            if( EXISTS "${_TMP_DLFCN_DIR}/DependenciesAndLibraries.cmake")
-               unset( DLFCN_DEFINITIONS)
-               list( INSERT CMAKE_MODULE_PATH 0 "${_TMP_DLFCN_DIR}")
-               include( "${_TMP_DLFCN_DIR}/DependenciesAndLibraries.cmake")
-               list( REMOVE_ITEM CMAKE_MODULE_PATH "${_TMP_DLFCN_DIR}")
+            if( EXISTS "${_TMP_DL_DIR}/DependenciesAndLibraries.cmake")
+               unset( DL_DEFINITIONS)
+               list( INSERT CMAKE_MODULE_PATH 0 "${_TMP_DL_DIR}")
+               include( "${_TMP_DL_DIR}/DependenciesAndLibraries.cmake")
+               list( REMOVE_ITEM CMAKE_MODULE_PATH "${_TMP_DL_DIR}")
                set( INHERITED_DEFINITIONS
                   ${INHERITED_DEFINITIONS}
-                  ${DLFCN_DEFINITIONS}
+                  ${DL_DEFINITIONS}
                   CACHE INTERNAL "need to cache this"
                )
                break()
             endif()
          endforeach()
       else()
-         message( FATAL_ERROR "DLFCN_LIBRARY was not found")
+         message( FATAL_ERROR "DL_LIBRARY was not found")
       endif()
    endif()
 endif()
