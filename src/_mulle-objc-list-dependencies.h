@@ -7,11 +7,11 @@
 #define _mulle_objc_list__dependencies_h__
 
 # if ! defined( __MINGW__)
-#  include <dlfcn.h>
+#  include <dlfcn.h>   // dlfcn
 # endif
 
 # if defined( __MINGW__)
-#  include <psapi.h>
+#  include <psapi.h>   // psapi
 # endif
 
 #endif
