@@ -40,6 +40,8 @@
 #define __MULLE_OBJC_NO_TRT__ 1
 #define __MULLE_OBJC_NO_FMC__ 1
 
+#include <mulle-objc-runtime/mulle-objc-runtime.h>
+
 #include "dependencies.h"
 // direct load instead of dependencies.h because its a debug header
 #include <mulle-objc-runtime/mulle-objc-csvdump.h>
@@ -70,7 +72,6 @@ static uint32_t  loader_classid = MULLE_OBJC_LOADER_CLASSID;
 
 static enum
 {
-
    dump_callable_coverage,
    dump_callable_methods,
    dump_classes,
@@ -100,7 +101,7 @@ static void   log_printf( char *format, ...)
 static void   usage( void)
 {
    fprintf( stderr,
-           "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
+            "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
             "\n"
             "   The binary is listed. The preceeding libraries are\n"
             "   explicitly loaded but their contents aren't listed.\n"
@@ -492,7 +493,7 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
    if( ! list)
       return;
 
-   method = list->methods;
+   method   = list->methods;
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
    {
@@ -563,13 +564,13 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
       if( p->classid != loader_classid)
       {
          printf( "      { @selector( %s), @selector( %s) },"
-                "      // %08x;%s;%08x;%s\n",
-                p->classname,
-                p->categoryname,
-                p->classid,
-                p->classname,
-                p->categoryid,
-                p->categoryname);
+                 "      // %08x;%s;%08x;%s\n",
+                    p->classname,
+                    p->categoryname,
+                    p->classid,
+                    p->classname,
+                    p->categoryid,
+                    p->categoryname);
       }
       break;
 

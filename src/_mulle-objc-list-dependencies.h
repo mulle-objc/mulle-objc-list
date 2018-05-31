@@ -14,6 +14,4 @@
 #  include <psapi.h>
 # endif
 
-# include <mulle-objc-runtime/mulle-objc-runtime.h>
-
 #endif
