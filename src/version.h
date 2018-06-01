@@ -1,2 +1,2 @@
-#define MULLE_OBJC_LIST_VERSION  ((0 << 20) | (12 << 8) | 1)
+#define MULLE_OBJC_LIST_VERSION  ((0 << 20) | (13 << 8) | 0)
 
