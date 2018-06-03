@@ -47,9 +47,8 @@ usage()
 usage:
    ${MULLE_EXECUTABLE} [options] <name> [dependencies]
 
-   Name is the name of the library without prefix or
-   extension and without "Standalone" suffix.
-   Dependencies is the list of Objective-C dependencies
+   Name is the name of the library without prefix or extension and without a
+   "Standalone" suffix. Dependencies are a list of Objective-C dependencies
    of this library.
 
    Options:
@@ -61,41 +60,13 @@ EOF
 }
 
 
-make_tmp()
-{
-   local name="${1:-mctmp}"
-   local type="${2}"
-
-   case "${UNAME}" in
-      darwin|freebsd)
-         mktemp ${type} "/tmp/${name}.XXXXXX"
-      ;;
-
-      *)
-         mktemp ${type} -t "${name}.XXXXXX"
-      ;;
-   esac
-}
-
-
-make_tmp_file()
-{
-   make_tmp "$1"
-}
-
-
-make_tmp_directory()
-{
-   make_tmp "$1" "-d"
-}
-
 #
 # For each dependency, emit the necessary dependency on the loader
 # except for MulleObjC
 #
 _dump_loader_dependencies()
 {
-   log_debug "${MULLE_EXECUTABLE}:_dump_loader_dependencies" "$@"
+   log_entry "_dump_loader_dependencies" "$@"
 
    local depfile
    local depname
@@ -103,7 +74,7 @@ _dump_loader_dependencies()
    local classid
    local categoryid
 
-   classid="`mulle-objc-uniqueid MulleObjCLoader | tail -1`"
+   classid="`${MULLE_OBJC_UNIQUEID} MulleObjCLoader | tail -1`"
    while [ $# -ne 0 ]
    do
       case "$1" in
@@ -113,7 +84,7 @@ _dump_loader_dependencies()
          ;;
 
          *)
-            depfile="${DEPENDENCIES_DIR}/include/$1/dependencies.inc"
+            depfile="${DEPENDENCY_DIR}/include/$1/dependencies.inc"
             depname="$1"
          ;;
       esac
@@ -135,7 +106,7 @@ _dump_loader_dependencies()
 
       if [ ! -z "${depname}" ]
       then
-         categoryid="`mulle-objc-uniqueid "${depname}" | tail -1`"
+         categoryid="`${MULLE_OBJC_UNIQUEID} "${depname}" | tail -1`"
          exekutor echo "      { @selector( MulleObjCLoader), \
 @selector( ${depname}) },      // $classid;MulleObjCLoader;$categoryid;${depname}";
       fi
@@ -147,17 +118,17 @@ _dump_loader_dependencies()
 
 _combine_dependencies_inc()
 {
-   log_debug "${MULLE_EXECUTABLE}:_combine_dependencies_inc" "$@"
+   log_entry "_combine_dependencies_inc" "$@"
 
    local depfile
 
    while [ $# -ne 0 ]
    do
-      depfile="${DEPENDENCIES_DIR}/include/$1/dependencies.inc"
+      depfile="${DEPENDENCY_DIR}/include/$1/dependencies.inc"
 
       if [ ! -f "${depfile}" ]
       then
-         fail "\"${depfile}\" not found, mulle-bootstrap first"
+         fail "\"${depfile}\" not found"
       fi
 
       cat "${depfile}"
@@ -172,7 +143,7 @@ _combine_dependencies_inc()
 #
 _do_dump_dylib_dependencies()
 {
-   log_debug "${MULLE_EXECUTABLE}:_do_dump_dylib_dependencies" "$@"
+   log_entry "_do_dump_dylib_dependencies" "$@"
 
    #
    # First get all classes and categories "below" OS for later removal
@@ -187,11 +158,19 @@ _do_dump_dylib_dependencies()
 
    redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
 
+   local filename
+   local directory
+
+   filename="`fast_basename "${LIBRARYFILE}"`"
+   directory="`fast_dirname "${LIBRARYFILE}"`"
+
    # inside cd for mingw, fixed path problems
    (
-      exekutor cd "`dirname -- "${LIBRARYFILE}"`" &&
-      redirect_exekutor "${tmpplus}" mulle-objc-list ${MULLE_OBJC_LIST_FLAGS} -d "`basename -- "${LIBRARYFILE}"`" || fail "mulle-objc-list failed"
-   ) || exit 1
+      exekutor cd "${directory}" &&
+      redirect_exekutor "${tmpplus}" "${MULLE_OBJC_LIST}" ${MULLE_OBJC_LIST_FLAGS} \
+                                          -d "${filename}" \
+
+   ) || fail "mulle-objc-list failed"
    #
    # remove inherited dependencies from standalone dependencies
    # also remove MulleObjCLoader class as dependency
@@ -200,12 +179,12 @@ _do_dump_dylib_dependencies()
    then
       exekutor fgrep -x -v -f"${tmpminus}" "${tmpplus}"
    else
-      cat "${tmpplus}"
+      rexekutor cat "${tmpplus}"
    fi
 
    if [ "${OPTION_REMOVE_TMP}" = "YES" ]
    then
-      rm "${tmpplus}" "${tmpminus}"
+      exekutor rm "${tmpplus}" "${tmpminus}"
    else
       log_info "${tmpplus} and ${tmpminus} not removed"
    fi
@@ -214,18 +193,26 @@ _do_dump_dylib_dependencies()
 
 _do_dump_static_dependencies()
 {
-   log_debug "${MULLE_EXECUTABLE}:_do_dump_static_dependencies" "$@"
+   log_entry "_do_dump_static_dependencies" "$@"
+
+   local filename
+   local directory
+
+   filename="`fast_basename "${LIBRARYFILE}"`"
+   directory="`fast_dirname "${LIBRARYFILE}"`"
 
    (
-      exekutor cd "`dirname -- "${LIBRARYFILE}"`" &&
-      exekutor mulle-objc-lista --configuration "${OPTION_CONFIGURATION}" ${MULLE_OBJC_LIST_FLAGS} -d "`basename -- "${LIBRARYFILE}"`"
+      exekutor cd "${directory}" &&
+      exekutor "${MULLE_OBJC_LISTA}" --configuration "${OPTION_CONFIGURATION}" \
+                                     ${MULLE_OBJC_LIST_FLAGS} \
+                                     -d "${filename}"
    ) || fail "mulle-objc-lista failed"
 }
 
 
 _dump_dependencies()
 {
-   log_debug "${MULLE_EXECUTABLE}:_dump_dependencies" "$@"
+   log_entry "_dump_dependencies" "$@"
 
    local params
 
@@ -239,13 +226,7 @@ _dump_dependencies()
       params="${params} --configuration '${OPTION_CONFIGURATION}'"
    fi
 
-   DEPENDENCIES_DIR="`eval_exekutor mulle-bootstrap paths ${params} dependencies`"
-   if [ -z "${DEPENDENCIES_DIR}" ]
-   then
-      fail "Could not get the dependencies path via \"mulle-bootstrap paths\""
-   fi
-
-   log_fluff "DEPENDENCIES_DIR : $PWD"
+   [ -z "${DEPENDENCY_DIR}" ] && fail "DEPENDENCY_DIR not set"
 
    _dump_loader_dependencies "$@" | LC_ALL=C sort | LC_ALL=C sort -u
    if [ ! -z "${LIBRARYFILE}" ]
@@ -257,7 +238,7 @@ _dump_dependencies()
 
 dump_dependencies()
 {
-   log_debug "${MULLE_EXECUTABLE}:dump_dependencies" "$@"
+   log_entry "dump_dependencies" "$@"
 
    log_fluff "PWD          : $PWD"
    log_fluff "ARGV         : $*"
@@ -283,20 +264,14 @@ main()
 
    while [ $# -ne 0 ]
    do
-      if core_technical_flags "$1"
+      if options_technical_flags "$1"
       then
-         case "$1" in
-            -vv)
-               MULLE_OBJC_LIST_FLAGS="`concat "${MULLE_OBJC_LIST_FLAGS}" "-v"`"
-            ;;
-         esac
-
          shift
          continue
       fi
 
       case "$1" in
-         -h|--help)
+         -h|--help|help)
             usage
          ;;
 
@@ -358,8 +333,7 @@ main()
    done
 
 
-   core_setup_trace "${MULLE_TRACE}"
-   export MULLE_TRACE
+   options_setup_trace "${MULLE_TRACE}"
 
    local name
 
@@ -389,26 +363,30 @@ main()
       ;;
    esac
 
-   local pathcmd
-
-   pathcmd="`mulle-bootstrap paths -s ':' -q "'" path`" || fail "mulle-bootstrap not found in PATH ($PATH)"
-
-   eval "${pathcmd}"
-
    # windows...
-   if [ -z "`command -v "fgrep"`" ]
+
+   FGREP="`command -v "fgrep"`"
+   if [ -z  "${FGREP}" ]
    then
       fail "fgrep not found in PATH ($PATH)"
    fi
 
-   if [ -z "`command -v "mulle-objc-list"`" ]
+   MULLE_OBJC_LIST="`command -v "mulle-objc-list"`"
+   if [ -z "${MULLE_OBJC_LIST}" ]
    then
       fail "mulle-objc-list not found in PATH ($PATH)"
    fi
 
-   if [ -z "`command -v "mulle-objc-lista"`" ]
+   MULLE_OBJC_LISTA="`command -v "mulle-objc-lista"`"
+   if [ -z "${MULLE_OBJC_LISTA}" ]
    then
       fail "mulle-objc-lista not found in PATH ($PATH)"
+   fi
+
+   MULLE_OBJC_UNIQUEID="`command -v "mulle-objc-uniqueid"`"
+   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
+   then
+      fail "mulle-objc-uniqueid not found in PATH ($PATH)"
    fi
 
    #
@@ -417,7 +395,7 @@ main()
    if [ ! -z "${LIBRARYFILE}" -a ! -f "${LIBRARYFILE}" ]
    then
       fail "\"${LIBRARYFILE}\" not found. \
-mulle-build first or specify build directory with -b"
+Craft it first or specify build directory with -b"
    fi
 
    local result
@@ -455,26 +433,16 @@ Is whole archive load working on this platform ?"
 
 _init()
 {
-   local libexecpath
-
-   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
-   if [ -z "${libexecpath}" ]
+   if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
    then
-      if [ -z "`command -v "mulle-bootstrap"`" ]
-      then
-         echo "${MULLE_EXECUTABLE} fatal error: Could not find mulle-bootstrap for \"${MULLE_EXECUTABLE}\" in \"$PATH\"" >&2
+      MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env "libexec-dir" 2> /dev/null`"
+      [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ] && \
+         echo "mulle-bashfunctions-env not installed" >&2 && \
          exit 1
-      fi
-
-      echo "${MULLE_EXECUTABLE} fatal error: `which mulle-bootstrap` is incompatible" >&2
-      exit 1
    fi
 
-   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
-   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
-   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
 }
-
 
 #
 # leading backslash ? looks like we're getting called from
@@ -486,25 +454,6 @@ case "$PATH" in
    ;;
 esac
 
-
-# sometimes passed in
-if [ -z "${MULLE_EXECUTABLE}" ]
-then
-   MULLE_EXECUTABLE="`basename -- "$0"`"
-   MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
-fi
-
-MULLE_EXECUTABLE="`basename -- "$0"`"
-MULLE_ARGUMENTS="$@"
-MULLE_EXECUTABLE_PID="$$"
-
-
-set -o pipefail
-
-_init "$@" # needs params
-
-#
-# combine all coverage files into one and sort -u it
-#
-
+_init "$@"
 main "$@"
+
