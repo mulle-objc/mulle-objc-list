@@ -27,6 +27,7 @@ EOF
 }
 
 
+
 setup_cc_environment()
 {
    case "${MULLE_UNAME}" in
@@ -75,9 +76,18 @@ setup_cc_environment()
       ;;
    esac
 
-   verify_binary "${CC}" "compiler" > /dev/null
-   verify_binary "${LD}" "linker"  > /dev/null
-   verify_binary "${NM}" "nm"  > /dev/null
+   if [ -z "`command -v "${CC}"`" ]
+   then
+      fail "${CC} not in PATH"
+   fi
+   if [ -z "`command -v "${LD}"`" ]
+   then
+      fail "${LD} not in PATH"
+   fi
+   if [ -z "`command -v "${NM}"`" ]
+   then
+      fail "${NM} not in PATH"
+   fi
 }
 
 
