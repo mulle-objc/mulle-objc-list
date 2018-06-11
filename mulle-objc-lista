@@ -3,6 +3,7 @@
 # this script unpacks an .a file and creates a list of defined methods
 # for each .o file
 #
+[ "${TRACE}" = "YES" -o "${MULLE_OBJC_LISTA_TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 MULLE_EXECUTABLE_VERSION=0.9.1
 
@@ -859,7 +860,7 @@ create_undefined_linkage()
 
    local text
 
-   text="`create_undefined_linkage_c "${infile}" "${tmpdir}"`" || exit 1
+   text="`create_undefined_linkage_c "${infile}" "${tmpdir}"`" || fail "Creating undefined C linkage failed"
    if [ -z "${text}" ]
    then
       log_fluff "No undefined symbols to spoof for \"${infile}\""
@@ -888,7 +889,7 @@ ${text}"
    cflags="`shlib_cflags`"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor ${CC} ${cflags} -c -o "${outfile}" "${cfile}" || exit 1
+   exekutor ${CC} ${cflags} -c -o "${outfile}" "${cfile}" || fail "Compiling undefined symbol linkage failed"
 }
 
 
@@ -951,21 +952,20 @@ _create_shlib()
 
             eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -nologo "-OUT:'${shlib}'"
          ) >&2 || exit 1
-      ;;
-
-      *)
-         # just a bit faster than mingw needing to copy the library
-         # for path reasons
-         wholelibrary="`shlib_load_all_library "${library}"`"
-         files="${wholelibrary}"
-
-         if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
-         then
-            files="${undefined} ${files}"
-         fi
-         eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -o "'${shlib}'" || exit 1
+         return
       ;;
    esac
+
+   # just a bit faster than mingw needing to copy the library
+   # for path reasons
+   wholelibrary="`shlib_load_all_library "${library}"`"
+   files="${wholelibrary}"
+
+   if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
+   then
+      files="${undefined} ${files}"
+   fi
+   eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -o "'${shlib}'" || fail "Linking temporary shared library failed"
 }
 
 
@@ -977,6 +977,7 @@ create_shlib()
    log_entry "create_shlib" "$@"
 
    local library="$1"
+   local directory="$2"
 
    local name
    local undefined
@@ -988,14 +989,12 @@ create_shlib()
 
    ext="`shlib_extension`"
 
-   tmpdir="`make_tmp_directory "lista"`"
-
    name="`basename "${library}" .a`"
-   undefined="${tmpdir}/${name}.undef.o"
-   shlib="${tmpdir}/${name}.${ext}"
+   undefined="${directory}/${name}.undef.o"
+   shlib="${directory}/${name}.${ext}"
 
    log_fluff "Create shlib \"${shlib}\"..."
-   _create_shlib "${shlib}" "${library}" "${undefined}" "${tmpdir}"
+   _create_shlib "${shlib}" "${library}" "${undefined}" "${directory}"
 
    rexekutor echo "${shlib}"
 }
@@ -1010,13 +1009,16 @@ main()
    local shlib
    local OPTION_CONFIGURATION="Release"
 
-   cmdline="mulle-objc-list"
-   if [ -z "`command -v mulle-objc-list`" ]
+   cmdline="`command -v mulle-objc-list`"
+   if [ -z "${cmdline}" ]
    then
       fail "mulle-objc-list not in PATH"
    fi
+   cmdline="'${cmdline}'"
 
+   #
    # collect options for mulle-objc-list
+   #
    while [ $# -gt 1 ]
    do
       if options_technical_flags "$1"
@@ -1042,6 +1044,10 @@ main()
 
    options_setup_trace "${MULLE_TRACE}"
 
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   then
+      cmdline="${cmdline} '-v'"
+   fi
 
    library="$1"
    if [ ! -f "${library}" ]
@@ -1053,20 +1059,15 @@ main()
 
    log_verbose "Create shared libs (if needed)..."
 
-   shlib="`create_shlib "${library}"`" || exit 1
-
    local directory
 
-   directory="`fast_dirname "${shlib}"`"
-   shlib="`fast_basename "${shlib}"`"
-
+   directory="`make_tmp_directory "lista"`"
+   shlib="`create_shlib "${library}" "${directory}"`" || exit 1
    cmdline="${cmdline} '${shlib}'"
 
-   log_verbose "Run mulle-objc-list on shared library \"${shlib}\" ..."
-   (
-      exekutor cd "${directory}" &&
-      eval_exekutor ${cmdline}
-   )
+   log_verbose "Run mulle-objc-list on shared library \"${shlib}\"..."
+
+   eval_exekutor ${cmdline}
 }
 
 

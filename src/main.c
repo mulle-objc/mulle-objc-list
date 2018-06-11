@@ -686,7 +686,7 @@ static char   *concat( char *a, char *b)
 {
    size_t   len_a;
    size_t   len_b;
-   char      *s;
+   char     *s;
 
    len_a = strlen( a);
    len_b = strlen( b);
@@ -883,7 +883,8 @@ int  main( int argc, char *argv[])
       }
 
       if( verbose)
-         fprintf( stderr, "Loaded \"%s\". (universe: %p, dlmode: %u)\n", argv[ i], universe, dlmode);
+         fprintf( stderr, "Loaded \"%s\". (universe: %p, dlmode: %u)\n",
+               argv[ i], universe, dlmode);
    }
 
    if( mode == dump_dependencies)

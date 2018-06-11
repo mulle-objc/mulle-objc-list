@@ -29,6 +29,7 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
+[ "${TRACE}" = "YES" -o "${MULLE_OBJC_CREATE_DEPENDENCIES_TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 MULLE_EXECUTABLE_VERSION=0.9.1
 
@@ -167,7 +168,9 @@ _do_dump_dylib_dependencies()
    # inside cd for mingw, fixed path problems
    (
       exekutor cd "${directory}" &&
-      redirect_exekutor "${tmpplus}" "${MULLE_OBJC_LIST}" ${MULLE_OBJC_LIST_FLAGS} \
+      redirect_exekutor "${tmpplus}" "${MULLE_OBJC_LIST}" \
+                                          ${MULLE_TECHNICAL_FLAGS} \
+                                          ${MULLE_OBJC_LIST_FLAGS} \
                                           -d "${filename}" \
 
    ) || fail "mulle-objc-list failed"
@@ -203,8 +206,9 @@ _do_dump_static_dependencies()
 
    (
       exekutor cd "${directory}" &&
-      exekutor "${MULLE_OBJC_LISTA}" --configuration "${OPTION_CONFIGURATION}" \
-                                     ${MULLE_OBJC_LIST_FLAGS} \
+      exekutor "${MULLE_OBJC_LISTA}" ${MULLE_TECHNICAL_FLAGS} \
+                                     ${MULLE_OBJC_LISTA_FLAGS} \
+                                     --configuration "${OPTION_CONFIGURATION}" \
                                      -d "${filename}"
    ) || fail "mulle-objc-lista failed"
 }
@@ -228,6 +232,8 @@ _dump_dependencies()
 
    [ -z "${DEPENDENCY_DIR}" ] && fail "DEPENDENCY_DIR not set"
 
+   local rval
+
    _dump_loader_dependencies "$@" | LC_ALL=C sort | LC_ALL=C sort -u
    if [ ! -z "${LIBRARYFILE}" ]
    then
@@ -244,8 +250,12 @@ dump_dependencies()
    log_fluff "ARGV         : $*"
    log_fluff "BUILDPATH    : ${BUILDPATH}"
 
-   _dump_dependencies "$@" |
-      fgrep -v '{ @selector( MulleObjCLoader), MULLE_OBJC_NO_CATEGORYID }'
+   local tmp
+
+   tmp="`_dump_dependencies "$@"`" || exit 1
+
+   fgrep -v '{ @selector( MulleObjCLoader), MULLE_OBJC_NO_CATEGORYID }' <<< "${tmp}"
+   return 0
 }
 
 
@@ -293,10 +303,6 @@ main()
             OPTION_FORCE="YES"
          ;;
 
-         -n|--dry-run)
-            MULLE_FLAG_EXECUTOR_DRY_RUN="YES"
-         ;;
-
          --no-remove)
             OPTION_REMOVE_TMP="NO"
          ;;
@@ -315,7 +321,7 @@ main()
             OPTION_SDK="$1"
          ;;
 
-         -)
+         -|--)
             break
          ;;
 
@@ -331,7 +337,6 @@ main()
 
       shift
    done
-
 
    options_setup_trace "${MULLE_TRACE}"
 
@@ -400,7 +405,7 @@ Craft it first or specify build directory with -b"
 
    local result
 
-   result="`dump_dependencies "$@"`" || exit 1
+   result="`dump_dependencies "$@"`" || exit  1
 
    if [ -z "${result}" ]
    then
@@ -410,8 +415,10 @@ Is whole archive load working on this platform ?"
 
    if [ -z "${OUTPUT}" ]
    then
+      log_info "Done"
+
       exekutor echo "$result"
-      return
+      return 0
    fi
 
    if [ "${OPTION_FORCE}" = "NO" ] && [ -f "${OUTPUT}" ]
