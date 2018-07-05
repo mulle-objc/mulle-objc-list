@@ -2,7 +2,7 @@ digraph optimizer {
 
    node [ shape="folder"]
 
-   "dependencies" -> "include" -> "Foo" -> "dependencies.inc"
+   "dependencies" -> "include" -> "Foo" -> "objc-loader.inc"
    "dependencies" -> "lib" -> "libFoo.a"
 
    "unarchive" -> "Foo.d"
@@ -10,14 +10,14 @@ digraph optimizer {
    "Foo.d" -> "Foo+Bar.o"
    "Foo.d" -> "class_db.csv"
    "Foo.d" -> "method_db.csv"
-   "Foo.d" -> "loader-dependencies.inc"
+   "Foo.d" -> "loader-objc-loader.inc"
    "Foo.d" -> "MethodObjCLoader+Foo.m"
 
    "class_db.csv" [ shape="note", penwidth=2, color="seagreen"]
    "method_db.csv" [ shape="note", penwidth=2, color="seagreen"]
 
-   "dependencies.inc" [ shape="note", penwidth=2, color="goldenrod"]
-   "loader-dependencies.inc" [ shape="note", penwidth=2, color="goldenrod" ]
+   "objc-loader.inc" [ shape="note", penwidth=2, color="goldenrod"]
+   "loader-objc-loader.inc" [ shape="note", penwidth=2, color="goldenrod" ]
    "MethodObjCLoader+Foo.m" [ shape="note", penwidth=2, color="purple" ]
    "Foo+Bar.o" [ shape="note"]
    "Foo.o" [ shape="note"]

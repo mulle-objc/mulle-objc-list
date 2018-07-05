@@ -65,7 +65,7 @@ EOF
    --cflags                 : CFLAGS for loader recompilation
    --coverage-dir <dir>     : location of the coverage files
    --cppflags               : CPPFLAGS for loader recompilation
-   --dependencies-dir <dir> : The dependencies directory of your project
+   --dependency-dir <dir>   : The dependency directory of your project
    --keep-tmp               : do not erase temporarily created files
    --library-dir <dir>      : destination for the output libraries
    --objc-name <name>       : ObjC library name (instead of ${OBJC_DEFAULT_NAME})
@@ -370,10 +370,10 @@ optimize_folder()
 
    log_fluff "Rebuilding the loader \"${ofile}\"..."
 
-   redirect_exekutor "${opti}/class-dependencies.inc" sed 's/^\([^;]*\);\([^;]*\);.*$/      { @selector( \2), MULLE_OBJC_NO_CATEGORYID },      \/\/ \1;\2;;/' \
+   redirect_exekutor "${opti}/class-objc-loader.inc" sed 's/^\([^;]*\);\([^;]*\);.*$/      { @selector( \2), MULLE_OBJC_NO_CATEGORYID },      \/\/ \1;\2;;/' \
       "${opti}/used_class_db.csv"
 
-   redirect_exekutor "${opti}/category-dependencies.inc" sed 's/^\([^;]*\);\([^;]*\);\([^;]*\);\([^;]*\);.*$/      { @selector( \2), @selector( \4) },      \/\/ \1;\2;\3;\4/' \
+   redirect_exekutor "${opti}/category-objc-loader.inc" sed 's/^\([^;]*\);\([^;]*\);\([^;]*\);\([^;]*\);.*$/      { @selector( \2), @selector( \4) },      \/\/ \1;\2;\3;\4/' \
       "${opti}/used_method_db.csv"
 
    exekutor [ ! -f "${srcfile}" ] && internal_fail "\"${srcfile}\" is missing"
@@ -523,11 +523,11 @@ main()
             CFLAGS="$1"
          ;;
 
-         --dependencies-dir)
+         --dependency-dir|--dependencies-dir)
             [ $# -eq 1 ] && fail "missing argument to $1"
             shift
 
-            DEPENDENCIES_DIR="$1"
+            DEPENDENCY_DIR="$1"
          ;;
 
          --coverage-dir)
@@ -613,14 +613,14 @@ main()
 
    core_setup_trace "${MULLE_TRACE}"
 
-   if [ -z "${DEPENDENCIES_DIR}" ]
+   if [ -z "${DEPENDENCY_DIR}" ]
    then
-      DEPENDENCIES_DIR="`mulle-bootstrap paths dependencies 2> /dev/null`"
+      fail "DEPENDENCY_DIR is not defined"
    fi
 
-   if [ -z "${CPPFLAGS}" ] && [ ! -z "${DEPENDENCIES_DIR}" ]
+   if [ -z "${CPPFLAGS}" ] && [ ! -z "${DEPENDENCY_DIR}" ]
    then
-      CPPFLAGS="-I'${DEPENDENCIES_DIR}/include'"
+      CPPFLAGS="-I'${DEPENDENCY_DIR}/include'"
    fi
 
    OBJC_LIBRARY="${LIB_PREFIX}${OBJC_NAME:-${OBJC_DEFAULT_NAME}}"

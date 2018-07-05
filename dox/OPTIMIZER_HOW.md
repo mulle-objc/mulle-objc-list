@@ -56,7 +56,7 @@ The loader object file `MulleObjCLoader+Foo.o` contained in `libFoo.a` has been 
 
 File                      | Description
 --------------------------|-----------------------------------
-`loader-dependencies.inc` | C file that contains the dependencies to Objective-C base libraries (as they are represented by their MulleObjCLoader categories)
+`loader-objc-loader.inc`  | C file that contains the dependencies to Objective-C base libraries (as they are represented by their MulleObjCLoader categories)
 `class-db.csv`            | List of classes contained in `libFoo.a`
 `method-db.csv`           | List of all methods contained in `libFoo.a`
 `MethodObjCLoader+Foo.m`  | A partially complete, generated loader for this library
@@ -74,9 +74,9 @@ The generated loader will look like this:
 {
    static struct _mulle_objc_dependency   dependencies[] =
    {
-#include "loader-dependencies.inc"
-#include "class-dependencies.inc"
-#include "category-dependencies.inc"
+#include "loader-objc-loader.inc"
+#include "class-objc-loader.inc"
+#include "category-objc-loader.inc"
       { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }
    };
 
@@ -86,7 +86,7 @@ The generated loader will look like this:
 @end
 ```
 
-As you can see `loader-dependencies.inc` has already been generated. The other two files will be supplied by the optimizer during the next steps.
+As you can see `loader-objc-loader.inc` has already been generated. The other two files will be supplied by the optimizer during the next steps.
 
 ### 2. Generate coverage information by running the executable
 
@@ -116,12 +116,12 @@ The result of this pass are two new files in the `Foo.d` folder:
 
 File                        | Description
 ----------------------------|-----------------------------------
-`class-dependencies.inc`    | C file that contains the classes of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
-`category-dependencies.inc` | C file that contains the categories of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
+`class-objc-loader.inc`    | C file that contains the classes of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
+`category-objc-loader.inc` | C file that contains the categories of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
 
 A new `MulleObjCLoader+Foo.o` is now compiled. It contains only the dependencies for those classes and categories, that have been referenced by the coverage files.
 
-Assume the generated coverage uses class `Foo.o` but does not include any methods contained in `Foo+Bar.o`. Then `class-dependencies.inc` would reference `Foo.o`, but `category-dependencies.inc` would be empty.
+Assume the generated coverage uses class `Foo.o` but does not include any methods contained in `Foo+Bar.o`. Then `class-objc-loader.inc` would reference `Foo.o`, but `category-objc-loader.inc` would be empty.
 
 ### 4. mulle-objc-optimize creates new libraries
 

@@ -29,7 +29,7 @@
 #   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #   POSSIBILITY OF SUCH DAMAGE.
 #
-[ "${TRACE}" = "YES" -o "${MULLE_OBJC_CREATE_DEPENDENCIES_TRACE}" = "YES" ] && set -x && : "$0" "$@"
+[ "${TRACE}" = "YES" -o "${MULLE_OBJC_LOADER_TOOL_TRACE}" = "YES" ] && set -x && : "$0" "$@"
 
 MULLE_EXECUTABLE_VERSION=0.9.1
 
@@ -85,14 +85,14 @@ _dump_loader_dependencies()
          ;;
 
          *)
-            depfile="${DEPENDENCY_DIR}/include/$1/dependencies.inc"
+            depfile="${DEPENDENCY_DIR}/include/$1/objc-loader.inc"
             depname="$1"
          ;;
       esac
 
       if [ ! -f "${depfile}" ]
       then
-         fail "\"${depfile}\" not found, mulle-bootstrap first"
+         fail "\"${depfile}\" not found"
       fi
       if [ -z "${depname}" ]
       then
@@ -125,7 +125,15 @@ _combine_dependencies_inc()
 
    while [ $# -ne 0 ]
    do
-      depfile="${DEPENDENCY_DIR}/include/$1/dependencies.inc"
+      case "$1" in
+         '/'*)
+            depfile="$1"
+         ;;
+
+         *)
+            depfile="${DEPENDENCY_DIR}/include/$1/objc-loader.inc"
+         ;;
+      esac
 
       if [ ! -f "${depfile}" ]
       then
@@ -180,7 +188,7 @@ _do_dump_dylib_dependencies()
    #
    if [ ! -z "`cat "${tmpminus}"`" ]
    then
-      exekutor fgrep -x -v -f"${tmpminus}" "${tmpplus}"
+      exekutor fgrep -x -v -f "${tmpminus}" "${tmpplus}"
    else
       rexekutor cat "${tmpplus}"
    fi
@@ -271,6 +279,7 @@ main()
    local OPTION_SDK="Default"
    local OPTION_FORCE="NO"
    local OUTPUT
+
 
    while [ $# -ne 0 ]
    do
@@ -428,12 +437,15 @@ Is whole archive load working on this platform ?"
       before="`cat "${OUTPUT}"`"
       if [ "${result}" = "${before}" ]
       then
-         log_verbose "Contents of \"`basename -- ${OUTPUT}`\" are already up to date"
+         log_info "Contents of \"`basename -- ${OUTPUT}`\" are already up to date"
          return 0
       fi
    fi
 
-   redirect_exekutor "${OUTPUT}" echo "${result}"
+   local directory
+
+   mkdir_parent_if_missing "${OUTPUT}" || exit 1
+   redirect_exekutor "${OUTPUT}" echo "${result}" || exit 1
    log_info "Wrote \"${OUTPUT}\""
 }
 

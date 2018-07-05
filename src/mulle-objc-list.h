@@ -1,7 +1,7 @@
 #ifndef mulle_objc_list_h__
 #define mulle_objc_list_h__
 
-#include "dependencies.h"
+#include "include.h"
 #include <stdio.h>
 
 

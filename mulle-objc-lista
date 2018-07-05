@@ -1007,6 +1007,7 @@ main()
    local cmdline
    local library
    local shlib
+
    local OPTION_CONFIGURATION="Release"
 
    cmdline="`command -v mulle-objc-list`"

@@ -3,14 +3,14 @@
    Edits will be lost.
 */
 
-#ifndef _mulle_objc_list__dependencies_h__
-#define _mulle_objc_list__dependencies_h__
+#ifndef _mulle_objc_list_include_h__
+#define _mulle_objc_list_include_h__
 
-# if ! defined( __MINGW__)
+# if ! defined( __mingw__)
 #  include <dlfcn.h>   // dlfcn
 # endif
 
-# if defined( __MINGW__)
+# if defined( __mingw__)
 #  include <psapi.h>   // psapi
 # endif
 

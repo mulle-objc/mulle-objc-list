@@ -5,7 +5,7 @@ digraph optimizer {
    "unarchive" -> "Foo.d"
    "Foo.d" -> "class_db.csv"
    "Foo.d" -> "method_db.csv"
-   "Foo.d" -> "loader-dependencies.inc"
+   "Foo.d" -> "objc-loader.inc"
    "Foo.d" -> "MulleObjCLoader+Foo.m"
 
    "unarchive" [ shape="folder" ]
@@ -14,7 +14,7 @@ digraph optimizer {
    "class_db.csv"   [ penwidth=2, color="seagreen"]
    "method_db.csv"  [ penwidth=2, color="seagreen"]
 
-   "loader-dependencies.inc" [ penwidth=2, color="goldenrod" ]
+   "objc-loader.inc" [ penwidth=2, color="goldenrod" ]
 
    "MulleObjCLoader+Foo.m" [ penwidth=2 ]
 
@@ -28,12 +28,12 @@ digraph optimizer {
    "optimize" -> "Foo2.d"
 
    "Foo2.d" [ label="Foo.d", shape="folder" ]
-   "Foo2.d" -> "class-dependencies.inc"
-   "Foo2.d" -> "method-dependencies.inc"
+   "Foo2.d" -> "class-objc-loader.inc"
+   "Foo2.d" -> "method-objc-loader.inc"
    "Foo2.d" -> "MulleObjCLoader+Foo.o"
 
    "MulleObjCLoader+Foo.o" [ penwidth=2, color="blue" ]
 
-   "class-dependencies.inc"    [ penwidth=2, color="goldenrod"]
-   "method-dependencies.inc"   [ penwidth=2, color="goldenrod" ]
+   "class-objc-loader.inc"    [ penwidth=2, color="goldenrod"]
+   "method-objc-loader.inc"   [ penwidth=2, color="goldenrod" ]
 }

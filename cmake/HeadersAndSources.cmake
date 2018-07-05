@@ -11,31 +11,32 @@ include( _Sources)
 # === MULLE-SDE END ===
 #
 
-set( SCRIPTS
-mulle-objc-create-dependencies-inc
-mulle-objc-lista
-mulle-objc-optimize
-mulle-objc-printline
-mulle-objc-searchid
-mulle-objc-unarchive
-mulle-objc-uncovered-methods
+# add ignored headers back in
+set( PUBLIC_HEADERS
+   src/mulle-objc-list.h
 )
 
+#
+# You can put more source and resource file definitions here.
+#
+set( SOURCES
+	src/main.c
+)
 
-# add ignored header back in
-set( PUBLIC_HEADERS
-"src/_mulle-objc-list-dependencies.h"
-${PUBLIC_HEADERS}
+set( SCRIPTS
+	mulle-objc-loader-tool
+	mulle-objc-lista
+	mulle-objc-optimize
+	mulle-objc-printline
+	mulle-objc-searchid
+	mulle-objc-unarchive
+	mulle-objc-uncovered-methods
 )
 
 if( MSVC)
    set( SCRIPTS
       ${SCRIPTS}
-      mulle-objc-create-dependencies-inc.bat
+      mulle-objc-loader-tool.bat
       mulle-objc-list.bat
    )
 endif()
-
-#
-# You can put more source and resource file definitions here.
-#

@@ -4,13 +4,5 @@ if( MULLE_TRACE_INCLUDE)
    MESSAGE( STATUS "# Include \"${CMAKE_CURRENT_LIST_FILE}\"" )
 endif()
 
-set( INCLUDE_DIRS
-src
-) 
-
-      set( PUBLIC_HEADERS
-src/dependencies.h
-src/mulle-objc-list.h
-src/version.h
-) 
+# Header generation disabled by MULLE_SDE_CMAKE_HEADERS_FILE=NONE
 

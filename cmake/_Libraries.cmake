@@ -4,7 +4,7 @@ if( MULLE_TRACE_INCLUDE)
    message( STATUS "# Include \"${CMAKE_CURRENT_LIST_FILE}\"" )
 endif()
 
-if( NOT MINGW)
+if( NOT ${CMAKE_SYSTEM_NAME} MATCHES "Mingw")
    if( NOT DL_LIBRARY)
       find_library( DL_LIBRARY NAMES dl dlfcn)
       message( STATUS "DL_LIBRARY is ${DL_LIBRARY}")
@@ -45,7 +45,7 @@ if( NOT MINGW)
 endif()
 
 
-if( MINGW)
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Mingw")
    if( NOT PSAPI_LIBRARY)
       find_library( PSAPI_LIBRARY NAMES psapi)
       message( STATUS "PSAPI_LIBRARY is ${PSAPI_LIBRARY}")

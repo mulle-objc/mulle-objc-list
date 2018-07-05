@@ -42,7 +42,7 @@
 
 #include <mulle-objc-runtime/mulle-objc-runtime.h>
 
-#include "dependencies.h"
+#include "include.h"
 // direct load instead of dependencies.h because its a debug header
 #include <mulle-objc-runtime/mulle-objc-csvdump.h>
 

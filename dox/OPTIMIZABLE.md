@@ -73,7 +73,7 @@ It is assumed, that you generate your library project files
 using **mulle-foundation-init** and **mulle-objc-init**.
 Then `src/dependencies.inc` will be created for your via cmake.
 
-Otherwise check out `mulle-objc-create-dependencies-inc` provided by the **mulle-objc-list** project.
+Otherwise check out `mulle-objc-loader-tool` provided by the **mulle-objc-list** project.
 
 
 
