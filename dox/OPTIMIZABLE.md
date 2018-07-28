@@ -5,7 +5,7 @@ static library filename would be `libFoo.a`. "lib" is a OS specific prefix
 prependend to the name. and ".a" is the OS specific file extension.
 
 
-There are two specific requirements to make a library "Foo" optimizable. It must contain a `MulleObjCLoader+Foo.o` object file and a `dependencies.inc` header:
+There are two specific requirements to make a library "Foo" optimizable. It must contain a `MulleObjCLoader+Foo.o` object file and a `objc-loader.inc` header:
 
 ![Optimization Step #1](opti_1.svg)
 
@@ -22,7 +22,7 @@ The compiled form is expected to be either `MulleObjCLoader+Foo.o` or
 `MulleObjCLoader+Foo.m.o`. That's how it is searched in the library archive.
 
 This category only has one method called `+dependencies`. This method does
-nothing else, but only returns the contents of `dependencies.inc` as a static C array of `struct  _mulle_objc_dependencies` terminated by a zero values entry.
+nothing else, but only returns the contents of `objc-loader.inc` as a static C array of `struct  _mulle_objc_dependencies` terminated by a zero values entry.
 
 
 
@@ -37,7 +37,7 @@ nothing else, but only returns the contents of `dependencies.inc` as a static C 
    static struct _mulle_objc_dependency   dependencies[] =
    {
 
-#include "dependencies.inc"
+#include "objc-loader.inc"
 
       { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }
    };
@@ -48,14 +48,14 @@ nothing else, but only returns the contents of `dependencies.inc` as a static C 
 @end
 ```
 
-### Must provide `include/Foo/dependencies.inc`
+### Must provide `include/Foo/objc-loader.inc`
 
-Each library must make a file called `dependencies.inc` available. It is placed
+Each library must make a file called `objc-loader.inc` available. It is placed
 into the headers directory under the name of the library:
 
 ![Installed library filesystem tree](opti_2.svg)
 
-The file `dependencies.inc` contains dependency information for the required base libraries. It also contains a list of all classes and categories defined by this library.
+The file `objc-loader.inc` contains dependency information for the required base libraries. It also contains a list of all classes and categories defined by this library.
 
 > See: [Understanding load order of classes and categories](https://github.com/mulle-objc/mulle-objc-runtime/wiki/Understanding---load-order-of-classes-and-categories)
 
@@ -69,9 +69,8 @@ The optimizer checks, that there isn't more than one category on `MulleObjCLoade
 
 ## How to generate `dependencies.inc`
 
-It is assumed, that you generate your library project files
-using **mulle-foundation-init** and **mulle-objc-init**.
-Then `src/dependencies.inc` will be created for your via cmake.
+It is assumed, that you generate your library project files using **mulle-sde init**.
+Then `src/objc-loader.inc` will be created for your via cmake.
 
 Otherwise check out `mulle-objc-loader-tool` provided by the **mulle-objc-list** project.
 

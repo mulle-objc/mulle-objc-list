@@ -20,5 +20,5 @@ digraph optimizer {
    "Foo+Bar.m" [ penwidth=2, color="purple" ]
    "MulleObjCLoader+Foo.m" [ penwidth=2, color="purple" ]
    "libFoo.a"     [ penwidth=2, color="blue"]
-   "dependencies.inc" [ penwidth=2, color="goldenrod"]
+   "objc-loader.inc" [ penwidth=2, color="goldenrod"]
 }
