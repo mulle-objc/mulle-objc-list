@@ -56,6 +56,14 @@ target_compile_definitions( mulle-objc-list
 PRIVATE ${MULLE_OBJC_LIST_DEFINITIONS}
 )
 
+
+include( Executable OPTIONAL)
+
+set( INSTALL_EXECUTABLE_TARGETS
+   "mulle-objc-list"
+   ${INSTALL_EXECUTABLE_TARGETS}
+)
+
 #
 # see: https://john.nachtimwald.com/2012/07/15/calling-functions-in-exe-from-plugins-in-windows/
 #
@@ -72,7 +80,7 @@ include( PostExecutable OPTIONAL)
 
 include( PreInstall OPTIONAL)
 
-install( TARGETS mulle-objc-list DESTINATION "bin")
+install( TARGETS ${INSTALL_EXECUTABLE_TARGETS} DESTINATION "bin")
 
 install( FILES ${PUBLIC_HEADERS} DESTINATION "include/mulle-objc-list")
 install( FILES ${CMAKE_INCLUDES} DESTINATION "include/mulle-objc-list/cmake")

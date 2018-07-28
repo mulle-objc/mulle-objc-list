@@ -6,11 +6,11 @@
 #ifndef _mulle_objc_list_include_h__
 #define _mulle_objc_list_include_h__
 
-# if ! defined( __mingw__)
+# if ! defined( _WIN32)
 #  include <dlfcn.h>   // dlfcn
 # endif
 
-# if defined( __mingw__)
+# if defined( _WIN32)
 #  include <psapi.h>   // psapi
 # endif
 

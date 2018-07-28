@@ -47,3 +47,6 @@ tmp.*/
 
 *.sublime-workspace
 .mulle-env/etc/environment-user-*
+alpha-release.sh
+investigation.md
+test/
