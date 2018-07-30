@@ -1,3 +1,3 @@
 dlfcn;none;no-all-load,no-build,no-delete,no-dependency,no-fs,no-load-all,no-os-mingw,no-update;22064DE4-5F7B-4CA7-8401-5E008EDCDCA0;;;;;aliases=dl,dlfcn
 psapi;none;no-all-load,no-build,no-delete,no-dependency,no-fs,no-update,only-os-mingw;E9018412-A74E-430A-9C3F-0DCD0C955BD8;;;;;
-mulle-objc-runtime;tar;no-all-load,no-header;9B6DDA67-0C58-4790-B8A5-22F525EA8BF7;${MULLE_OBJC_RUNTIME_URL:-https://github.com/mulle-objc/mulle-objc-runtime/archive/${MULLE_OBJC_RUNTIME_BRANCH:-latest}.tar.gz};;;;
+mulle-objc-runtime;tar;no-header;9B6DDA67-0C58-4790-B8A5-22F525EA8BF7;${MULLE_OBJC_RUNTIME_URL:-https://github.com/mulle-objc/mulle-objc-runtime/archive/${MULLE_OBJC_RUNTIME_BRANCH:-latest}.tar.gz};;;;
