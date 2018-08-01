@@ -1,7 +1,3 @@
-### 0.13.2
-
-* modernize sde
-
 ## 0.13.0
 
 * migrated to mulle-sde
