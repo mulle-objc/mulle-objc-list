@@ -22,7 +22,8 @@ The compiled form is expected to be either `MulleObjCLoader+Foo.o` or
 `MulleObjCLoader+Foo.m.o`. That's how it is searched in the library archive.
 
 This category only has one method called `+dependencies`. This method does
-nothing else, but only returns the contents of `objc-loader.inc` as a static C array of `struct  _mulle_objc_dependencies` terminated by a zero values entry.
+nothing else, but to return the contents of `objc-loader.inc` as a static 
+C array of `struct  _mulle_objc_dependencies` terminated by a zero values entry.
 
 
 
@@ -64,7 +65,8 @@ Together with the template for generating a MulleObjCLoader category, the optimi
 
 ### Must not contain two MulleObjCLoader categories
 
-The optimizer checks, that there isn't more than one category on `MulleObjCLoader`. If it finds two or more, the whole library is deemed unoptimizable.
+The optimizer checks, that there isn't more than one category on `MulleObjCLoader`. If it finds 
+two or more, the whole library is deemed unoptimizable.
 
 
 ## How to generate `dependencies.inc`
