@@ -1,6 +1,6 @@
 # Generating coverage files is easy
 
-Assume that you have a **mulle-objc** executable **myexe** is a that links
+Assume that you have a **mulle-objc** executable **myexe** that links
 against `libMulleObjC.a`. Coverage files are generated wqhen you run myexe
 with the environment variable  **MULLE_OBJC_COVERAGE** set to YES:
 
@@ -42,7 +42,8 @@ each category and class files.
 those dependencies are covered. They should be, because, if they are not,
 why are they dependencies in the first place ?
 6. Preferably optimize all ObjC libraries and not just a subset.
-7. Coverage can't predict the future. If you use a plugin architecture using **NSBundle**, then using coverage optimization is not a good idea.
+7. Coverage can't predict the future. If you use a plugin architecture 
+using **NSBundle**, then using coverage optimization is not a good idea.
 
 
 ## Dealing with unoptimizable Libraries
