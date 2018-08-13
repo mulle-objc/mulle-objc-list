@@ -130,11 +130,13 @@ Commands:
 
 ## Install Prequisites
 
-Install [mulle-objc-developer](https://github.com/mulle-obj/mulle-objc-developer).
+Install [mulle-objc-developer](https://github.com/mulle-objc/mulle-objc-developer).
 
 
-### Use **mulle-build** to build the project
+### Use **mulle-sde** to build the project
+
+See [mulle-sde](//github-com/mulle-sde) for more information about mulle-sde.
 
 ```
-mulle-build --bootstrap
+mulle-sde craft
 ```
