@@ -128,15 +128,27 @@ Commands:
 ```
 
 
-## Install Prequisites
+## Required Library
 
-Install [mulle-objc-developer](https://github.com/mulle-objc/mulle-objc-developer).
+  Name         | Build Status | Release Version
+---------------|--------------|---------------------------------
+[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://travis-ci.org/mulle-objc/mulle-objc-runtime.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://travis-ci.org/mulle-objc/mulle-objc-runtime.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime)
 
+## How to build it
 
-### Use **mulle-sde** to build the project
+#### Manually with cmake
 
-See [mulle-sde](//github-com/mulle-sde) for more information about mulle-sde.
+Install all above prerequisites:
+
+now build the project
 
 ```
-mulle-sde craft
+mkdir build
+cd build
+cmake ..
 ```
+
+#### Conveniently with mulle-sde
+
+Install [mulle-sde](//github.com/mulle-sde) and run `mulle-sde craft`.
+
