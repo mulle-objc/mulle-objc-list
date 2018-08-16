@@ -17,13 +17,11 @@ Usage:
    ${MULLE_EXECUTABLE} [options] [library]+
 
    Unarchive the given static libraries and prepare them for optimization.
-   If no libraries are given, ${MULLE_EXECUTABLE} will try to determine the
-   current dependencies folder via mulle-bootstrap and unarchive all static
-   libraries contained therein.
+   If no libraries are given, ${MULLE_EXECUTABLE} will unarchive all static
+   libraries contained in \${DEPENDENCY_DIR}/lib.
 
 Options:
    --unarchive-dir  <dir>    : where to unarchive libraries to
-   --dependencies-dir <dir>  : dependencies folder to scan
 
 EOF
 
@@ -37,7 +35,7 @@ EOF
 # ahem
 lib_pretension()
 {
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       mingw*)
       ;;
 
@@ -50,7 +48,7 @@ lib_pretension()
 
 lib_extension()
 {
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       mingw*)
          echo "lib"
       ;;
@@ -64,7 +62,7 @@ lib_extension()
 
 shlib_extension()
 {
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       darwin)
          echo "dylib"
       ;;
@@ -78,7 +76,7 @@ shlib_extension()
 
 shlib_cflags()
 {
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       darwin)
          echo "-fno-common"
       ;;
@@ -92,7 +90,7 @@ shlib_cflags()
 
 shlib_ldflags()
 {
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       darwin)
          echo "-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
       ;;
@@ -112,7 +110,7 @@ nm_global_undefined_names()
 {
    local filename="$1"
 
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       darwin)
          exekutor nm -g -u -j "${filename}"
       ;;
@@ -133,7 +131,7 @@ create_undefined_linkage_c()
    local symbols
 
    # global, undefined, no type info
-   case "${UNAME}" in
+   case "${MULLE_UNAME}" in
       darwin)
          symbols="`nm_global_undefined_names "${infile}" | sed 's/^_//'`" || exit 1
       ;;
@@ -541,7 +539,7 @@ create_undefined_linkage_c()
 #
 create_undefined_linkage()
 {
-   log_debug "create_undefined_linkage" "$*"
+   log_entry "create_undefined_linkage" "$@"
 
    local infile="$1"
    local outfile="$2"
@@ -573,10 +571,12 @@ create_undefined_linkage()
 
 name_from_library()
 {
+   log_entry "name_from_library" "$@"
+
    local library="$1"
 
    # remove extension
-   library="`extension_less_basename "${library}"`"
+   library="`extensionless_basename "${library}"`"
 
    # remove prefix
    case "${library}" in
@@ -597,6 +597,8 @@ name_from_library()
 
 foldername_from_library()
 {
+   log_entry "foldername_from_library" "$@"
+
    local library="$1"
    local prefix="$2"
 
@@ -612,7 +614,7 @@ foldername_from_library()
 #
 create_shlibs()
 {
-   log_debug "create_shlibs" "$*"
+   log_entry "create_shlibs" "$@"
 
    local folder="$1"
 
@@ -671,7 +673,7 @@ create_shlibs()
 
 unpack_library_into_folder()
 {
-   log_debug "unpack_library_into_folder" "$*"
+   log_entry "unpack_library_into_folder" "$@"
 
    local library="$1"
    local folder="$2"
@@ -700,9 +702,11 @@ unpack_library_into_folder()
 
 remove_all_extensions()
 {
+   log_entry "remove_all_extensions" "$@"
+
    local name
 
-   name="`extension_less_basename "$1"`"
+   name="`extensionless_basename "$1"`"
    if [ "${name}" = "$1" ]
    then
       echo "${name}"
@@ -715,6 +719,8 @@ remove_all_extensions()
 
 emit_loader_source()
 {
+   log_entry "emit_loader_source" "$@"
+
    name="$1"
 
    cat <<EOF
@@ -743,7 +749,7 @@ EOF
 
 prepare_for_optimizer()
 {
-   log_debug "prepare_for_optimizer" "$*"
+   log_entry "prepare_for_optimizer" "$*"
 
    local folder="$1"
    local library="$2"
@@ -764,9 +770,9 @@ prepare_for_optimizer()
    count="`ls -1 "${folder}/MulleObjCLoader"*.o 2> /dev/null | wc -l | awk '{ print $1 }'`"
    case "${count}" in
       1)
-         if [ ! -f "${include}/dependencies.inc" ]
+         if [ ! -f "${include}/objc-loader.inc" ]
          then
-            log_warning "\"${name}\" is not optimizable as \"${include}/dependencies.inc\" was not found"
+            log_warning "\"${name}\" is not optimizable as \"${include}/objc-loader.inc\" was not found"
             exekutor touch "${folder}/.unoptimizable" || exit 1
             return
          fi
@@ -822,10 +828,10 @@ prepare_for_optimizer()
       return 1
    fi
 
-   log_fluff "Loader \"${filename}\" and \"dependencies.inc\" found"
+   log_fluff "Loader \"${filename}\" and \"objc-loader.inc\" found"
 
-   redirect_exekutor "${folder}/dependencies_db.csv" sed 's|^.*// *||' "${include}/dependencies.inc"
-   exekutor egrep '// *58bd58d3' "${include}/dependencies.inc"  | \
+   redirect_exekutor "${folder}/dependencies_db.csv" sed 's|^.*// *||' "${include}/objc-loader.inc"
+   exekutor egrep '// *58bd58d3' "${include}/objc-loader.inc"  | \
       redirect_exekutor "${folder}/loader-dependencies.inc" fgrep -v ';;'
 
    redirect_exekutor "${folder}/MulleObjCLoader+${name}.m" emit_loader_source "${name}"
@@ -841,7 +847,7 @@ prepare_for_optimizer()
 
 unpack_library()
 {
-   log_debug "unpack_library" "$@"
+   log_entry "unpack_library" "$@"
 
    local library="$1"
 
@@ -893,7 +899,7 @@ unpack_library()
 
 unpack_all()
 {
-   log_debug "unpack_all" "$@"
+   log_entry "unpack_all" "$@"
 
    while [ $# -ne 0 ]
    do
@@ -907,7 +913,7 @@ unpack_all()
 # run this with "folder" as PWD
 create_method_csv()
 {
-   log_debug "create_method_csv" "$*"
+   log_entry "create_method_csv" "$*"
 
    local folder="$1"
 
@@ -927,7 +933,7 @@ create_method_csv()
          continue
       fi
 
-      name="`basename "${shlib}" ".${ext}"`"
+      name="`basename -- "${shlib}" ".${ext}"`"
       i="${name}.o"
 
       log_fluff "Create entries for methods of \"$i\"..."
@@ -941,7 +947,7 @@ create_method_csv()
 # run this with "folder" as PWD
 create_class_csv()
 {
-   log_debug "create_class_csv" "$*"
+   log_entry "create_class_csv" "$*"
 
    local folder="$1"
 
@@ -961,7 +967,7 @@ create_class_csv()
          continue
       fi
 
-      name="`basename "${shlib}" ".${ext}"`"
+      name="`basename -- "${shlib}" ".${ext}"`"
       ofile="${name}.o"
 
       log_fluff "Create entries for classes of \"$ofile\"..."
@@ -974,7 +980,7 @@ create_class_csv()
 
 create_method_csv_db()
 {
-   log_debug "create_method_csv_db" "$*"
+   log_entry "create_method_csv_db" "$*"
 
    local folder="$1"
 
@@ -986,7 +992,7 @@ create_method_csv_db()
 
 create_class_csv_db()
 {
-   log_debug "create_class_csv_db" "$*"
+   log_entry "create_class_csv_db" "$*"
 
    local folder="$1"
 
@@ -996,10 +1002,9 @@ create_class_csv_db()
 }
 
 
-
 clean_folder_tmp()
 {
-   log_debug "clean_folder_tmp" "$*"
+   log_entry "clean_folder_tmp" "$*"
 
    local folder="$1"
 
@@ -1013,7 +1018,7 @@ clean_folder_tmp()
 
 create_databases()
 {
-   log_debug "create_databases" "$*"
+   log_entry "create_databases" "$@"
 
    libraries="$1"
 
@@ -1046,7 +1051,8 @@ create_databases()
       then
          log_verbose "Create databases for ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} ..."
 
-         cd "${folder}" || return 1
+         rexekutor cd "${folder}" || return 1
+
          create_method_csv_db "${folder}"
          create_class_csv_db "${folder}"
 
@@ -1054,56 +1060,43 @@ create_databases()
          then
             clean_folder_tmp "${folder}"
          fi
-         cd "${old}"
+         rexekutor cd "${old}"
 
-         touch "${folder}/.unarchive_done"
+         exekutor touch "${folder}/.unarchive_done"
       else
          log_fluff "${lib} is C only"
       fi
    done
 
-   touch "${UNARCHIVE_PREFIX}.unarchive_done"
+   exekutor touch "${UNARCHIVE_PREFIX}.unarchive_done"
 
    IFS="${DEFAULT_IFS}"
 }
 
 
-_init()
-{
-   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
-   if [ -z "${libexecpath}" ]
-   then
-      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
-      exit 1
-   fi
-
-   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
-   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
-   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
-}
-
-
 unarchive()
 {
-   if [ -z "$*" ]
-   then
-      [ -z "${DEPENDENCIES_DIR}" ] && usage
+   log_entry "unarchive" "$@"
 
-      if [ ! -d "${DEPENDENCIES_DIR}/lib" ]
+   if [ $# -eq 0 ]
+   then
+      [ -z "${DEPENDENCY_DIR}" ] && usage
+
+      if [ ! -d "${DEPENDENCY_DIR}/lib" ]
       then
-         fail "\"${DEPENDENCIES_DIR}/lib\" not found"
+         fail "\"${DEPENDENCY_DIR}/lib\" not found"
       fi
 
       local libext
       local lib
       local i
 
-      log_info "Unpacking libraries found in ${C_RESET}${C_BOLD}${DEPENDENCIES_DIR}/lib${C_INFO} ..."
+      log_info "Unpacking libraries found in ${C_RESET}${C_BOLD}${DEPENDENCY_DIR}/lib${C_INFO} ..."
 
       libext="`lib_extension`"
       IFS="
 "
-      for i in `ls -1 "${DEPENDENCIES_DIR}/lib/"*.${libext}`
+      for i in `ls -1 "${DEPENDENCY_DIR}/lib"/*.${libext}`
       do
          IFS="${DEFAULT_IFS}"
 
@@ -1132,7 +1125,7 @@ main()
 
    while [ $# -ne 0 ]
    do
-      if core_technical_flags "$1"
+      if options_technical_flags "$1"
       then
          shift
          continue
@@ -1168,13 +1161,6 @@ main()
             esac
          ;;
 
-         --dependencies-dir)
-            [ $# -eq 1 ] && fail "missing argument to $1"
-            shift
-
-            DEPENDENCIES_DIR="$1"
-         ;;
-
          -h|--help)
             usage
          ;;
@@ -1191,17 +1177,7 @@ main()
       shift
    done
 
-   core_setup_trace "${MULLE_TRACE}"
-
-   if [ -z "${DEPENDENCIES_DIR}" ]
-   then
-      DEPENDENCIES_DIR="`mulle-bootstrap paths dependencies 2> /dev/null`"
-   fi
-
-   if [ ! -z "${DEPENDENCIES_DIR}" ] && [ -d "${DEPENDENCIES_DIR}/bin" ]
-   then
-      PATH="$PATH:${DEPENDENCIES_DIR}/bin"
-   fi
+   options_setup_trace "${MULLE_TRACE}"
 
    # your code follows here
    if [ -z "`command -v mulle-objc-list`" ]
@@ -1230,14 +1206,34 @@ main()
 }
 
 
-MULLE_EXECUTABLE="`basename -- "$0"`"
-MULLE_ARGUMENTS="$@"
-MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
-MULLE_EXECUTABLE_PID="$$"
+_init()
+{
+   if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
+   then
+      MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env "libexec-dir" 2> /dev/null`"
+      [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ] && \
+         echo "mulle-bashfunctions-env not installed" >&2 && \
+         exit 1
+   fi
 
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
 
-set -o pipefail
+   set -o pipefail
+}
 
-_init "$@" # needs params
+#
+# leading backslash ? looks like we're getting called from
+# mingw via a .BAT or so
+#
+case "$PATH" in
+   '\\'*)
+      PATH="`tr '\\' '/' <<< "${PATH}"`"
+   ;;
+esac
 
+#
+# combine all coverage files into one and sort -u it
+#
+
+_init "$@"
 main "$@"

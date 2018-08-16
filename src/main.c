@@ -103,9 +103,9 @@ static void   usage( void)
    fprintf( stderr,
             "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
             "\n"
-            "   The binary is listed. The preceeding libraries are\n"
+            "   Lists Objective-C symbols of a binary. Preceeding libraries are\n"
             "   explicitly loaded but their contents aren't listed.\n"
-            "   Implicitly loaded libraries by binary are listed.\n"
+            "   Libraries implicitly loaded by the binary are listed.\n"
             "\n"
             "Options:\n"
             "   -e      : emit dependencies sentinel field\n"

@@ -39,7 +39,7 @@ coverage_help()
    cat <<EOF
 Coverage file \"${COVERAGE}\" not found."
 Create it by running your mulle-objc code like so:
-MULLE_OBJC_DUMP_COVERAGE="YES" /path/to/binary
+MULLE_OBJC_COVERAGE="YES" /path/to/binary
 EOF
 }
 
@@ -63,9 +63,10 @@ fi
 
 if [ ! -f "${METHODS}" ]
 then
-   coverage_help >&2
+   methods_help >&2
    exit 1
 fi
+
 
 remove_inherited_methods()
 {

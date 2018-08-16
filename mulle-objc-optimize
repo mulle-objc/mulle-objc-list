@@ -16,43 +16,18 @@ MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
 MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
 
 
-# ahem
-lib_pretension()
-{
-   case "${UNAME}" in
-      mingw*)
-      ;;
-
-      *)
-         echo "lib"
-       ;;
-   esac
-}
-
-
-lib_extension()
-{
-   case "${UNAME}" in
-      mingw*)
-         echo "lib"
-      ;;
-
-      *)
-         echo "a"
-       ;;
-   esac
-}
-
-
 usage()
 {
    cat <<EOF >&2
 Usage:
    ${MULLE_EXECUTABLE} [options] <library>+
 
-   From the output of mulle-objc-unarchive generate two static libraries.
-   One can be linked like C code (size reduction possible) and one
-   needs to linked like Objective-C code (no size reduction possible).
+   This program will generate two static libraries from the output of
+   mulle-objc-unarchive. One can be linked like C code (size reduction possible)
+   and one needs to linked like Objective-C code (no size reduction possible).
+   The decision into which library code is moved, is based on coverage info
+   you get from running an executable with the environment variable
+   MULLE_OBJC_COVERAGE.
 
 Options:
 EOF
@@ -80,57 +55,54 @@ EOF
 }
 
 
-#
-# different on platform. Also I really dont like the
-# /var/tmp/x/y/z stuff on OS X
-#
 
-make_tmp()
+# ahem
+lib_pretension()
 {
-   local name="${1:-mctmp}"
-   local type="${2}"
-
-   case "${UNAME}" in
-      darwin|freebsd)
-         mktemp ${type} "/tmp/${name}.XXXXXX"
+   case "${MULLE_UNAME}" in
+      mingw*)
       ;;
 
       *)
-         mktemp ${type} -t "${name}.XXXXXX"
-      ;;
+         echo "lib"
+       ;;
    esac
 }
 
 
-make_tmp_file()
+lib_extension()
 {
-   make_tmp "$1"
-}
+   case "${MULLE_UNAME}" in
+      mingw*)
+         echo "lib"
+      ;;
 
-
-make_tmp_directory()
-{
-   make_tmp "$1" "-d"
+      *)
+         echo "a"
+       ;;
+   esac
 }
 
 
 name_from_library()
 {
+   log_entry "name_from_library" "$@"
+
    local library="$1"
 
    # remove extension
-   library="`extension_less_basename "${library}"`"
+   library="`extensionless_basename "${library}"`"
 
    # remove prefix
    case "${library}" in
       lib*)
-         library="`sed 's/^lib//' <<< "${library}"`"
+         library="`LC_ALL=C sed 's/^lib//' <<< "${library}"`"
       ;;
    esac
 
    case "${library}" in
       *Standalone)
-         library="`sed 's/Standalone$//' <<< "${library}"`"
+         library="`LC_ALL=C sed 's/Standalone$//' <<< "${library}"`"
       ;;
    esac
 
@@ -140,6 +112,8 @@ name_from_library()
 
 foldername_from_library()
 {
+   log_entry "foldername_from_library" "$@"
+
    local library="$1"
    local prefix="$2"
 
@@ -152,23 +126,29 @@ foldername_from_library()
 
 optionally_strip_class_load_from_methods()
 {
+   log_entry "optionally_strip_class_load_from_methods" "$@"
+
    if [ "${OPTION_STRIP_LOAD}" = "YES" ]
    then
-      exekutor egrep -v ';1f2fdaed;\+load$'
+      rexekutor egrep -v ';1f2fdaed;\+load$'
    else
-      exekutor cat
+      rexekutor cat
    fi
 }
 
 
 strip_class_dependencies_from_methods()
 {
-   exekutor egrep -v ';fb10562e;\+dependencies$'
+   log_entry "strip_class_dependencies_from_methods" "$@"
+
+   rexekutor egrep -v ';fb10562e;\+dependencies$'
 }
 
 
 create_empty_library()
 {
+   log_entry "create_empty_library" "$@"
+
    local library="$1"
    local name="$2"
 
@@ -177,7 +157,7 @@ create_empty_library()
    while :
    do
       ofile="`make_tmp_file "unused"`"
-      if mv "${ofile}" "${ofile}.o"
+      if exekutor mv "${ofile}" "${ofile}.o"
       then
          ofile="${ofile}.o"
          break
@@ -185,10 +165,10 @@ create_empty_library()
       remove_file_if_present "${ofile}"
    done
 
-   echo "void   __unused_linkage_${name}( void) {}" | \
-       mulle-clang -x c -o "${ofile}" -c - &&
+   rexekutor echo "void   __unused_linkage_${name}( void) {}" | \
+       exekutor "${CC}" -x c -o "${ofile}" -c - &&
 
-   ar -r -c "${library}" "${ofile}" || return 1
+   exekutor ar -r -c "${library}" "${ofile}" || return 1
 
    remove_file_if_present "${ofile}"
 }
@@ -200,7 +180,7 @@ create_empty_library()
 #
 prepare_coverage_files()
 {
-   log_debug "prepare_coverage_files" "$*"
+   log_entry "prepare_coverage_files" "$@"
 
    TMPDIR="${TMPDIR:-/tmp}"
 
@@ -225,7 +205,7 @@ prepare_coverage_files()
 
 optimize_folder()
 {
-   log_debug "optimize" "$*"
+   log_entry "optimize_folder" "$@"
 
    local folder="$1"
 
@@ -233,7 +213,7 @@ optimize_folder()
    local directoryname
    local name
 
-   directoryname="`basename -- "${folder}"`"
+   directoryname="`fast_basename "${folder}"`"
    name="`basename -- "${directoryname}" ".d"`"
    opti="${OPTIMIZE_DIR}/${directoryname}"
 
@@ -471,14 +451,9 @@ main()
    C_DEFAULT_NAME="`lib_pretension`_c`lib_extension`"
    OBJC_DEFAULT_NAME="`lib_pretension`_ObjC.`lib_extension`"
 
-   if [ -z "${CPPFLAGS}" ]
-   then
-      CPPFLAGS="`mulle-bootstrap paths cppflags 2> /dev/null`"
-   fi
-
    while [ $# -ne 0 ]
    do
-      if core_technical_flags "$1"
+      if options_technical_flags "$1"
       then
          shift
          continue
@@ -611,16 +586,36 @@ main()
       shift
    done
 
-   core_setup_trace "${MULLE_TRACE}"
+   options_setup_trace "${MULLE_TRACE}"
 
    if [ -z "${DEPENDENCY_DIR}" ]
    then
       fail "DEPENDENCY_DIR is not defined"
    fi
 
-   if [ -z "${CPPFLAGS}" ] && [ ! -z "${DEPENDENCY_DIR}" ]
+
+   if [ -z "${CC}" ]
    then
-      CPPFLAGS="-I'${DEPENDENCY_DIR}/include'"
+      case "${MULLE_UNAME}" in
+         mingw*)
+            CC="mulle-clang-cl"
+         ;;
+
+         *)
+            CC="mulle-clang"
+         ;;
+      esac
+   fi
+
+   if [ -z "${CPPFLAGS}" ]
+   then
+      case "${MULLE_UNAME}" in
+         darwin)
+            CPPFLAGS="-isysroot "'`xcrun --show-sdk-path`'""
+         ;;
+      esac
+
+      CPPFLAGS="`concat "${CPPFLAGS}" "-isystem '${DEPENDENCY_DIR}/include'" `"
    fi
 
    OBJC_LIBRARY="${LIB_PREFIX}${OBJC_NAME:-${OBJC_DEFAULT_NAME}}"
@@ -647,33 +642,34 @@ main()
 }
 
 
-MULLE_EXECUTABLE="`basename -- "$0"`"
-MULLE_ARGUMENTS="$@"
-MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
-MULLE_EXECUTABLE_PID="$$"
-
-
-set -o pipefail
-
-
 _init()
 {
-   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
-   if [ -z "${libexecpath}" ]
+   if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
    then
-      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
-      exit 1
+      MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env "libexec-dir" 2> /dev/null`"
+      [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ] && \
+         echo "mulle-bashfunctions-env not installed" >&2 && \
+         exit 1
    fi
 
-   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
-   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
-   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+
+   set -o pipefail
 }
 
-_init "$@" # needs params
+#
+# leading backslash ? looks like we're getting called from
+# mingw via a .BAT or so
+#
+case "$PATH" in
+   '\\'*)
+      PATH="`tr '\\' '/' <<< "${PATH}"`"
+   ;;
+esac
 
 #
 # combine all coverage files into one and sort -u it
 #
 
+_init "$@"
 main "$@"

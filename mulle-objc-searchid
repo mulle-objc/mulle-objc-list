@@ -14,7 +14,10 @@ usage()
 {
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE} [options] <library>+
+   ${MULLE_EXECUTABLE} [options] <uniqueid> <library>+
+
+   Search for a string matching a uniqueid, which would most often be a
+   @selector value or a classID.
 
 Options:
 EOF
@@ -25,27 +28,10 @@ EOF
 }
 
 
-add_path()
-{
-   local line="$1"
-   local path="$2"
-
-   if [ -z "${line}" ]
-   then
-      echo "${path}"
-   else
-      if [ -z "${path}" ]
-      then
-         echo "${line}"
-      else
-         echo "${line}:${path}"
-      fi
-   fi
-}
-
-
 prettify_uniqueid()
 {
+   log_entry "prettify_uniqueid" "$@"
+
    local uniqueid="$1"
 
    uniqueid="`tr '[A-Z]' '[a-z]' <<< "${uniqueid}"`"
@@ -88,7 +74,7 @@ prettify_uniqueid()
 
 grep_library()
 {
-   log_debug "grep_library" "$*"
+   log_entry "grep_library" "$@"
 
    local uniqueid="$1"
    local library="$2"
@@ -123,7 +109,7 @@ grep_library()
 
 grep_libraries()
 {
-   log_debug "grep_libraries" "$*"
+   log_entry "grep_libraries" "$@"
 
    local uniqueid="$1"
 
@@ -162,7 +148,7 @@ grep_libraries()
 
 search()
 {
-   log_debug "search" "$*"
+   log_entry "search" "$@"
 
    local uniqueid="$1"; shift
 
@@ -223,7 +209,7 @@ main()
 
    while [ $# -ne 0 ]
    do
-      if core_technical_flags "$1"
+      if options_technical_flags "$1"
       then
          shift
          continue
@@ -240,7 +226,7 @@ main()
             [ $# -eq 1 ] && fail "missing argument to $1"
             shift
 
-            LIB_PATH="`add_path "${LIB_PATH}" "$1"`"
+            LIB_PATH="`colon_concat "${LIB_PATH}" "$1"`"
          ;;
 
          --selector)
@@ -263,7 +249,7 @@ main()
       shift
    done
 
-   core_setup_trace "${MULLE_TRACE}"
+   options_setup_trace "${MULLE_TRACE}"
 
    local uniqueid
 
@@ -271,11 +257,7 @@ main()
 
    if [ -z "${LIB_PATH}" ]
    then
-      LIB_PATH="`mulle-bootstrap paths librarypath`"
-      if [ -z "${LIB_PATH}" ]
-      then
-         LIB_PATH="."
-      fi
+      LIB_PATH="${DEPENDENCY_DIR}/lib:${DEPENDENCY_DIR}/Debug/lib"
    fi
 
    if [ -z "`command -v mulle-objc-list`" ]
@@ -330,35 +312,34 @@ main()
 }
 
 
-
 _init()
 {
-   libexecpath="`mulle-bootstrap library-path 2> /dev/null`"
-   if [ -z "${libexecpath}" ]
+   if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
    then
-      echo "Fatal Error: Could not find mulle-bootstrap library for ${MULLE_EXECUTABLE}" >&2
-      exit 1
+      MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env "libexec-dir" 2> /dev/null`"
+      [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ] && \
+         echo "mulle-bashfunctions-env not installed" >&2 && \
+         exit 1
    fi
 
-   . ${libexecpath}/mulle-bootstrap-logging.sh || internal_fail "mulle-bootstrap-logging.sh not found"
-   . ${libexecpath}/mulle-bootstrap-functions.sh || internal_fail "mulle-bootstrap-functions.sh not found"
-   . ${libexecpath}/mulle-bootstrap-core-options.sh || internal_fail "mulle-bootstrap-core-options.sh not found"
+   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+
+   set -o pipefail
 }
 
-
-MULLE_EXECUTABLE="`basename -- "$0"`"
-MULLE_ARGUMENTS="$@"
-MULLE_EXECUTABLE_FAIL_PREFIX="${MULLE_EXECUTABLE}"
-MULLE_EXECUTABLE_PID="$$"
-
-
-set -o pipefail
-
-_init "$@" # needs params
-
+#
+# leading backslash ? looks like we're getting called from
+# mingw via a .BAT or so
+#
+case "$PATH" in
+   '\\'*)
+      PATH="`tr '\\' '/' <<< "${PATH}"`"
+   ;;
+esac
 
 #
 # combine all coverage files into one and sort -u it
 #
 
+_init "$@"
 main "$@"

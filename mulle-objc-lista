@@ -31,6 +31,8 @@ EOF
 
 setup_cc_environment()
 {
+   log_entry "setup_cc_environment" "$@"
+
    case "${MULLE_UNAME}" in
       mingw*)
          CC="mulle-clang-cl"
@@ -94,6 +96,8 @@ setup_cc_environment()
 
 shlib_extension()
 {
+   log_entry "shlib_extension" "$@"
+
    case "${MULLE_UNAME}" in
       darwin)
          echo "dylib"
@@ -112,6 +116,8 @@ shlib_extension()
 
 shlib_cflags()
 {
+   log_entry "shlib_cflags" "$@"
+
    case "${MULLE_UNAME}" in
       darwin)
          echo "-fno-common"
@@ -141,6 +147,8 @@ shlib_cflags()
 
 shlib_ldflags()
 {
+   log_entry "shlib_ldflags" "$@"
+
    case "${MULLE_UNAME}" in
       darwin)
          echo "-dynamiclib -Os -flat_namespace -undefined suppress"
@@ -159,6 +167,8 @@ shlib_ldflags()
 
 shlib_load_all_library()
 {
+   log_entry "shlib_load_all_library" "$@"
+
    local library="$1"
 
    case "${MULLE_UNAME}" in
@@ -179,6 +189,8 @@ shlib_load_all_library()
 
 _nm_global_defined_names()
 {
+   log_entry "_nm_global_defined_names" "$@"
+
    local filename="$1"
 
    case "${MULLE_UNAME}" in
@@ -214,6 +226,8 @@ _nm_global_defined_names()
 
 _nm_global_undefined_names()
 {
+   log_entry "_nm_global_undefined_names" "$@"
+
    local filename="$1"
 
    case "${MULLE_UNAME}" in
@@ -246,18 +260,24 @@ _nm_global_undefined_names()
 
 nm_global_defined_names()
 {
+   log_entry "nm_global_defined_names" "$@"
+
    _nm_global_defined_names "$@" | sed '/^$/d' | sort -u
 }
 
 
 nm_global_undefined_names()
 {
+   log_entry "nm_global_undefined_names" "$@"
+
    _nm_global_undefined_names "$@" | sed '/^$/d' | sort -u
 }
 
 
 emit_enqueue()
 {
+   log_entry "emit_enqueue" "$@"
+
    cat <<EOF
 #define PSAPI_VERSION 1
 #include <windows.h>
@@ -295,6 +315,8 @@ EOF
 
 emit()
 {
+   log_entry "emit" "$@"
+
    local symbol="$1"
 
    case "${MULLE_UNAME}" in
@@ -323,6 +345,8 @@ emit()
 
 emit_no_return()
 {
+   log_entry "emit_no_return" "$@"
+
    local symbol="$1"
 
    case "${MULLE_UNAME}" in
@@ -824,7 +848,9 @@ create_undefined_linkage_c()
 
 emit_dllmain()
 {
-   return 0
+   log_entry "emit_dllmain" "$@"
+
+   return 0   # hmm
 
    echo '#define DLL_PROCESS_ATTACH      1
 #define DLL_THREAD_ATTACH       2
@@ -1002,8 +1028,6 @@ create_shlib()
 
 main()
 {
-   # your code follows here
-
    local cmdline
    local library
    local shlib

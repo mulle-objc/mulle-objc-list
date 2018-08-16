@@ -48,8 +48,11 @@ usage()
 usage:
    ${MULLE_EXECUTABLE} [options] <name> [dependencies]
 
+   Produces the "objc-loader.inc" file, that declares the dependencies of
+   a library.
+
    Name is the name of the library without prefix or extension and without a
-   "Standalone" suffix. Dependencies are a list of Objective-C dependencies
+   "Standalone" suffix. Dependencies are the Objective-C dependencies
    of this library.
 
    Options:
@@ -63,7 +66,18 @@ EOF
 
 #
 # For each dependency, emit the necessary dependency on the loader
-# except for MulleObjC
+# except for MulleObjC of the form. The input can either be the
+# name (like MulleObjCStandardFoundation) or the location of the
+# objc-loader.inc file (in this case of MulleObjCStandardFoundation). Or it
+# can be combination of both, separated by ':' (historical ?)
+#
+# { @selector( MulleObjCLoader), @selector( <name>) }
+#
+# This tool is mulle-sde agnostic, otherwise we could do this:
+#
+# mulle-sourcetree -e list \
+#   --format "      { @selector( MulleObjCLoader), @selector( %a) },\n" \
+#    --marks all-load --output-raw --output-no-header
 #
 _dump_loader_dependencies()
 {
@@ -76,9 +90,21 @@ _dump_loader_dependencies()
    local categoryid
 
    classid="`${MULLE_OBJC_UNIQUEID} MulleObjCLoader | tail -1`"
+
    while [ $# -ne 0 ]
    do
       case "$1" in
+         "")
+            log_warning "Empty dependency"
+            continue
+         ;;
+
+         *'/objc-loader.inc')
+            depfile="$1"
+            depname="`fast_dirname "${depfile}" `"
+            depname="`fast_basename "${depname}" `"
+         ;;
+
          *:*)
             depfile="`cut -d ':' -f 1 <<< "$1"`"
             depname="`cut -d ':' -f 2 <<< "$1"`"
@@ -92,11 +118,12 @@ _dump_loader_dependencies()
 
       if [ ! -f "${depfile}" ]
       then
-         fail "\"${depfile}\" not found"
+         log_warning "\"${depfile}\" not found"
       fi
+
       if [ -z "${depname}" ]
       then
-         fail "No name given for dependency"
+         fail "No name given or found for dependency \"$1\""
       fi
 
       case "${depname}" in
@@ -114,91 +141,6 @@ _dump_loader_dependencies()
 
       shift
    done
-}
-
-
-_combine_dependencies_inc()
-{
-   log_entry "_combine_dependencies_inc" "$@"
-
-   local depfile
-
-   while [ $# -ne 0 ]
-   do
-      case "$1" in
-         '/'*)
-            depfile="$1"
-         ;;
-
-         *)
-            depfile="${DEPENDENCY_DIR}/include/$1/objc-loader.inc"
-         ;;
-      esac
-
-      if [ ! -f "${depfile}" ]
-      then
-         fail "\"${depfile}\" not found"
-      fi
-
-      cat "${depfile}"
-
-      shift
-   done
-}
-
-
-#
-# the old way
-#
-_do_dump_dylib_dependencies()
-{
-   log_entry "_do_dump_dylib_dependencies" "$@"
-
-   #
-   # First get all classes and categories "below" OS for later removal
-   # Then get all standalone classes, but remove Posix classes and
-   # OS specifica. The remainder are osbase-dependencies
-   #
-   local tmpplus
-   local tmpminus
-
-   tmpplus="`make_tmp_file "plus"`"
-   tmpminus="`make_tmp_file "minus"`"
-
-   redirect_exekutor "${tmpminus}" _combine_dependencies_inc "$@" || fail "combine failed"
-
-   local filename
-   local directory
-
-   filename="`fast_basename "${LIBRARYFILE}"`"
-   directory="`fast_dirname "${LIBRARYFILE}"`"
-
-   # inside cd for mingw, fixed path problems
-   (
-      exekutor cd "${directory}" &&
-      redirect_exekutor "${tmpplus}" "${MULLE_OBJC_LIST}" \
-                                          ${MULLE_TECHNICAL_FLAGS} \
-                                          ${MULLE_OBJC_LIST_FLAGS} \
-                                          -d "${filename}" \
-
-   ) || fail "mulle-objc-list failed"
-   #
-   # remove inherited dependencies from standalone dependencies
-   # also remove MulleObjCLoader class as dependency
-   #
-   if [ ! -z "`cat "${tmpminus}"`" ]
-   then
-      exekutor fgrep -x -v -f "${tmpminus}" "${tmpplus}"
-   else
-      rexekutor cat "${tmpplus}"
-   fi
-
-   if [ "${OPTION_REMOVE_TMP}" = "YES" ]
-   then
-      exekutor rm "${tmpplus}" "${tmpminus}"
-   else
-      log_info "${tmpplus} and ${tmpminus} not removed"
-   fi
 }
 
 
@@ -226,27 +168,22 @@ _dump_dependencies()
 {
    log_entry "_dump_dependencies" "$@"
 
-   local params
-
-   if [ "${OPTION_SDK}" != "Default" ]
-   then
-      params="--sdk '${OPTION_SDK}'"
-   fi
-
-   if [ "${OPTION_CONFIGURATION}" != "Release" ]
-   then
-      params="${params} --configuration '${OPTION_CONFIGURATION}'"
-   fi
-
    [ -z "${DEPENDENCY_DIR}" ] && fail "DEPENDENCY_DIR not set"
 
    local rval
 
+   set -o pipefail
+
    _dump_loader_dependencies "$@" | LC_ALL=C sort | LC_ALL=C sort -u
+   [ $? -ne 0 ] && return 1
+
    if [ ! -z "${LIBRARYFILE}" ]
    then
       _do_dump_static_dependencies | LC_ALL=C sort | LC_ALL=C sort -u
+      [ $? -ne 0 ] && return 1
    fi
+
+   return 0
 }
 
 
@@ -279,7 +216,6 @@ main()
    local OPTION_SDK="Default"
    local OPTION_FORCE="NO"
    local OUTPUT
-
 
    while [ $# -ne 0 ]
    do
@@ -475,4 +411,94 @@ esac
 
 _init "$@"
 main "$@"
+
+
+## +T+
+## +T+ Code Friedhof
+## +T+
+
+# _combine_inc_files()
+# {
+#    log_entry "_combine_inc_files" "$@"
+
+#    local depfile
+
+#    while [ $# -ne 0 ]
+#    do
+#       case "$1" in
+#          '/'*)
+#             depfile="$1"
+#          ;;
+
+#          *)
+#             depfile="${DEPENDENCY_DIR}/include/$1/objc-loader.inc"
+#          ;;
+#       esac
+
+#       if [ ! -f "${depfile}" ]
+#       then
+#          fail "\"${depfile}\" not found"
+#       fi
+
+#       cat "${depfile}"
+
+#       shift
+#    done
+# }
+
+
+# #
+# # the old way.  This combined everything together and then dumped it somehow.
+# # I forget how this was supposed to work really.
+# #
+# _do_dump_dylib_dependencies()
+# {
+#    log_entry "_do_dump_dylib_dependencies" "$@"
+
+#    #
+#    # First get all classes and categories "below" OS for later removal
+#    # Then get all standalone classes, but remove Posix classes and
+#    # OS specifica. The remainder are osbase-dependencies
+#    #
+#    local tmpplus
+#    local tmpminus
+
+#    tmpplus="`make_tmp_file "plus"`"
+#    tmpminus="`make_tmp_file "minus"`"
+
+#    redirect_exekutor "${tmpminus}" _combine_inc_files "$@" || fail "combine failed"
+
+#    local filename
+#    local directory
+
+#    filename="`fast_basename "${LIBRARYFILE}"`"
+#    directory="`fast_dirname "${LIBRARYFILE}"`"
+
+#    # inside cd for mingw, fixed path problems
+#    (
+#       exekutor cd "${directory}" &&
+#       redirect_exekutor "${tmpplus}" "${MULLE_OBJC_LIST}" \
+#                                           ${MULLE_TECHNICAL_FLAGS} \
+#                                           ${MULLE_OBJC_LIST_FLAGS} \
+#                                           -d "${filename}" \
+
+#    ) || fail "mulle-objc-list failed"
+#    #
+#    # remove inherited dependencies from standalone dependencies
+#    # also remove MulleObjCLoader class as dependency
+#    #
+#    if [ ! -z "`cat "${tmpminus}"`" ]
+#    then
+#       exekutor fgrep -x -v -f "${tmpminus}" "${tmpplus}"
+#    else
+#       rexekutor cat "${tmpplus}"
+#    fi
+
+#    if [ "${OPTION_REMOVE_TMP}" = "YES" ]
+#    then
+#       exekutor rm "${tmpplus}" "${tmpminus}"
+#    else
+#       log_info "${tmpplus} and ${tmpminus} not removed"
+#    fi
+# }
 
