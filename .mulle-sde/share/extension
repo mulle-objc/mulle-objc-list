@@ -3,3 +3,5 @@ mulle-sde/c;runtime
 mulle-sde/sde;extra
 mulle-sde/c-cmake;buildtool
 mulle-sde/cmake;buildtool
+mulle-sde/vscode-clang;extra
+mulle-sde/vscode;extra

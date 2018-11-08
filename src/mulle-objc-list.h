@@ -49,7 +49,7 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
       {
          Dl_info   info;
 
-         if( dladdr( (void *) __mulle_objc_universe_setup, &info))
+         if( dladdr( (void *) _mulle_objc_universe_init, &info))
             mulle_objc_universe_set_path( universe, (char *) info.dli_fname);
       }
 #endif

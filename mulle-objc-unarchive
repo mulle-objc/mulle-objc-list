@@ -417,8 +417,8 @@ create_undefined_linkage_c()
          objc_exception_extract) ;;
          objc_exception_match) ;;
          objc_exception_throw) ;;
-         objc_exception_try_enter) ;;
-         objc_exception_try_exit) ;;
+         objc_exception_tryenter) ;;
+         objc_exception_tryexit) ;;
          objc_getClass) ;;
          objc_getMetaClass) ;;
          objc_msgSend) ;;
@@ -523,7 +523,7 @@ create_undefined_linkage_c()
          wmemchr) ;;
          wmemcmp) ;;
 
-         mulle_objc_loadinfo_unfailing_enqueue) ;;
+         mulle_objc_loadinfo_enqueue_nofail) ;;
 
          *)
             echo "void  $i() {}"

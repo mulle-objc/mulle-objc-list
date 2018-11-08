@@ -32,13 +32,14 @@
 //  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //  POSSIBILITY OF SUCH DAMAGE.
 //
+#pragma clang diagnostic ignored "-Wparentheses"
+#pragma clang diagnostic ignored "-Wswitch"
 
 // we don't really load any code, so this is
 // the minimal setup
 
 #define __MULLE_OBJC_NO_TPS__ 1
-#define __MULLE_OBJC_NO_TRT__ 1
-#define __MULLE_OBJC_NO_FMC__ 1
+#define __MULLE_OBJC_NO_FCS__ 1
 
 #include <mulle-objc-runtime/mulle-objc-runtime.h>
 
@@ -647,13 +648,14 @@ int  __mulle_objc_list_callback( struct _mulle_objc_loadinfo *info)
       switch( mode)
       {
       case dump_info :
-         mulle_objc_loadinfo_csvdump_terse( info, stdout);
+         mulle_objc_loadinfo_csvdump_terse_to_fp( info, stdout);
          return( 0);
       }
 
       loadclasslist_walk( info->loadclasslist, info);
       loadcategorylist_walk( info->loadcategorylist, info);
    }
+   return(0);
 }
 
 
@@ -706,15 +708,22 @@ int  main( int argc, char *argv[])
    int    i;
    int    dlmode;
    char   *path;
-   struct _mulle_objc_universe   *(*p_mulle_objc_get_universe)( void);
+   struct _mulle_objc_universe   *(*p_mulle_objc_get_universe)( mulle_objc_universeid_t, char *);
    struct _mulle_objc_universe   *universe;
+   char                          *universename;
+   mulle_objc_universeid_t       universeid;
+
+   universeid   = MULLE_OBJC_DEFAULTUNIVERSEID;
+   universename = NULL;
 
 #if defined( DEBUG) && defined( __MULLE_OBJC__)
-   if( mulle_objc_check_runtime())
+   if( mulle_objc_global_check_universe( __MULLE_OBJC_UNIVERSENAME__) != mulle_objc_universe_is_ok)
    {
       extern void   mulle_objc_dotdump( void);
 
-      mulle_objc_dotdump();
+      universe = __mulle_objc_global_get_universe( __MULLE_OBJC_UNIVERSEID__);
+      mulle_objc_class_dotdump_to_directory( universe, ".");
+      abort();
    }
 #endif
 
@@ -727,7 +736,7 @@ int  main( int argc, char *argv[])
    // the dylib comes usually with its own global universe
    //
    // struct _mulle_objc_universe   *universe;
-   // universe = __get_or_create_mulle_objc_runtime();
+   // universe = __register_mulle_objc_universe();
    // universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
    // but
    /*
@@ -735,7 +744,7 @@ int  main( int argc, char *argv[])
     *
     * Though we load with RTLD_LOCAL, the dylib we load
     * probably contains it's own mulle-objc. So "our"
-    * mulle_objc_loadinfo_unfailing_enqueue is not used.
+    * mulle_objc_loadinfo_enqueue_nofail is not used.
     * If it is too outdated and does not support
     * should_load_loadinfo( at the same offset) stuff
     * goes really wrong!
@@ -817,6 +826,15 @@ int  main( int argc, char *argv[])
          mode = dump_callable_coverage;
          break;
 
+      case 'u' :
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         universename = argv[ i];
+         universeid   = mulle_objc_universeid_from_string( universename);
+         break;
+
       case 'l':
          if( i + 1 >= argc)
             usage();
@@ -835,7 +853,7 @@ int  main( int argc, char *argv[])
 
 
    // ensure linker doesn't strip it out
-   mulle_objc_loadinfo_unfailingenqueue( NULL);
+   mulle_objc_loadinfo_enqueue_nofail( NULL);
 
    dlmode |= RTLD_NOW;
    for(; i < argc ; i++)
@@ -875,16 +893,20 @@ int  main( int argc, char *argv[])
 
       // get a global function
       universe = NULL;
-      adr      = dlsym( handle, "mulle_objc_get_or_create_universe");
+      adr      = dlsym( handle, "mulle_objc_global_register_universe");
       if( adr)
       {
          p_mulle_objc_get_universe = adr;
-         universe = (*p_mulle_objc_get_universe)();
+         universe = (*p_mulle_objc_get_universe)( universeid, universename);
       }
 
       if( verbose)
-         fprintf( stderr, "Loaded \"%s\". (universe: %p, dlmode: %u)\n",
-               argv[ i], universe, dlmode);
+         fprintf( stderr, "Loaded \"%s\". (universe: \"%s\" %x (%p), dlmode: %u)\n",
+               argv[ i],
+               universe->universename ? universe->universename : "*default*",
+               universe->universeid,
+               universe,
+               dlmode);
    }
 
    if( mode == dump_dependencies)
@@ -897,10 +919,10 @@ int  main( int argc, char *argv[])
    if( verbose)
    {
       //
-      // only use __mulle_objc_get_universe because we want an address
+      // only use __mulle_objc_global_get_universe because we want an address
       // and don't access it otherwise
       //
-      universe = __mulle_objc_get_universe();
+      universe = __mulle_objc_global_get_universe( universeid, universename);
       fprintf( stderr, "The mulle_objc_list universe is at %p\n", universe);
    }
 
@@ -911,14 +933,16 @@ int  main( int argc, char *argv[])
 #ifndef STANDALONE_MULLE_OBJC
 
 MULLE_C_CONST_RETURN  // always returns same value (in same thread)
-struct _mulle_objc_universe  *__get_or_create_mulle_objc_universe( void)
+struct _mulle_objc_universe  *
+   __register_mulle_objc_universe( mulle_objc_universeid_t universeid,
+                                   char *universename)
 {
    struct _mulle_objc_universe  *universe;
 
-   universe = __mulle_objc_get_universe();
+   universe = __mulle_objc_global_get_universe( universeid, universename);
    if( _mulle_objc_universe_is_uninitialized( universe))
    {
-      _mulle_objc_universe_bang( universe, 0, 0, NULL);
+      _mulle_objc_universe_bang( universe, 0, NULL);
        universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
    }
    return( universe);

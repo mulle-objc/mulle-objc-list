@@ -173,7 +173,7 @@ shlib_load_all_library()
 
    case "${MULLE_UNAME}" in
       darwin)
-         echo "-force_load '${library}'"
+         echo "'${library}' -force_load '${library}'"
       ;;
 
       mingw)
@@ -291,7 +291,7 @@ static void   nop( void *unused)
 
 
 __declspec( dllexport)
-void   mulle_objc_loadinfo_unfailingenqueue( void *info)
+void   mulle_objc_loadinfo_enqueue_nofail( void *info)
 {
    static void  (*__mulle_objc_list_callback)( void *);
 
@@ -717,8 +717,8 @@ create_undefined_linkage_c()
          objc_exception_extract) ;;
          objc_exception_match) ;;
          objc_exception_throw) ;;
-         objc_exception_try_enter) ;;
-         objc_exception_try_exit) ;;
+         objc_exception_tryenter) ;;
+         objc_exception_tryexit) ;;
          objc_getClass) ;;
          objc_getMetaClass) ;;
          objc_msgSend) ;;
@@ -824,10 +824,10 @@ create_undefined_linkage_c()
          wmemcmp) ;;
 
 
-#         mulle_objc_loadinfo_unfailingenqueue) ;;
+#         mulle_objc_loadinfo_enqueue_nofail) ;;
 #         ;;
 
-         mulle_objc_loadinfo_unfailingenqueue)
+         mulle_objc_loadinfo_enqueue_nofail)
             case "${MULLE_UNAME}" in
                mingw)
                ;;
@@ -915,7 +915,11 @@ ${text}"
    cflags="`shlib_cflags`"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor ${CC} ${cflags} -c -o "${outfile}" "${cfile}" || fail "Compiling undefined symbol linkage failed"
+   exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
+                            -Wno-builtin-requires-header \
+                            -c \
+                            -o "${outfile}" \
+                            "${cfile}" || exit 1
 }
 
 
@@ -936,7 +940,12 @@ create_mingw_aux_linkage()
    cflags="`shlib_cflags`"
 
    log_fluff "Compile auxiliary linkage \"${auxfile}\"..."
-   exekutor ${CC} ${cflags} -c -o "${outfile}" "${auxfile}" || exit 1
+   exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
+                            -Wno-builtin-requires-header \
+                            -c \
+                            -o \
+                            "${outfile}" \
+                            "${auxfile}" || exit 1
 }
 
 
@@ -991,7 +1000,8 @@ _create_shlib()
    then
       files="${undefined} ${files}"
    fi
-   eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -o "'${shlib}'" || fail "Linking temporary shared library failed"
+   eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -o "'${shlib}'" \
+    || fail "Linking temporary shared library failed"
 }
 
 

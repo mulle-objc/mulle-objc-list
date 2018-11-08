@@ -28,9 +28,9 @@ EOF
 }
 
 
-prettify_uniqueid()
+r_prettify_uniqueid()
 {
-   log_entry "prettify_uniqueid" "$@"
+   log_entry "r_prettify_uniqueid" "$@"
 
    local uniqueid="$1"
 
@@ -68,7 +68,7 @@ prettify_uniqueid()
       ;;
    esac
 
-   echo "${uniqueid}"
+   RVAL="${uniqueid}"
 }
 
 
@@ -84,19 +84,38 @@ grep_library()
       return 1
    fi
 
-   log_fluff "Searching \"${library}\" ..."
+   log_verbose "Searching in \"${library}\" (${PWD#${MULLE_USER_PWD}/})..."
 
    local found
 
-   case "${library}" in
-      *.so|*.dylib)
-         found="`mulle-objc-list -s "${library}" 2> /dev/null | fgrep "${uniqueid}"`"
-      ;;
+   if [ "${MULLE_FLAG_LOG_FLUFF}" = "YES" ]
+   then
+      case "${library}" in
+         *.so|*.dylib)
+            found="`rexekutor mulle-objc-list -s "${library}" | rexekutor fgrep "${uniqueid}"`"
+         ;;
 
-      *)
-         found="`mulle-objc-lista -s "${library}" 2> /dev/null | fgrep "${uniqueid}"`"
-      ;;
-   esac
+         *)
+            found="`rexekutor mulle-objc-lista \
+                                 ${MULLE_TECHNICAL_FLAGS} \
+                                 ${MULLE_OBJC_LISTA_FLAGS} \
+                                 -s "${library}" | rexekutor fgrep "${uniqueid}"`"
+         ;;
+      esac
+   else
+      case "${library}" in
+         *.so|*.dylib)
+            found="`rexekutor mulle-objc-list -s "${library}" 2> /dev/null | rexekutor fgrep "${uniqueid}"`"
+         ;;
+
+         *)
+            found="`rexekutor mulle-objc-lista \
+                                 ${MULLE_TECHNICAL_FLAGS} \
+                                 ${MULLE_OBJC_LISTA_FLAGS} \
+                                 -s "${library}" 2> /dev/null | rexekutor fgrep "${uniqueid}"`"
+         ;;
+      esac
+   fi
 
    if [ -z "${found}" ]
    then
@@ -135,7 +154,7 @@ grep_libraries()
          ;;
 
          *)
-            log_fluff "Ignored \$i\""
+            log_fluff "Ignored \"$i\""
          ;;
       esac
    done
@@ -165,12 +184,15 @@ search()
       do
          IFS="${DEFAULT_IFS}"
 
-         cd "${folder}"
-         if grep_libraries "${uniqueid}"
+         if [ -d "${folder}" ]
          then
-            return
+            cd "${folder}"
+            if grep_libraries "${uniqueid}"
+            then
+               cd "${old}"
+               return
+            fi
          fi
-         cd "${old}"
       done
       cd "${old}"
 
@@ -184,12 +206,15 @@ search()
          do
             IFS="${DEFAULT_IFS}"
 
-            cd "${folder}"
-            if grep_library "${uniqueid}" "${1}"
+            if [ -d "${folder}" ]
             then
-               return
+               cd "${folder}"
+               if grep_library "${uniqueid}" "${1}"
+               then
+                  cd "${old}"
+                  return
+               fi
             fi
-            cd "${old}"
          done
 
          cd "${old}"
@@ -199,6 +224,54 @@ search()
    fi
 }
 
+find_in_libraries()
+{
+   local uniqueid="$1"
+
+   if [ -z "${LIB_PATH}" ]
+   then
+      LIB_PATH="${DEPENDENCY_DIR}/lib:${DEPENDENCY_DIR}/Debug/lib"
+   fi
+
+   if [ -z "`command -v mulle-objc-list`" ]
+   then
+      fail "mulle-objc-list not in PATH"
+   fi
+
+   if [ -z "`command -v mulle-objc-lista`" ]
+   then
+      fail "mulle-objc-lista not in PATH"
+   fi
+
+   search "${uniqueid}" "$@" | \
+      sed "s|^${uniqueid};\\([^;]*\\).*$|\\1|" | \
+      sed "s|^.*;${uniqueid};\\([^;]*\\).*$|\\1|" | \
+      sed 's|^[-+]||' | \
+      sort -u
+}
+
+
+find_local_words()
+{
+   rexekutor find . -type f \( -path ./build -prune -o \
+                               -path ./dependency -prune -o \
+                               -path ./addiction -prune -o\
+                               -name "*.[hcm]" -o -name "*.aam" \) \
+                      -exec grep -o -E '\w+' {} \;
+}
+
+
+find_local_unique_words()
+{
+   find_local_words | sort -u
+}
+
+
+find_local_uniqueids()
+{
+   find_local_unique_words | CSV=ON rexekutor xargs "${UNIQUEID}"
+}
+
 
 
 main()
@@ -206,6 +279,9 @@ main()
    local LIB_PATH
 
    local OPTION_SELECTOR="NO"
+   local OPTION_LOCAL="YES"
+   local OPTION_LIBRARIES="YES"
+   local OPTION_DUMP_WORDS="NO"
 
    while [ $# -ne 0 ]
    do
@@ -227,6 +303,26 @@ main()
             shift
 
             LIB_PATH="`colon_concat "${LIB_PATH}" "$1"`"
+         ;;
+
+         --local)
+            OPTION_LOCAL="YES"
+         ;;
+
+         --no-local)
+            OPTION_LOCAL="NO"
+         ;;
+
+         --dump-words)
+            OPTION_DUMP_WORDS="YES"
+         ;;
+
+         --libraries)
+            OPTION_LIBRARIES="YES"
+         ;;
+
+         --no-libraries)
+            OPTION_LIBRARIES="NO"
          ;;
 
          --selector)
@@ -251,51 +347,53 @@ main()
 
    options_setup_trace "${MULLE_TRACE}"
 
+   if [ "${OPTION_DUMP_WORDS}" = "YES" ]
+   then
+      find_local_words
+      exit $?
+   fi
+
    local uniqueid
 
    [ $# -eq 0 ] && usage
-
-   if [ -z "${LIB_PATH}" ]
-   then
-      LIB_PATH="${DEPENDENCY_DIR}/lib:${DEPENDENCY_DIR}/Debug/lib"
-   fi
-
-   if [ -z "`command -v mulle-objc-list`" ]
-   then
-      fail "mulle-objc-list not in PATH"
-   fi
-
-   if [ -z "`command -v mulle-objc-lista`" ]
-   then
-      fail "mulle-objc-lista not in PATH"
-   fi
 
    #
    # make uniqueid pretty for various formats
    #
    [ -z "${1}" ] && usage
 
+   UNIQUEID="`command -v mulle-objc-uniqueid`"
+   [ -z "${UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+
    if [ "${OPTION_SELECTOR}" = "YES" ]
    then
-      if [ -z "`command -v mulle-objc-uniqueid`" ]
-      then
-         fail "mulle-objc-uniqueid not in PATH"
-      fi
-
-      uniqueid="`mulle-objc-uniqueid "$1"`"
+      uniqueid="`${UNIQUEID} "$1"`"
       log_info "@selector( $1) is ${uniqueid}"
    else
-      uniqueid="`prettify_uniqueid "$1"`"
+      r_prettify_uniqueid "$1"
+      uniqueid="${RVAL}"
    fi
 
    [ -z "${uniqueid}" ] && fail "malformed input \"$1\""
    shift
 
-   result="`search "${uniqueid}" "$@" | \
-      sed "s|^${uniqueid};\\([^;]*\\).*$|\\1|" | \
-      sed "s|^.*;${uniqueid};\\([^;]*\\).*$|\\1|" | \
-      sed 's|^[-+]||' | \
-      sort -u`"
+
+   if [ "${OPTION_LOCAL}" = "YES" ]
+   then
+      local escaped
+
+      r_escaped_grep_pattern "${uniqueid}"
+      escaped="${RVAL}"
+      result="`find_local_uniqueids | rexekutor egrep "^${escaped};" | rexekutor cut -d ';' -f 2`"
+   fi
+
+   if [ -z "${result}" ]
+   then
+      if [ "${OPTION_LIBRARIES}" = "YES" ]
+      then
+            result="`find_in_libraries "${uniqueid}" `"
+      fi
+   fi
 
    if [ -z "${result}" ]
    then

@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.0)
+cmake_minimum_required( VERSION 3.1)
 
 project( mulle-objc-list C)
 
@@ -11,81 +11,49 @@ list( INSERT CMAKE_MODULE_PATH 0 "${PROJECT_SOURCE_DIR}/cmake")
 
 include( Environment)
 
+include( Files)
 
-### Files
+if( HEADERS_PHASE)
+   install( FILES ${PUBLIC_HEADERS} DESTINATION "include/mulle-objc-list")
 
-include( PreFiles OPTIONAL)
+   # short cut out
+   if( NOT COMPILE_PHASE AND NOT LINK_PHASE)
+      return()
+   endif()
+endif()
 
-#
-# Include all .cmake files in ./cmake
-#
-file( GLOB LOCAL_CMAKE_INCLUDES
-   "cmake/[A-Za-z0-9]*.cmake"
-)
-
-foreach( FILE ${LOCAL_CMAKE_INCLUDES} )
-   include( "${FILE}")
-endforeach()
-
-
-include( PostFiles OPTIONAL)
+if( LINK_PHASE)
+   include( Dependencies OPTIONAL)
+endif()
 
 
 ### Executable
 
-include( PreExecutable OPTIONAL)
+#
+# we just link mulle-objc-runtime as a c library and not with everything
+#
+if( LINK_PHASE)
+   set( DEPENDENCY_LIBRARIES
+      ${ALL_LOAD_DEPENDENCY_LIBRARIES}
+      ${DEPENDENCY_LIBRARIES}
+      CACHE INTERNAL "need to cache this"
+   )
+   unset( ALL_LOAD_DEPENDENCY_LIBRARIES CACHE)
+endif()
 
-add_executable( mulle-objc-list
-${SOURCES}
-${PUBLIC_HEADERS}
-${PRIVATE_HEADERS}
-${CMAKE_EDITABLE_FILES}
-)
-
-message( STATUS "ALL_LOAD_DEPENDENCY_LIBRARIES=${ALL_LOAD_DEPENDENCY_LIBRARIES}")
-message( STATUS "DEPENDENCY_LIBRARIES=${DEPENDENCY_LIBRARIES}")
-message( STATUS "OPTIONAL_DEPENDENCY_LIBRARIES=${OPTIONAL_DEPENDENCY_LIBRARIES}")
-message( STATUS "OS_SPECIFIC_LIBRARIES=${OS_SPECIFIC_LIBRARIES}")
-
-target_link_libraries( mulle-objc-list
-${ALL_LOAD_DEPENDENCY_LIBRARIES}
-${DEPENDENCY_LIBRARIES}
-${OPTIONAL_DEPENDENCY_LIBRARIES}
-${OS_SPECIFIC_LIBRARIES}
-)
-
-target_compile_definitions( mulle-objc-list
-PRIVATE ${MULLE_OBJC_LIST_DEFINITIONS}
-)
-
-
-include( Executable OPTIONAL)
-
-set( INSTALL_EXECUTABLE_TARGETS
-   "mulle-objc-list"
-   ${INSTALL_EXECUTABLE_TARGETS}
-)
+include( Executable)
+include( InstallExecutable)
 
 #
 # see: https://john.nachtimwald.com/2012/07/15/calling-functions-in-exe-from-plugins-in-windows/
 #
-if( MSVC)
-   target_link_libraries( mulle-objc-list
+if( LINK_PHASE AND MSVC)
+   target_link_libraries( "${EXECUTABLE_NAME}"
       "-export:__mulle_objc_loadinfo_callback"
       "-export:__mulle_objc_list_callback"
    )
 endif()
 
-include( PostExecutable OPTIONAL)
-
-### Install
-
-include( PreInstall OPTIONAL)
-
-install( TARGETS ${INSTALL_EXECUTABLE_TARGETS} DESTINATION "bin")
-
-install( FILES ${PUBLIC_HEADERS} DESTINATION "include/mulle-objc-list")
-install( FILES ${CMAKE_INCLUDES} DESTINATION "include/mulle-objc-list/cmake")
 
 install( FILES ${SCRIPTS}
 PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
@@ -93,8 +61,8 @@ PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
             WORLD_EXECUTE WORLD_READ
 DESTINATION "bin")
 
-include( PostInstall OPTIONAL)
+
+include( FinalOutput OPTIONAL)
 
 # only for Executable
-
 include( Motd OPTIONAL)
