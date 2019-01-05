@@ -1,0 +1,12 @@
+#
+#
+#
+export MULLE_MATCH_TO_CMAKE_HEADERS_FILE="NONE"
+
+
+#
+#
+#
+export MULLE_MATCH_TO_CMAKE_SOURCES_FILE="NONE"
+
+

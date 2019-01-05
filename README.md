@@ -1,5 +1,6 @@
+# mulle-objc-list
 
-# A collection of tools to inspect Objective-C object files
+📒 Lists mulle-objc runtime information contained in executables.
 
 The functionality is based on `mulle-objc-list` which loads a shared
 library and dumps the mulle-objc load information contained within as

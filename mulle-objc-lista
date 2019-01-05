@@ -1095,6 +1095,7 @@ main()
    log_verbose "Create shared libs (if needed)..."
 
    local directory
+   local rval
 
    directory="`make_tmp_directory "lista"`"
    shlib="`create_shlib "${library}" "${directory}"`" || exit 1
@@ -1103,6 +1104,11 @@ main()
    log_verbose "Run mulle-objc-list on shared library \"${shlib}\"..."
 
    eval_exekutor ${cmdline}
+   rval=$?
+
+   rmdir_safer "${directory}"
+
+   return $rval
 }
 
 

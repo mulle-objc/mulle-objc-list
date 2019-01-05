@@ -5,5 +5,5 @@ if( MULLE_TRACE_INCLUDE)
    MESSAGE( STATUS "# Include \"${CMAKE_CURRENT_LIST_FILE}\"" )
 endif()
 
-# Header generation disabled by MULLE_SDE_CMAKE_HEADERS_FILE=NONE
+# Header generation disabled by MULLE_MATCH_TO_CMAKE_HEADERS_FILE=NONE
 
