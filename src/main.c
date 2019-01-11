@@ -942,7 +942,7 @@ struct _mulle_objc_universe  *
    universe = __mulle_objc_global_get_universe( universeid, universename);
    if( _mulle_objc_universe_is_uninitialized( universe))
    {
-      _mulle_objc_universe_bang( universe, 0, NULL);
+      _mulle_objc_universe_bang( universe, 0, NULL, NULL);
        universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
    }
    return( universe);

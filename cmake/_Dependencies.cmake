@@ -5,6 +5,7 @@ if( MULLE_TRACE_INCLUDE)
    message( STATUS "# Include \"${CMAKE_CURRENT_LIST_FILE}\"" )
 endif()
 
+# sourcetree: MULLE_OBJC_RUNTIME;no-header,no-singlephase;
 if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
    find_library( MULLE_OBJC_RUNTIME_LIBRARY NAMES ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-objc-runtime${CMAKE_STATIC_LIBRARY_SUFFIX} mulle-objc-runtime)
    message( STATUS "MULLE_OBJC_RUNTIME_LIBRARY is ${MULLE_OBJC_RUNTIME_LIBRARY}")
@@ -68,7 +69,7 @@ if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
       #
       if( NOT NO_INHERIT_OBJC_LOADERS)
          foreach( _TMP_MULLE_OBJC_RUNTIME_NAME "mulle-objc-runtime")
-            set( _TMP_MULLE_OBJC_RUNTIME_FILE "${_TMP_MULLE_OBJC_RUNTIME_ROOT}/include/${_TMP_MULLE_OBJC_RUNTIME_NAME}/objc-loader.inc")
+            set( _TMP_MULLE_OBJC_RUNTIME_FILE "${_TMP_MULLE_OBJC_RUNTIME_ROOT}/include/${_TMP_MULLE_OBJC_RUNTIME_NAME}/MulleObjCLoader+${_TMP_MULLE_OBJC_RUNTIME_NAME}.h")
             if( EXISTS "${_TMP_MULLE_OBJC_RUNTIME_FILE}")
                set( INHERITED_OBJC_LOADERS
                   ${INHERITED_OBJC_LOADERS}

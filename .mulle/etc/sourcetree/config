@@ -1,3 +1,4 @@
-dlfcn;none;no-all-load,no-build,no-delete,no-dependency,no-fs,no-load-all,no-os-mingw,no-update;22064DE4-5F7B-4CA7-8401-5E008EDCDCA0;;;;;aliases=dl,dlfcn
-psapi;none;no-all-load,no-build,no-delete,no-dependency,no-fs,no-update,only-os-mingw;E9018412-A74E-430A-9C3F-0DCD0C955BD8;;;;;
-mulle-objc-runtime;tar;no-header;9B6DDA67-0C58-4790-B8A5-22F525EA8BF7;${MULLE_OBJC_RUNTIME_URL:-https://github.com/mulle-objc/mulle-objc-runtime/archive/${MULLE_OBJC_RUNTIME_BRANCH:-latest}.tar.gz};;;;
+mulle-objc-runtime;tar;no-header,no-singlephase;1a4c5f04-6d19-477a-bfb7-55a189dd1e54;${MULLE_OBJC_RUNTIME_URL:-https://github.com/mulle-objc/mulle-objc-runtime/archive/${MULLE_OBJC_RUNTIME_BRANCH:-latest}.tar.gz};;;;
+dlfcn;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-load-all,no-public,no-require,no-update,only-os-mingw;0151ead7-a1b8-4e6c-a3f4-92b05fc0b0bb;;;;;aliases=dl,dlfcn
+psapi;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-public,no-require,no-update,only-os-mingw;b72d651a-29b8-4e38-b2ad-2dc49ec80666;;;;;
+dl;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-load-all,no-os-mingw,no-public,no-require,no-update;31e775e7-3d64-4b93-a71e-7bf9c1f47aa7;;;;;aliases=dl,dlfcn
