@@ -88,16 +88,22 @@ main()
    [ $# -ne 1 ] && usage
    CLASS="$1"
 
-   if [ -z "`command -v mulle-objc-uniqueid`" ]
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
    then
-      fail "mulle-objc-uniqueid not in PATH"
+      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid"
+      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
+      then
+         MULLE_OBJC_UNIQUEID="${MULLE_OBJC_UNIQUEID:-`command -v mulle-objc-uniqueid`}"
+         [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+      fi
    fi
 
-   CLASSID="`mulle-objc-uniqueid "${CLASS}"`"
+   CLASSID="`"${MULLE_OBJC_UNIQUEID}" "${CLASS}"`"
 
    if [ ! -z "${CATEGORY}" ]
    then
-      CATEGORYID="`mulle-objc-uniqueid "${CATEGORY}"`"
+      CATEGORYID="`"${MULLE_OBJC_UNIQUEID}" "${CATEGORY}"`"
    fi
 
    if [ -z "${METHOD}" ]
@@ -121,7 +127,7 @@ main()
    esac
 
    METHOD="${METHOD:1:${#METHOD}-1}"
-   METHODID="`mulle-objc-uniqueid "${METHOD}"`"
+   METHODID="`"${MULLE_OBJC_UNIQUEID}" "${METHOD}"`"
 
    echo "${CLASSID};${CLASS};${CATEGORYID};${CATEGORY};${METHODID};${PREFIX}${METHOD}"
 }

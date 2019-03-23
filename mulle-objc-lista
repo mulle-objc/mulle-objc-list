@@ -373,6 +373,98 @@ emit_no_return()
 }
 
 
+CLANG_FUNCTIONS="_Block_object_assign:_Block_object_dispose:_Exit:__cospi:\
+__cospif:__exp10:__exp10f:__finite:__finitef:__finitel:__sigsetjmp:__sinpi:\
+__sinpif:__tanpi:__tanpif:_byteswap_uint64:_byteswap_ulong:_byteswap_ushort:\
+_longjmp:_setjmp:_setjmpex:abs:acos:acosf:acosh:acoshf:acoshl:acosl:alloca:\
+asin:asinf:asinh:asinhf:asinhl:asinl:atan:atan2:atan2f:atan2l:atanf:atanh:\
+atanhf:atanhl:atanl:bzero:cabs:cabsf:cabsl:cacos:cacosf:cacosh:cacoshf:\
+cacoshl:cacosl:calloc:carg:cargf:cargl:casin:casinf:casinh:casinhf:casinhl:\
+casinl:catan:catanf:catanh:catanhf:catanhl:catanl:cbrt:cbrtf:cbrtl:ccos:ccosf:\
+ccosh:ccoshf:ccoshl:ccosl:ceil:ceilf:ceill:cexp:cexpf:cexpl:cimag:cimagf:\
+cimagl:clog:clogf:clogl:conj:conjf:conjl:copysign:copysignf:copysignl:cos:\
+cosf:cosh:coshf:coshl:cosl:cpow:cpowf:cpowl:cproj:cprojf:cprojl:creal:crealf:\
+creall:csin:csinf:csinh:csinhf:csinhl:csinl:csqrt:csqrtf:csqrtl:ctan:ctanf:\
+ctanh:ctanhf:ctanhl:ctanl:erf:erfc:erfcf:erfcl:erff:erfl:exp:exp2:exp2f:exp2l:\
+expf:expl:expm1:expm1f:expm1l:fabs:fabsf:fabsl:fdim:fdimf:fdiml:finite:\
+finitef:finitel:floor:floorf:floorl:fma:fmaf:fmal:fmax:fmaxf:fmaxl:fmin:fminf:\
+fminl:fmod:fmodf:fmodl:fprintf:frexp:frexpf:frexpl:fscanf:getcontext:hypot:\
+hypotf:hypotl:ilogb:ilogbf:ilogbl:index:isalnum:isalpha:isblank:iscntrl:\
+isdigit:isgraph:islower:isprint:ispunct:isspace:isupper:isxdigit:labs:ldexp:\
+ldexpf:ldexpl:lgamma:lgammaf:lgammal:llabs:llrint:llrintf:llrintl:llround:\
+llroundf:llroundl:log:log10:log10f:log10l:log1p:log1pf:log1pl:log2:log2f:\
+log2l:logb:logbf:logbl:logf:logl:longjmp:lrint:lrintf:lrintl:lround:lroundf:\
+lroundl:malloc:memchr:memcmp:memcpy:memmove:memset:modf:modff:modfl:nan:nanf:\
+nanl:nearbyint:nearbyintf:nearbyintl:nextafter:nextafterf:nextafterl:\
+nexttoward:nexttowardf:nexttowardl:objc_assign_global:objc_assign_ivar:\
+objc_assign_strongCast:objc_assign_weak:objc_enumerationMutation:\
+objc_exception_extract:objc_exception_match:objc_exception_throw:\
+objc_exception_tryenter:objc_exception_tryexit:objc_getClass:\
+objc_getMetaClass:objc_msgSend:objc_msgSendSuper:objc_msgSendSuper_stret:\
+objc_msgSend_fp2ret:objc_msgSend_fpret:objc_msgSend_stret:objc_read_weak:\
+objc_sync_enter:objc_sync_exit:pow:powf:powl:printf:qsetjmp:realloc:remainder:\
+remainderf:remainderl:rindex:rint:rintf:rintl:round:roundf:roundl:savectx:\
+scalbln:scalblnf:scalblnl:scalbn:scalbnf:scalbnl:scanf:setjmp:setjmp_syscall:\
+siglongjmp:sigsetjmp:sin:sinf:sinh:sinhf:sinhl:sinl:snprintf:sprintf:sqrt:\
+sqrtf:sqrtl:sscanf:stpcpy:stpncpy:strcasecmp:strcat:strchr:strcmp:strcpy:\
+strcspn:strdup:strerror:strlcat:strlcpy:strlen:strncasecmp:strncat:strncmp:\
+strncpy:strndup:strpbrk:strrchr:strspn:strstr:strtok:strxfrm:tan:tanf:tanh:\
+tanhf:tanhl:tanl:tgamma:tgammaf:tgammal:tolower:toupper:trunc:truncf:truncl:\
+vfork:vfprintf:vfscanf:vprintf:vscanf:vsnprintf:vsprintf:vsscanf:wcschr:\
+wcscmp:wcslen:wcsncmp:wmemchr:wmemcmp"
+
+
+mulle_clang_library_functions()
+{
+   echo "struct i_am_bogus;"
+
+   IFS=':'
+   for name in ${CLANG_FUNCTIONS}
+   do
+      echo "void   ${name}( struct i_am_bogus *p) {}"
+   done
+   IFS="${DEFAULT_IFS}"
+}
+
+
+print_mulle_clang_builtin_case()
+{
+   mulle_clang_library_functions | \
+      mulle-clang -cc1 -fsyntax-only -x c 2>&1 | \
+      sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
+}
+
+
+print_mulle_clang_builtin_function()
+{
+   cat <<EOF
+_is_clang_builtin()
+{
+   case "\$1" in
+EOF
+
+   print_mulle_clang_builtin_case
+
+   cat <<EOF
+   esac
+
+   return 1
+}
+EOF
+
+}
+
+
+is_clang_builtin()
+{
+   if [ -z "${_is_clang_builtin_defined}" ]
+   then
+      eval "`print_mulle_clang_builtin_function`" || exit 1
+      _is_clang_builtin_defined="YES"
+   fi
+
+   _is_clang_builtin "$@"
+}
 
 #
 # read symbols from .a file, figure out the ones that we need to "spoof"
@@ -414,13 +506,13 @@ create_undefined_linkage_c()
    #  sort | \
    #  sed s'/\(.*\)/         \1) ;;/'
    #
-   for i in `exekutor cat "${tmpdir}/undefined_globals"`
+   for i in `rexekutor cat "${tmpdir}/undefined_globals"`
    do
       case $i in
          "") ;;
+
 #         NSLog) ;;
 #         NSLogv) ;;
-
 #
 # some windows stuff
 #
@@ -458,374 +550,8 @@ create_undefined_linkage_c()
             esac
          ;;
 
-#
-# Clang stuff
-#
-         _Block_object_assign) ;;
-         _Block_object_dispose) ;;
-         _Exit) ;;
-         __cospi) ;;
-         __cospif) ;;
-         __exp10) ;;
-         __exp10f) ;;
-         __finite) ;;
-         __finitef) ;;
-         __finitel) ;;
-         __sigsetjmp) ;;
-         __sinpi) ;;
-         __sinpif) ;;
-         __tanpi) ;;
-         __tanpif) ;;
-         _byteswap_uint64) ;;
-         _byteswap_ulong) ;;
-         _byteswap_ushort) ;;
-         _longjmp) ;;
-         _setjmp) ;;
-         _setjmpex) ;;
-         abs) ;;
-         acos) ;;
-         acosf) ;;
-         acosh) ;;
-         acoshf) ;;
-         acoshl) ;;
-         acosl) ;;
-         alloca) ;;
-         asin) ;;
-         asinf) ;;
-         asinh) ;;
-         asinhf) ;;
-         asinhl) ;;
-         asinl) ;;
-         atan) ;;
-         atan2) ;;
-         atan2f) ;;
-         atan2l) ;;
-         atanf) ;;
-         atanh) ;;
-         atanhf) ;;
-         atanhl) ;;
-         atanl) ;;
-         bzero) ;;
-         cabs) ;;
-         cabsf) ;;
-         cabsl) ;;
-         cacos) ;;
-         cacosf) ;;
-         cacosh) ;;
-         cacoshf) ;;
-         cacoshl) ;;
-         cacosl) ;;
-         calloc) ;;
-         carg) ;;
-         cargf) ;;
-         cargl) ;;
-         casin) ;;
-         casinf) ;;
-         casinh) ;;
-         casinhf) ;;
-         casinhl) ;;
-         casinl) ;;
-         catan) ;;
-         catanf) ;;
-         catanh) ;;
-         catanhf) ;;
-         catanhl) ;;
-         catanl) ;;
-         cbrt) ;;
-         cbrtf) ;;
-         cbrtl) ;;
-         ccos) ;;
-         ccosf) ;;
-         ccosh) ;;
-         ccoshf) ;;
-         ccoshl) ;;
-         ccosl) ;;
-         ceil) ;;
-         ceilf) ;;
-         ceill) ;;
-         cexp) ;;
-         cexpf) ;;
-         cexpl) ;;
-         cimag) ;;
-         cimagf) ;;
-         cimagl) ;;
-         clog) ;;
-         clogf) ;;
-         clogl) ;;
-         conj) ;;
-         conjf) ;;
-         conjl) ;;
-         copysign) ;;
-         copysignf) ;;
-         copysignl) ;;
-         cos) ;;
-         cosf) ;;
-         cosh) ;;
-         coshf) ;;
-         coshl) ;;
-         cosl) ;;
-         cpow) ;;
-         cpowf) ;;
-         cpowl) ;;
-         cproj) ;;
-         cprojf) ;;
-         cprojl) ;;
-         creal) ;;
-         crealf) ;;
-         creall) ;;
-         csin) ;;
-         csinf) ;;
-         csinh) ;;
-         csinhf) ;;
-         csinhl) ;;
-         csinl) ;;
-         csqrt) ;;
-         csqrtf) ;;
-         csqrtl) ;;
-         ctan) ;;
-         ctanf) ;;
-         ctanh) ;;
-         ctanhf) ;;
-         ctanhl) ;;
-         ctanl) ;;
-         erf) ;;
-         erfc) ;;
-         erfcf) ;;
-         erfcl) ;;
-         erff) ;;
-         erfl) ;;
-         exp) ;;
-         exp2) ;;
-         exp2f) ;;
-         exp2l) ;;
-         expf) ;;
-         expl) ;;
-         expm1) ;;
-         expm1f) ;;
-         expm1l) ;;
-         fabs) ;;
-         fabsf) ;;
-         fabsl) ;;
-         fdim) ;;
-         fdimf) ;;
-         fdiml) ;;
-         finite) ;;
-         finitef) ;;
-         finitel) ;;
-         floor) ;;
-         floorf) ;;
-         floorl) ;;
-         fma) ;;
-         fmaf) ;;
-         fmal) ;;
-         fmax) ;;
-         fmaxf) ;;
-         fmaxl) ;;
-         fmin) ;;
-         fminf) ;;
-         fminl) ;;
-         fmod) ;;
-         fmodf) ;;
-         fmodl) ;;
-         fprintf) ;;
-         frexp) ;;
-         frexpf) ;;
-         frexpl) ;;
-         fscanf) ;;
-         getcontext) ;;
-         hypot) ;;
-         hypotf) ;;
-         hypotl) ;;
-         ilogb) ;;
-         ilogbf) ;;
-         ilogbl) ;;
-         index) ;;
-         isalnum) ;;
-         isalpha) ;;
-         isblank) ;;
-         iscntrl) ;;
-         isdigit) ;;
-         isgraph) ;;
-         islower) ;;
-         isprint) ;;
-         ispunct) ;;
-         isspace) ;;
-         isupper) ;;
-         isxdigit) ;;
-         labs) ;;
-         ldexp) ;;
-         ldexpf) ;;
-         ldexpl) ;;
-         lgamma) ;;
-         lgammaf) ;;
-         lgammal) ;;
-         llabs) ;;
-         llrint) ;;
-         llrintf) ;;
-         llrintl) ;;
-         llround) ;;
-         llroundf) ;;
-         llroundl) ;;
-         log) ;;
-         log10) ;;
-         log10f) ;;
-         log10l) ;;
-         log1p) ;;
-         log1pf) ;;
-         log1pl) ;;
-         log2) ;;
-         log2f) ;;
-         log2l) ;;
-         logb) ;;
-         logbf) ;;
-         logbl) ;;
-         logf) ;;
-         logl) ;;
-         longjmp) ;;
-         lrint) ;;
-         lrintf) ;;
-         lrintl) ;;
-         lround) ;;
-         lroundf) ;;
-         lroundl) ;;
-         malloc) ;;
-         memchr) ;;
-         memcmp) ;;
-         memcpy) ;;
-         memmove) ;;
-         memset) ;;
-         modf) ;;
-         modff) ;;
-         modfl) ;;
-         nan) ;;
-         nanf) ;;
-         nanl) ;;
-         nearbyint) ;;
-         nearbyintf) ;;
-         nearbyintl) ;;
-         nextafter) ;;
-         nextafterf) ;;
-         nextafterl) ;;
-         nexttoward) ;;
-         nexttowardf) ;;
-         nexttowardl) ;;
-         objc_assign_global) ;;
-         objc_assign_ivar) ;;
-         objc_assign_strongCast) ;;
-         objc_assign_weak) ;;
-         objc_enumerationMutation) ;;
-         objc_exception_extract) ;;
-         objc_exception_match) ;;
-         objc_exception_throw) ;;
-         objc_exception_tryenter) ;;
-         objc_exception_tryexit) ;;
-         objc_getClass) ;;
-         objc_getMetaClass) ;;
-         objc_msgSend) ;;
-         objc_msgSendSuper) ;;
-         objc_msgSendSuper_stret) ;;
-         objc_msgSend_fp2ret) ;;
-         objc_msgSend_fpret) ;;
-         objc_msgSend_stret) ;;
-         objc_read_weak) ;;
-         objc_sync_enter) ;;
-         objc_sync_exit) ;;
-         pow) ;;
-         powf) ;;
-         powl) ;;
-         printf) ;;
-         qsetjmp) ;;
-         realloc) ;;
-         remainder) ;;
-         remainderf) ;;
-         remainderl) ;;
-         rindex) ;;
-         rint) ;;
-         rintf) ;;
-         rintl) ;;
-         round) ;;
-         roundf) ;;
-         roundl) ;;
-         savectx) ;;
-         scalbln) ;;
-         scalblnf) ;;
-         scalblnl) ;;
-         scalbn) ;;
-         scalbnf) ;;
-         scalbnl) ;;
-         scanf) ;;
-         setjmp) ;;
-         setjmp_syscall) ;;
-         siglongjmp) ;;
-         sigsetjmp) ;;
-         sin) ;;
-         sinf) ;;
-         sinh) ;;
-         sinhf) ;;
-         sinhl) ;;
-         sinl) ;;
-         snprintf) ;;
-         sprintf) ;;
-         sqrt) ;;
-         sqrtf) ;;
-         sqrtl) ;;
-         sscanf) ;;
-         stpcpy) ;;
-         stpncpy) ;;
-         strcasecmp) ;;
-         strcat) ;;
-         strchr) ;;
-         strcmp) ;;
-         strcpy) ;;
-         strcspn) ;;
-         strdup) ;;
-         strerror) ;;
-         strlcat) ;;
-         strlcpy) ;;
-         strlen) ;;
-         strncasecmp) ;;
-         strncat) ;;
-         strncmp) ;;
-         strncpy) ;;
-         strndup) ;;
-         strpbrk) ;;
-         strrchr) ;;
-         strspn) ;;
-         strstr) ;;
-         strtok) ;;
-         strxfrm) ;;
-         tan) ;;
-         tanf) ;;
-         tanh) ;;
-         tanhf) ;;
-         tanhl) ;;
-         tanl) ;;
-         tgamma) ;;
-         tgammaf) ;;
-         tgammal) ;;
-         tolower) ;;
-         toupper) ;;
-         trunc) ;;
-         truncf) ;;
-         truncl) ;;
-         vfork) ;;
-         vfprintf) ;;
-         vfscanf) ;;
-         vprintf) ;;
-         vscanf) ;;
-         vsnprintf) ;;
-         vsprintf) ;;
-         vsscanf) ;;
-         wcschr) ;;
-         wcscmp) ;;
-         wcslen) ;;
-         wcsncmp) ;;
-         wmemchr) ;;
-         wmemcmp) ;;
 
-
-#         mulle_objc_loadinfo_enqueue_nofail) ;;
-#         ;;
+#         mulle_objc_loadinfo_enqueue_nofail:#         ;;
 
          mulle_objc_loadinfo_enqueue_nofail)
             case "${MULLE_UNAME}" in
@@ -839,7 +565,10 @@ create_undefined_linkage_c()
          ;;
 
          *)
-            emit "$i"
+            # if ! is_clang_builtin "$i"
+            # then
+               emit "$i"
+            # fi
          ;;
       esac
    done
@@ -906,7 +635,8 @@ ${text}"
    local cfile
    local folder
 
-   folder="`dirname -- "${outfile}"`"
+   r_fast_dirname "${outfile}"
+   folder="${RVAL}"
    cfile="${folder}/`basename -- "${outfile}" .o`".c
    redirect_exekutor "${cfile}" echo "${text}"
 
@@ -971,7 +701,8 @@ _create_shlib()
          (
             exekutor cd "${tmpdir}" || exit 1
 
-            libraryname="`fast_basename "${library}"`"
+            r_fast_basename "${library}"
+            libraryname="${RVAL}"
             wholelibrary="`shlib_load_all_library "${libraryname}"`" || exit 1
 
             files="${wholelibrary}"
@@ -981,9 +712,12 @@ _create_shlib()
 
             if create_undefined_linkage "${library}" "${undefined}" "."
             then
-               files="`basename -- "${undefined}"` ${files}"
+               r_fast_basename "${undefined}"
+               r_concat "${RVAL}" "${files}"
+               files="${RVAL}"
             fi
-            shlib="`basename -- "${shlib}"`"
+            r_fast_basename "${shlib}"
+            shlib="${RVAL}"
 
             eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -nologo "-OUT:'${shlib}'"
          ) >&2 || exit 1
@@ -1043,13 +777,17 @@ main()
    local shlib
 
    local OPTION_CONFIGURATION="Release"
+   local OPTION_KEEP_SHLIB='NO'
 
-   cmdline="`command -v mulle-objc-list`"
-   if [ -z "${cmdline}" ]
+   # prefer sibling mulle-objc-list
+   MULLE_OBJC_LIST="${0%/*}/mulle-objc-list"
+   if [ ! -x "${MULLE_OBJC_LIST}" ]
    then
-      fail "mulle-objc-list not in PATH"
+      MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list`}"
+      [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
    fi
-   cmdline="'${cmdline}'"
+
+   cmdline="'${MULLE_OBJC_LIST}'"
 
    #
    # collect options for mulle-objc-list
@@ -1067,6 +805,12 @@ main()
             shift
 
             OPTION_CONFIGURATION="$1"
+            shift
+            continue
+         ;;
+
+         -k|--keep-shlib)
+            OPTION_KEEP_SHLIB='YES'
             shift
             continue
          ;;
@@ -1106,8 +850,12 @@ main()
    eval_exekutor ${cmdline}
    rval=$?
 
-   rmdir_safer "${directory}"
-
+   if [ "${OPTION_KEEP_SHLIB}" != 'YES' ]
+   then
+      rmdir_safer "${directory}"
+   else
+      log_verbose "Keeping \"${shlib}\" alive"
+   fi
    return $rval
 }
 

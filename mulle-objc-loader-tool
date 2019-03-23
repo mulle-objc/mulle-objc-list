@@ -333,22 +333,37 @@ main()
       fail "fgrep not found in PATH ($PATH)"
    fi
 
-   MULLE_OBJC_LIST="`command -v "mulle-objc-list"`"
+   # prefer sibling mulle-objc-list
    if [ -z "${MULLE_OBJC_LIST}" ]
    then
-      fail "mulle-objc-list not found in PATH ($PATH)"
+      MULLE_OBJC_LIST="${0%/*}/mulle-objc-list"
+      if [ ! -x "${MULLE_OBJC_LIST}" ]
+      then
+         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list`}"
+         [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
+      fi
    fi
 
-   MULLE_OBJC_LISTA="`command -v "mulle-objc-lista"`"
+   # prefer sibling mulle-objc-lista
    if [ -z "${MULLE_OBJC_LISTA}" ]
    then
-      fail "mulle-objc-lista not found in PATH ($PATH)"
+      MULLE_OBJC_LISTA="${0%/*}/mulle-objc-lista"
+      if [ ! -x "${MULLE_OBJC_LISTA}" ]
+      then
+         MULLE_OBJC_LISTA="${MULLE_OBJC_LISTA:-`command -v mulle-objc-lista`}"
+         [ -z "${MULLE_OBJC_LISTA}" ] && fail "mulle-objc-lista not in PATH"
+      fi
    fi
 
-   MULLE_OBJC_UNIQUEID="`command -v "mulle-objc-uniqueid"`"
+   # prefer sibling mulle-objc-lista
    if [ -z "${MULLE_OBJC_UNIQUEID}" ]
    then
-      fail "mulle-objc-uniqueid not found in PATH ($PATH)"
+      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid"
+      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
+      then
+         MULLE_OBJC_UNIQUEID="${MULLE_OBJC_UNIQUEID:-`command -v mulle-objc-uniqueid`}"
+         [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+      fi
    fi
 
    #
