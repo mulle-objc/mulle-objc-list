@@ -72,6 +72,11 @@ static int       emit_sentinel;
 static int       raw_types;
 static uint32_t  loader_classid = MULLE_OBJC_LOADER_CLASSID;
 
+static mulle_objc_classid_t      filter_classid;
+static mulle_objc_categoryid_t   filter_categoryid;
+static mulle_objc_methodid_t     filter_methodid;
+
+
 
 static enum
 {
@@ -103,19 +108,16 @@ static void   log_printf( char *format, ...)
 }
 
 
-static void   usage( void)
+static void   _usage( void)
 {
    fprintf( stderr,
-            "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
-            "\n"
-            "   Lists Objective-C symbols of a binary. Preceeding libraries are\n"
-            "   explicitly loaded but their contents aren't listed.\n"
-            "   Libraries implicitly loaded by the binary are listed.\n"
-            "\n"
             "Options:\n"
             "   -e      : emit dependencies sentinel field\n"
-            "   -l <id> : specify loader-class id for -d (default is 0x%08x)"
-            "   -r      : output raw types and signature strings"
+            "   -l <id> : specify loader-class id for -d (default is 0x%08x)\n"
+            "   -f <id> : filter for class with id\n"
+            "   -F <id> : filter for category with id (specify -f as well)\n"
+            "   -M <id> : filter for methods with id\n"
+            "   -r      : output raw types and signature strings\n"
             "   -v      : verbose\n"
             "\n"
             "Commands:\n"
@@ -123,7 +125,7 @@ static void   usage( void)
             "   -c      : list classes and categories\n"
             "   -d      : list classes and categories as +dependencies. Skips MulleObjCLoaders\n"
             "   -L      : list MulleObjCLoader dependencies\n"
-            "   -M      : list also root -methods as +methods\n"
+            "   -R      : list also root -methods as +methods\n"
             "   -T      : terse list methods with root -methods as +methods\n"
             "   -i      : dump loadinfo version information\n"
             "   -m      : list methods (default)\n"
@@ -135,6 +137,20 @@ static void   usage( void)
             , loader_classid);
    exit( 1);
 }
+
+
+static void   usage( void)
+{
+   fprintf( stderr,
+            "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
+            "\n"
+            "   Lists Objective-C symbols of a binary. Preceeding libraries are\n"
+            "   explicitly loaded but their contents aren't listed.\n"
+            "   Libraries implicitly loaded by the binary are listed.\n"
+            "\n");
+   _usage();
+}
+
 
 enum
 {
@@ -159,11 +175,6 @@ static char   *simple_typename( char *type)
    case _C_UCHR      : return( "unsigned char");
    case _C_SHT       : return( "short");
    case _C_USHT      : return( "unsigned short");
-   case _C_UINT      : return( "unsigned int");
-   case _C_LNG       : return( "long");
-   case _C_ULNG      : return( "unsigned long");
-   case _C_LNG_LNG   : return( "long long");
-   case _C_ULNG_LNG  : return( "unsigned long long");
    case _C_FLT       : return( "float");
    case _C_DBL       : return( "double");
    case _C_LNG_DBL   : return( "long double");
@@ -182,67 +193,182 @@ static char   *simple_typename( char *type)
 }
 
 
-static void   print_typeinfo( struct mulle_objc_typeinfo  *typeinfo, char *methodname);
+static void   print_typeinfo( struct mulle_objc_typeinfo *typeinfo,
+                              char *methodname,
+                              char *fragment);
 
 
-static void   print_int( char *type, char *methodname)
+enum translated
 {
-   char          **p_s;
-   size_t        len;
-   static char   *bool_verbs[] =
+   isUnknown = 0,
+   isBOOL,
+   isUnichar,
+   isNSStringEncoding,
+   isNSUInteger,
+   isNSInteger,
+   isNSRange,
+   isBOOLPointer,
+   isUnicharPointer,
+   isCString
+};
+
+enum verbtype
+{
+   isName = 0,
+   isPrefix,
+   isSuffix
+};
+
+struct verbtable
+{
+   char              *verb;
+   enum verbtype      type;
+   enum translated   translation;
+};
+
+
+static enum translated  verbtable_match( struct verbtable *p_s, char *fragment)
+{
+   size_t   len;
+   size_t   fragment_len;
+
+   if( ! fragment)
+      return( isUnknown);
+
+   while( *fragment == '_')
+      ++fragment;
+   fragment_len = strlen( fragment);
+
+   for( ;p_s->verb; p_s++)
    {
-      "is",
-      "has",
-      "can",
-      "allows",
-      "contains",
-      "conforms",
-      "generated",
-      0
+      len = strlen( p_s->verb);
+      if( fragment_len < len)
+         continue;
+      if( p_s->type == isName && len != fragment_len)
+         continue;
+      if( p_s->type == isSuffix)
+      {
+         if( strncmp( p_s->verb, &fragment[ fragment_len - len], len))
+            continue;
+      }
+      else
+         if( strncmp( p_s->verb, fragment, len))
+            continue;
+
+      if( p_s->type != isPrefix || isupper( fragment[ len]))
+         return( p_s->translation);
+   }
+   return( isUnknown);
+}
+
+
+
+static enum translated   translate_integral( char *fragment)
+{
+   // TODO: promote verb matching to regexp sometime
+   static struct verbtable   verbs[] =
+   {
+      { "is",              isPrefix, isBOOL },
+      { "has",             isPrefix, isBOOL },
+      { "can",             isPrefix, isBOOL },
+      { "allows",          isPrefix, isBOOL },
+      { "contains",        isPrefix, isBOOL },
+      { "conforms",        isPrefix, isBOOL },
+      { "generates",       isPrefix, isBOOL },
+      { "copyItems",       isName,   isBOOL },
+      { "freeWhenDone",    isName,   isBOOL },
+      { "encoding",        isName,   isNSStringEncoding },
+      { "length",          isName,   isNSUInteger },
+      { "hash",            isName,   isNSUInteger },
+      { "count",           isName,   isNSUInteger },
+      { "options",         isName,   isNSUInteger },
+      { "Index",           isSuffix, isNSUInteger },
+      { "StringLength",    isSuffix, isNSUInteger },
+      { "getOwnedObjects", isName,   isNSUInteger },
+      { "getObjects",      isName,   isNSUInteger },
+      { 0, 0, 0 }
    };
 
-   if( methodname)
+   return( verbtable_match( verbs, fragment));
+}
+
+
+static void   print_int( char *type, char *methodname, char *fragment)
+{
+   switch( translate_integral( fragment ? fragment : methodname))
    {
-      while( *methodname == '_')
-         ++methodname;
-
-      for( p_s = bool_verbs; *p_s; p_s++)
-      {
-         len = strlen( *p_s);
-         if( ! strncmp( *p_s, methodname, len) && isupper( methodname[ len]))
-         {
-            printf( "BOOL");
-            return;
-         }
-      }
+      case isNSUInteger       : printf( "NSUInteger"); return;
+      case isNSInteger        : printf( "NSInteger"); return;
+      case isNSStringEncoding : printf( "NSStringEncoding"); return;
+      case isBOOL             : printf( "BOOL"); return;
    }
-
    printf( "int");
 }
 
 
-static int   has_suffix( char *s, char *suffix)
+static void   print_unsigned_int( char *type, char *methodname, char *fragment)
 {
-   size_t   len;
-   size_t   suffix_len;
-
-   len = s ? strlen( s): 0;
-   if( ! len)
-      return( 0);
-
-   suffix_len = suffix ? strlen( suffix) : 0;
-   if( suffix_len > len)
-      return( 0);
-
-   return( ! strcmp( &s[ len - suffix_len], suffix));
+   switch( translate_integral( fragment ? fragment : methodname))
+   {
+      case isNSUInteger       : printf( "NSUInteger"); return;
+      case isNSStringEncoding : printf( "NSStringEncoding"); return;
+   }
+   printf( "unsigned int");
 }
 
 
-static void   print_struct_or_union( char *type, char *methodname, char *prefix)
+static void   print_long( char *type, char *methodname, char *fragment)
 {
-   char                         *element;
-   char                         *next;
+   switch( translate_integral( fragment ? fragment : methodname))
+   {
+      case isNSInteger        : printf( "NSInteger"); return;
+      case isNSStringEncoding : printf( "NSStringEncoding"); return;
+   }
+   printf( "long");
+}
+
+
+static void   print_unsigned_long( char *type, char *methodname, char *fragment)
+{
+   switch( translate_integral( fragment ? fragment : methodname))
+   {
+      case isNSUInteger       : printf( "NSUInteger"); return;
+      case isNSStringEncoding : printf( "NSStringEncoding"); return;
+   }
+   printf( "unsigned long");
+}
+
+
+static void   print_long_long( char *type, char *methodname, char *fragment)
+{
+   switch( translate_integral( fragment ? fragment : methodname))
+   {
+      case isNSInteger        : printf( "NSInteger"); return;
+      case isNSStringEncoding : printf( "NSStringEncoding"); return;
+   }
+   printf( "long long");
+}
+
+
+static void   print_unsigned_long_long( char *type, char *methodname, char *fragment)
+{
+   switch( translate_integral( fragment ? fragment : methodname))
+   {
+      case isNSUInteger       : printf( "NSUInteger"); return;
+      case isNSStringEncoding : printf( "NSStringEncoding"); return;
+   }
+   printf( "unsigned long long");
+}
+
+
+//
+// typedefs are resolved to struct
+//
+static void   _print_struct_or_union( char *type, char *prefix)
+{
    struct mulle_objc_typeinfo   typeinfo;
+   char                         *element;
+   unsigned int                 i;
 
    element = strchr( type, '=');
    if( ! element)
@@ -251,75 +377,138 @@ static void   print_struct_or_union( char *type, char *methodname, char *prefix)
       return;
    }
 
-   if( *type == '?')
+   i = 0;
+   if( *type != '?')
    {
-      ++type;
-
-      if( has_suffix( methodname, "Zone:"))
-      {
-         printf( "NSZone");
-         return;
-      }
-
-      ++element;
-      printf( "%s { ", prefix);
-      next = _mulle_objc_signature_supply_next_typeinfo( element, &typeinfo);
-      if( next != mulle_objc_signature_error)
-         print_typeinfo( &typeinfo, methodname);
-      else
-         printf( "** broken signature \"%s\" **", element);
-      printf( "}");
+      printf( "%s %.*s", prefix, (int) (element - type), type);
       return;
    }
 
-   printf( "%s %.*s", prefix, (int) (element - type), type);
+   printf( "%s { ", prefix);
+
+   errno = 0;
+   i     = 0;
+   type  = &element[ 1];
+   while( element = _mulle_objc_signature_supply_next_typeinfo( type, &typeinfo))
+   {
+      print_typeinfo( &typeinfo, NULL, NULL);
+      type = element;
+      printf( " f%d; ", i++);
+      if( *type == '}')
+         break;
+   }
+   if( errno == EINVAL)
+      printf( "** broken struct/union signature \"%s\" **", type);
+
+   printf( "}");
 }
 
 
-static void   print_struct( char *type, char *methodname)
+static enum translated   translate_struct( char *fragment)
 {
-   print_struct_or_union( ++type, methodname, "struct");
+   // TODO: promote verb matching to regexp sometime
+   static struct verbtable   verbs[] =
+   {
+      { "rangeOf", isPrefix, isNSRange },
+      { "range",   isName,   isNSRange },
+      { "Range",   isSuffix, isNSRange },
+      { 0, 0, 0 }
+   };
+
+   return( verbtable_match( verbs, fragment));
 }
 
 
-static void   print_union( char *type, char *methodname)
+static void   print_struct( char *type, char *methodname, char *fragment)
 {
-   print_struct_or_union( ++type, methodname, "union");
+   switch( translate_struct( fragment ? fragment : methodname))
+   {
+      case isNSRange : printf( "NSRange"); return;
+   }
+
+   _print_struct_or_union( ++type, "struct");
 }
 
 
-static void   print_pointer( char *type, char *methodname)
+static void   print_union( char *type, char *methodname, char *fragment)
 {
-   struct mulle_objc_typeinfo  typeinfo;
+   _print_struct_or_union( ++type, "union");
+}
 
-   if( _mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo) != mulle_objc_signature_error)
-      print_typeinfo( &typeinfo, methodname);
+
+static enum translated   translate_int_pointer( char *fragment)
+{
+   // TODO: promote verb matching to regexp sometime
+   static struct verbtable   verbs[] =
+   {
+      { "is",               isPrefix, isBOOLPointer    },
+      { "CharactersNoCopy", isSuffix, isUnicharPointer },
+      { "Characters",       isSuffix, isUnicharPointer },
+      { 0, 0, 0 }
+   };
+
+   return( verbtable_match( verbs, fragment));
+}
+
+
+static void   print_pointer( char *type, char *methodname, char *fragment)
+{
+   struct mulle_objc_typeinfo   typeinfo;
+
+   if( _mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo))
+   {
+      // fprintf( stderr, ">>> %s: %.1s\n",  fragment ? fragment : methodname, typeinfo.type);
+      switch( *typeinfo.type)
+      {
+      case 'i' :
+         switch( translate_int_pointer( fragment ? fragment : methodname))
+         {
+            case isBOOLPointer    : printf( "BOOL *"); return;
+            case isUnicharPointer : printf( "unichar *"); return;
+         }
+      }
+
+      print_typeinfo( &typeinfo, NULL, NULL);
+   }
    else
-      printf( "** broken signature \"%s\" **", type);
+      printf( "** broken pointer signature \"%s\" **", type);
    printf( " *");  // hmm
 }
 
 
-static void   print_array( char *type, char *methodname)
+static void   print_array( char *type, char *methodname, char *fragment)
 {
-   struct mulle_objc_typeinfo  typeinfo;
+   struct mulle_objc_typeinfo   typeinfo;
+   int    size = 0;
 
-   if( _mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo) != mulle_objc_signature_error)
-      print_typeinfo( &typeinfo, methodname);
+   while( isdigit( type[ 1]))
+   {
+      ++type;
+      size *= 10;
+      size += *type - '0';
+   }
+
+   if( _mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo))
+      print_typeinfo( &typeinfo, NULL, NULL);
    else
-      printf( "** broken signature \"%s\" **", type);
-   printf( " []");  // hmm
+      printf( "** broken array signature \"%s\" **", type);
+   if( size == 0)
+      printf( " []");  // hmm
+   else
+      printf( " [%d]", size);  // hmm
 }
 
 
-static void   print_bitfield( char *type, char *methodname)
+static void   print_bitfield( char *type, char *methodname, char *fragment)
 {
    printf( "**bitfield as parameter, O RLY ?**");
    return;
 }
 
 
-static void   print_typeinfo( struct mulle_objc_typeinfo *typeinfo, char *methodname)
+static void   print_typeinfo( struct mulle_objc_typeinfo *typeinfo,
+                              char *methodname,
+                              char *fragment)
 {
    char  *s;
    char  *end;
@@ -350,12 +539,17 @@ static void   print_typeinfo( struct mulle_objc_typeinfo *typeinfo, char *method
 
    switch( *typeinfo->type)
    {
-   case _C_INT      : print_int( typeinfo->type, methodname); return;
-   case _C_PTR      : print_pointer( typeinfo->type, methodname); return;
-   case _C_ARY_B    : print_array( typeinfo->type, methodname); return;
-   case _C_STRUCT_B : print_struct( typeinfo->type, methodname); return;
-   case _C_UNION_B  : print_union( typeinfo->type, methodname); return;
-   case _C_BFLD     : print_bitfield( typeinfo->type, methodname); return;
+   case _C_INT      : print_int( typeinfo->type, methodname, fragment); return;
+   case _C_UINT     : print_unsigned_int( typeinfo->type, methodname, fragment); return;
+   case _C_LNG      : print_long( typeinfo->type, methodname, fragment); return;
+   case _C_ULNG     : print_unsigned_long( typeinfo->type, methodname, fragment); return;
+   case _C_LNG_LNG  : print_long_long( typeinfo->type, methodname, fragment); return;
+   case _C_ULNG_LNG : print_unsigned_long_long( typeinfo->type, methodname, fragment); return;
+   case _C_PTR      : print_pointer( typeinfo->type, methodname, fragment); return;
+   case _C_ARY_B    : print_array( typeinfo->type, methodname, fragment); return;
+   case _C_STRUCT_B : print_struct( typeinfo->type, methodname, fragment); return;
+   case _C_UNION_B  : print_union( typeinfo->type, methodname, fragment); return;
+   case _C_BFLD     : print_bitfield( typeinfo->type, methodname, fragment); return;
    }
 
    printf( "**unknown type signature**");
@@ -405,6 +599,9 @@ static void   method_dump( struct _mulle_objc_method *method,
    char                         *types;
    struct mulle_objc_typeinfo   typeinfo;
    unsigned int                 i;
+   char                         *methodname;
+   char                         *fragment;
+   char                         *tokenizer;
 
    printf( ";%08x", _mulle_objc_method_get_methodid( method));
    printf( ";%c%s", type, _mulle_objc_method_get_name( method));
@@ -419,26 +616,49 @@ static void   method_dump( struct _mulle_objc_method *method,
       return;
    }
 
+   /*
+    * emit bits first, so that types can contain ';' for CSV parsing
+    */
+   printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
+   printf( ";0x%x", method->descriptor.bits);
+
+   methodname =_mulle_objc_method_get_name( method);
+   tokenizer  = mulle_strdup( methodname);
+
    types = _mulle_objc_method_get_signature( method);
    i     = 0;
+
    while( types = mulle_objc_signature_supply_next_typeinfo( types, &typeinfo))
    {
-      putchar( (i <= first_param_index) ? ';' : ',');
+      putchar( ! i ? ';' : ',');
 
-      switch( i++)
+      switch( i)
       {
+         case rval_index :
+            print_typeinfo( &typeinfo, methodname, NULL);
+            break;
+
          case object_index :
             printf( "%s *", classname);
-            continue;
+            break;
 
          case sel_index    :
             printf( "SEL");
-            continue;
+            break;
+
+         case first_param_index    :
+            fragment = strtok( tokenizer, ":");
+            print_typeinfo( &typeinfo, methodname, fragment);
+            break;
+
+         default :
+            fragment = strtok( NULL, ":");
+            print_typeinfo( &typeinfo, methodname, fragment);
+            break;
       }
-      print_typeinfo( &typeinfo, _mulle_objc_method_get_name( method));
+      ++i;
    }
-   printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
-   printf( ";0x%x", method->descriptor.bits);
+   mulle_free( tokenizer);
 }
 
 
@@ -448,6 +668,9 @@ static void   method_loadclass_dump( struct _mulle_objc_method *method,
                                      struct _mulle_objc_loadclass *p,
                                      struct _mulle_objc_loadinfo *info)
 {
+   if( filter_methodid && method->descriptor.methodid != filter_methodid)
+      return;
+
    printf( "%08x", p->classid);
    printf( ";%s",  p->classname);
    printf( ";");
@@ -466,6 +689,9 @@ static void   method_loadcategory_dump( struct _mulle_objc_method *method,
                                         struct _mulle_objc_loadcategory *p,
                                         struct _mulle_objc_loadinfo *info)
 {
+   if( filter_methodid && method->descriptor.methodid != filter_methodid)
+      return;
+
    if( mode == dump_loader)
    {
       if( method->descriptor.methodid != MULLE_OBJC_DEPENDENCIES_METHODID)
@@ -620,10 +846,10 @@ static void   ivar_dump( struct _mulle_objc_ivar *ivar)
 
    putchar(';');
    type = _mulle_objc_ivar_get_signature( ivar);
-   if( _mulle_objc_signature_supply_next_typeinfo( type, &typeinfo) != mulle_objc_signature_error)
-      print_typeinfo( &typeinfo, _mulle_objc_ivar_get_name( ivar));
+   if( _mulle_objc_signature_supply_next_typeinfo( type, &typeinfo))
+      print_typeinfo( &typeinfo, _mulle_objc_ivar_get_name( ivar), _mulle_objc_ivar_get_name( ivar));
    else
-      printf( "** broken signature \"%s\" **", type);
+      printf( "** broken ivar signature \"%s\" **", type);
 }
 
 
@@ -637,7 +863,6 @@ static void   ivar_loadclass_dump( struct _mulle_objc_ivar *ivar,
 
    printf( "\n");
 }
-
 
 
 static void   ivarlist_loadclass_dump( struct _mulle_objc_ivarlist *list,
@@ -666,6 +891,9 @@ static void   ivarlist_loadclass_dump( struct _mulle_objc_ivarlist *list,
 static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                               struct _mulle_objc_loadinfo *info)
 {
+   if( filter_classid && p->classid != filter_classid)
+      return;
+
    log_printf( "Dumping class %s ...\n", p->classname);
 
    switch( mode)
@@ -718,6 +946,11 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
 static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
                                  struct _mulle_objc_loadinfo *info)
 {
+   if( filter_categoryid && p->categoryid != filter_categoryid)
+      return;
+   if( filter_classid && p->classid != filter_classid)
+      return;
+
    log_printf( "Dumping category %s( %s) ...\n", p->classname, p->categoryname);
 
    switch( mode)
@@ -944,17 +1177,89 @@ int  main( int argc, char *argv[])
          }
 
       // options
-      case 'v':
-         verbose = 1;
+      case 'e':
+         emit_sentinel = 1;
+         break;
+
+      case 'f':
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         filter_classid = strtol( argv[ i], NULL, 16);
+         if( ! filter_classid)
+         {
+            fprintf( stderr, "Could not parse \"%s\" as classid\n", argv[ i]);
+            exit( 1);
+         }
+         break;
+
+      case 'F':
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         filter_categoryid = strtol( argv[ i], NULL, 16);
+         if( ! filter_categoryid)
+         {
+            fprintf( stderr, "Could not parse \"%s\" as categoryid\n", argv[ i]);
+            exit( 1);
+         }
+         break;
+
+      case 'M':
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         filter_methodid = strtol( argv[ i], NULL, 16);
+         if( ! filter_methodid)
+         {
+            fprintf( stderr, "Could not parse \"%s\" as methodid\n", argv[ i]);
+            exit( 1);
+         }
+         break;
+
+      case 'l':
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         loader_classid = atoi( argv[ i]);
          break;
 
       case 'r':
          raw_types = 1;
          break;
 
-      case 'e':
-         emit_sentinel = 1;
+      case 'u' :
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         universename = argv[ i];
+         universeid   = mulle_objc_universeid_from_string( universename);
          break;
+
+      case 'v':
+         verbose = 1;
+         break;
+
+      case '@' :
+         if( i + 1 >= argc)
+            usage();
+         ++i;
+
+         {
+            struct mulle_objc_typeinfo   typeinfo;
+
+            if( _mulle_objc_signature_supply_next_typeinfo( argv[ i], &typeinfo))
+            {
+               print_typeinfo( &typeinfo, NULL, NULL);
+               return( 0);
+            }
+         }
+         return( 1);
 
       // commands
       case 'c':
@@ -989,7 +1294,7 @@ int  main( int argc, char *argv[])
          mode = dump_methods;
          break;
 
-      case 'M':
+      case 'R':
          mode = dump_callable_methods;
          break;
 
@@ -1009,24 +1314,13 @@ int  main( int argc, char *argv[])
          mode = dump_callable_coverage;
          break;
 
-      case 'u' :
-         if( i + 1 >= argc)
-            usage();
-         ++i;
-
-         universename = argv[ i];
-         universeid   = mulle_objc_universeid_from_string( universename);
-         break;
-
-      case 'l':
-         if( i + 1 >= argc)
-            usage();
-         ++i;
-
-         loader_classid = atoi( argv[ i]);
+      case 'U' :
+         _usage();
+         exit( 1);
          break;
 
       default :
+         fprintf( stderr, "Unknown command or option \"%s\"\n", argv[ i]);
          usage();
       }
    }
