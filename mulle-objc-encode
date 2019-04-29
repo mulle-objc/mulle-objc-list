@@ -1,0 +1,135 @@
+#! /usr/bin/env bash
+
+
+encode_usage()
+{
+   cat "$0" >&2
+   exit 1
+}
+
+
+#
+# TODO: check MULLE_VIRTUAL_ROOT and search for mulle-objc headers
+#
+# A small utility to see that @encode does.
+# You will have to declare classes ahead though.
+#
+# e.g. mulle-objc-encode "struct foo { long a; long b; }[ 1]"
+# e.g. mulle-objc-encode -c NSArray "NSArray *"
+#
+main()
+{
+   local tmpfile
+
+   local declarations
+   local includes
+   local includepath
+
+   #
+   # simple option handling
+   #
+   while [ $# -ne 0 ]
+   do
+      case "$1" in
+         -h*|--help|help)
+            encode_usage
+         ;;
+
+         -c|--class-name)
+            shift
+            declarations="${declarations}
+@interface $1
+@end
+"
+         ;;
+
+         -i)
+            shift
+            if [ -z "${includes}" ]
+            then
+               includes="#include $1"
+            else
+               includes="${includes}
+'#include $1"
+            fi
+         ;;
+
+         -I)
+            shift
+            if [ -z "${includepath}" ]
+            then
+               includepath="'$1'"
+            else
+               includepath="${includepath} '$1'"
+            fi
+         ;;
+
+         -d|--declaration)
+            shift
+            declarations="${declarations}
+$1
+"
+         ;;
+
+         -p|--protocol-name)
+            shift
+            declarations="${declarations}
+@protocol $1
+@end
+"         ;;
+
+         -*)
+            echo "Unknown option \"$1\"" 2>&1
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   tmpfile="/tmp/`uuidgen`"
+
+   local srcfile
+   local exefile
+
+   srcfile="${tmpfile}.m"
+   exefile="${tmpfile}.exe"
+
+   cat <<EOF > "${srcfile}"
+#include <stdio.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+${includes}
+
+${declarations}
+
+int   main( int argc, char *argv[])
+{
+   printf( "%s\n", @encode( $*));
+   return( 0);
+}
+EOF
+
+   local sdkpath
+
+   case "`uname`" in
+      Darwin)
+         sdkpath="`xcrun --show-sdk-path`"
+         eval mulle-clang -isysroot "'${sdkpath}'" ${includepath} -o "'${exefile}'" "'${srcfile}'" || exit 1
+      ;;
+
+      *)
+         eval mulle-clang -o "'${exefile}'" ${includepath} "'${srcfile}'" || exit 1
+      ;;
+   esac
+
+   "${exefile}" && rm "${exefile}" "${srcfile}"
+}
+
+
+main "$@"

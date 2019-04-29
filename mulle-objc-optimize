@@ -32,7 +32,7 @@ Usage:
 Options:
 EOF
    (
-      core_technical_option_usage
+      options_technical_flags_usage
 
       cat <<EOF
 

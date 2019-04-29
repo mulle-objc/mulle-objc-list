@@ -85,11 +85,7 @@ _dump_loader_dependencies()
 
    local depfile
    local depname
-
-   local classid
    local categoryid
-
-   classid="`${MULLE_OBJC_UNIQUEID} MulleObjCLoader | tail -1`"
 
    while [ $# -ne 0 ]
    do
@@ -146,7 +142,7 @@ _dump_loader_dependencies()
       then
          categoryid="`${MULLE_OBJC_UNIQUEID} "${depname}" | tail -1`"
          exekutor echo "      { @selector( MulleObjCLoader), \
-@selector( ${depname}) },      // $classid;MulleObjCLoader;$categoryid;${depname}";
+@selector( ${depname}) },      // ${MULLE_OBJC_LOADER_CLASSID};MulleObjCLoader;$categoryid;${depname}";
       fi
 
       shift
@@ -350,7 +346,7 @@ main()
       MULLE_OBJC_LISTA="${0%/*}/mulle-objc-lista"
       if [ ! -x "${MULLE_OBJC_LISTA}" ]
       then
-         MULLE_OBJC_LISTA="${MULLE_OBJC_LISTA:-`command -v mulle-objc-lista`}"
+         MULLE_OBJC_LISTA="`command -v mulle-objc-lista`"
          [ -z "${MULLE_OBJC_LISTA}" ] && fail "mulle-objc-lista not in PATH"
       fi
    fi
@@ -361,10 +357,12 @@ main()
       MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid"
       if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
       then
-         MULLE_OBJC_UNIQUEID="${MULLE_OBJC_UNIQUEID:-`command -v mulle-objc-uniqueid`}"
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid`"
          [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
       fi
    fi
+
+   MULLE_OBJC_LOADER_CLASSID="`${MULLE_OBJC_UNIQUEID} MulleObjCLoader | tail -1`"
 
    #
    # could build it dynamically --

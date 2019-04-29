@@ -44,7 +44,10 @@ Index | Column name  | Description
 
 Each line represents one exported method. The format is:
 
-`classid;classname;categoryid;categoryname;methodid;+/-name;rvaltype;objtype;sel;params;variadic;bits`
+`classid;classname;categoryid;categoryname;methodid;+/-name;variadic;bits;tpe`
+
+> This has changed in 8.0.0
+
 
 Index | Column name  | Description
 ------|--------------|---------------------------------
@@ -53,13 +56,11 @@ Index | Column name  | Description
 3     | categoryid   |  optional: the id of the category
 4     | categoryname |  optional: the name of the category
 5     | methodid     |  the id of the method
-6     | name         |  methodname like `takeValue:forKey:`
-7     | rvaltype     |  return value C/ObjC type without parantheses
-8     | objctype     |  "classname" as a pointer
-9     | sel          |  always ':', the selector
-10    | params       |  parameter C/ObjC types (if any) separated by comma
-11    | variadic     |  either `...` or empty
-12    | bits         |  bits as hex value
+6     | name         |  methodname like `takeValue:forKey:`  with +/- prefix
+7     | variadic     |  either `...` or empty
+8     | bits         |  bits as hex value
+9     | type         |  decoded type of method, separated by comma
+                     |  (may contain ';')
 
 The intended use is to produce test skeleton code from this information.
 

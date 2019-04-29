@@ -13,7 +13,8 @@ MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
 usage()
 {
    cat <<EOF >&2
-Usage:
+Usage) ;;
+
    ${MULLE_EXECUTABLE} [options] [library]+
 
    Unarchive the given static libraries and prepare them for optimization.
@@ -25,7 +26,7 @@ Options:
 
 EOF
 
-   core_technical_option_usage | sort >&2
+   options_technical_flags_usage | sort >&2
 
    exit 1
 }
@@ -161,7 +162,7 @@ create_undefined_linkage_c()
          _Block_object_assign) ;;
          _Block_object_dispose) ;;
          _Exit) ;;
-         __cospi) ;;
+         __cospi);;
          __cospif) ;;
          __exp10) ;;
          __exp10f) ;;
@@ -169,18 +170,16 @@ create_undefined_linkage_c()
          __finitef) ;;
          __finitel) ;;
          __sigsetjmp) ;;
-         __sinpi) ;;
+         __sinpi);;
          __sinpif) ;;
          __tanpi) ;;
          __tanpif) ;;
          _byteswap_uint64) ;;
          _byteswap_ulong) ;;
-         _byteswap_ushort) ;;
-         _exit) ;;
+         _byteswap_ushort);;
          _longjmp) ;;
          _setjmp) ;;
          _setjmpex) ;;
-         abort) ;;
          abs) ;;
          acos) ;;
          acosf) ;;
@@ -188,7 +187,7 @@ create_undefined_linkage_c()
          acoshf) ;;
          acoshl) ;;
          acosl) ;;
-         alloca) ;;
+         alloca);;
          asin) ;;
          asinf) ;;
          asinh) ;;
@@ -200,7 +199,7 @@ create_undefined_linkage_c()
          atan2f) ;;
          atan2l) ;;
          atanf) ;;
-         atanh) ;;
+         atanh);;
          atanhf) ;;
          atanhl) ;;
          atanl) ;;
@@ -211,7 +210,7 @@ create_undefined_linkage_c()
          cacos) ;;
          cacosf) ;;
          cacosh) ;;
-         cacoshf) ;;
+         cacoshf);;
          cacoshl) ;;
          cacosl) ;;
          calloc) ;;
@@ -222,7 +221,7 @@ create_undefined_linkage_c()
          casinf) ;;
          casinh) ;;
          casinhf) ;;
-         casinhl) ;;
+         casinhl);;
          casinl) ;;
          catan) ;;
          catanf) ;;
@@ -234,7 +233,7 @@ create_undefined_linkage_c()
          cbrtf) ;;
          cbrtl) ;;
          ccos) ;;
-         ccosf) ;;
+         ccosf);;
          ccosh) ;;
          ccoshf) ;;
          ccoshl) ;;
@@ -246,7 +245,7 @@ create_undefined_linkage_c()
          cexpf) ;;
          cexpl) ;;
          cimag) ;;
-         cimagf) ;;
+         cimagf);;
          cimagl) ;;
          clog) ;;
          clogf) ;;
@@ -257,7 +256,7 @@ create_undefined_linkage_c()
          copysign) ;;
          copysignf) ;;
          copysignl) ;;
-         cos) ;;
+         cos);;
          cosf) ;;
          cosh) ;;
          coshf) ;;
@@ -270,7 +269,7 @@ create_undefined_linkage_c()
          cprojf) ;;
          cprojl) ;;
          creal) ;;
-         crealf) ;;
+         crealf);;
          creall) ;;
          csin) ;;
          csinf) ;;
@@ -282,7 +281,7 @@ create_undefined_linkage_c()
          csqrtf) ;;
          csqrtl) ;;
          ctan) ;;
-         ctanf) ;;
+         ctanf);;
          ctanh) ;;
          ctanhf) ;;
          ctanhl) ;;
@@ -293,11 +292,10 @@ create_undefined_linkage_c()
          erfcl) ;;
          erff) ;;
          erfl) ;;
-         exit) ;;
          exp) ;;
          exp2) ;;
          exp2f) ;;
-         exp2l) ;;
+         exp2l);;
          expf) ;;
          expl) ;;
          expm1) ;;
@@ -309,7 +307,7 @@ create_undefined_linkage_c()
          fdim) ;;
          fdimf) ;;
          fdiml) ;;
-         finite) ;;
+         finite);;
          finitef) ;;
          finitel) ;;
          floor) ;;
@@ -436,7 +434,7 @@ create_undefined_linkage_c()
          printf) ;;
          qsetjmp) ;;
          realloc) ;;
-         remainder) ;;
+         remainder);;
          remainderf) ;;
          remainderl) ;;
          rindex) ;;
@@ -446,7 +444,7 @@ create_undefined_linkage_c()
          round) ;;
          roundf) ;;
          roundl) ;;
-         savectx) ;;
+         savectx);;
          scalbln) ;;
          scalblnf) ;;
          scalblnl) ;;
@@ -455,7 +453,7 @@ create_undefined_linkage_c()
          scalbnl) ;;
          scanf) ;;
          setjmp) ;;
-         setjmp_syscall) ;;
+         setjmp_syscall);;
          siglongjmp) ;;
          sigsetjmp) ;;
          sin) ;;
@@ -466,7 +464,7 @@ create_undefined_linkage_c()
          sinl) ;;
          snprintf) ;;
          sprintf) ;;
-         sqrt) ;;
+         sqrt);;
          sqrtf) ;;
          sqrtl) ;;
          sscanf) ;;
@@ -476,7 +474,7 @@ create_undefined_linkage_c()
          strcat) ;;
          strchr) ;;
          strcmp) ;;
-         strcpy) ;;
+         strcpy);;
          strcspn) ;;
          strdup) ;;
          strerror) ;;
@@ -485,7 +483,7 @@ create_undefined_linkage_c()
          strlen) ;;
          strncasecmp) ;;
          strncat) ;;
-         strncmp) ;;
+         strncmp);;
          strncpy) ;;
          strndup) ;;
          strpbrk) ;;
@@ -496,7 +494,7 @@ create_undefined_linkage_c()
          strxfrm) ;;
          tan) ;;
          tanf) ;;
-         tanh) ;;
+         tanh);;
          tanhf) ;;
          tanhl) ;;
          tanl) ;;
@@ -507,7 +505,7 @@ create_undefined_linkage_c()
          toupper) ;;
          trunc) ;;
          truncf) ;;
-         truncl) ;;
+         truncl);;
          vfork) ;;
          vfprintf) ;;
          vfscanf) ;;
@@ -516,7 +514,7 @@ create_undefined_linkage_c()
          vsnprintf) ;;
          vsprintf) ;;
          vsscanf) ;;
-         wcschr) ;;
+         wcschr);;
          wcscmp) ;;
          wcslen) ;;
          wcsncmp) ;;

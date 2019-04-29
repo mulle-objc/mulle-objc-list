@@ -16,13 +16,13 @@ usage()
 Usage:
    ${MULLE_EXECUTABLE} [options] <uniqueid> <library>+
 
-   Search for a string matching a uniqueid, which would most often be a
-   @selector value or a classID.
+   Search though libraries for a string matching a uniqueid, This could be
+   amongst other things, a @selector or the mulle_objc_classid_t of a class.
 
 Options:
 EOF
 
-   core_technical_option_usage | sort >&2
+   options_technical_flags_usage | sort >&2
 
    exit 1
 }

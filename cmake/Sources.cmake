@@ -6,6 +6,7 @@ set( SOURCES
 )
 
 set( SCRIPTS
+   mulle-objc-encode
    mulle-objc-loader-tool
    mulle-objc-lista
    mulle-objc-optimize
@@ -14,6 +15,7 @@ set( SCRIPTS
    mulle-objc-unarchive
    mulle-objc-uncovered-methods
 )
+
 
 if( MSVC)
    set( SCRIPTS

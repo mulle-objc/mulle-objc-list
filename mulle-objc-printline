@@ -24,7 +24,7 @@ Options:
    --category <name> : specify category
 EOF
 
-   core_technical_option_usage | sort >&2
+   options_technical_flags_usage | sort >&2
 
    exit 1
 }
@@ -94,7 +94,7 @@ main()
       MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid"
       if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
       then
-         MULLE_OBJC_UNIQUEID="${MULLE_OBJC_UNIQUEID:-`command -v mulle-objc-uniqueid`}"
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid`"
          [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
       fi
    fi
