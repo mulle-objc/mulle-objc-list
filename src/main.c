@@ -207,6 +207,7 @@ enum translated
    isNSUInteger,
    isNSInteger,
    isNSRange,
+   isNSZone,
    isBOOLPointer,
    isUnicharPointer,
    isCString
@@ -409,9 +410,10 @@ static enum translated   translate_struct( char *fragment)
    // TODO: promote verb matching to regexp sometime
    static struct verbtable   verbs[] =
    {
-      { "rangeOf", isPrefix, isNSRange },
-      { "range",   isName,   isNSRange },
-      { "Range",   isSuffix, isNSRange },
+      { "rangeOf",  isPrefix,  isNSRange },
+      { "range",    isName,    isNSRange },
+      { "Range",    isSuffix,  isNSRange },
+      { "withZone", isSuffix,  isNSZone },
       { 0, 0, 0 }
    };
 
@@ -424,6 +426,7 @@ static void   print_struct( char *type, char *methodname, char *fragment)
    switch( translate_struct( fragment ? fragment : methodname))
    {
       case isNSRange : printf( "NSRange"); return;
+      case isNSZone  : printf( "NSZone"); return;
    }
 
    _print_struct_or_union( ++type, "struct");

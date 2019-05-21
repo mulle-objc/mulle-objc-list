@@ -1,3 +1,15 @@
+## 0.15.0
+
+* is aware of withZone suffix now for NSZone
+* new tool mulle-objc-encode
+* massive changes in the way signatures are interpreted and dumped
+* added method filter option
+* -M root methods flag renamed to -R, as -M is used by the method filter now
+* -C is now the class filter, to match -M in capitalization
+* dump properties and ivars too now
+* tools now search for sibling executables before searching PATH
+
+
 ### 0.14.1
 
 * modernized mulle-sde with .mulle folder
