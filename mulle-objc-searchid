@@ -35,8 +35,8 @@ r_prettify_uniqueid()
    local uniqueid="$1"
 
    uniqueid="`tr '[A-Z]' '[a-z]' <<< "${uniqueid}"`"
-   uniqueid="`sed 's/^0x//' <<< "${uniqueid}"`"
-   uniqueid="`sed 's/^\$//' <<< "${uniqueid}"`"
+   uniqueid="${uniqueid#0x}"
+   uniqueid="${uniqueid#\$}"
 
    case "${uniqueid}" in
       [0-9a-f])
@@ -92,11 +92,11 @@ grep_library()
    then
       case "${library}" in
          *.so|*.dylib)
-            found="`rexekutor mulle-objc-list -s "${library}" | rexekutor fgrep "${uniqueid}"`"
+            found="`rexekutor "${MULLE_OBJC_LIST}" -s "${library}" | rexekutor fgrep "${uniqueid}"`"
          ;;
 
          *)
-            found="`rexekutor mulle-objc-lista \
+            found="`rexekutor "${MULLE_OBJC_LISTA}" \
                                  ${MULLE_TECHNICAL_FLAGS} \
                                  ${MULLE_OBJC_LISTA_FLAGS} \
                                  -s "${library}" | rexekutor fgrep "${uniqueid}"`"
@@ -105,11 +105,11 @@ grep_library()
    else
       case "${library}" in
          *.so|*.dylib)
-            found="`rexekutor mulle-objc-list -s "${library}" 2> /dev/null | rexekutor fgrep "${uniqueid}"`"
+            found="`rexekutor "${MULLE_OBJC_LIST}" -s "${library}" 2> /dev/null | rexekutor fgrep "${uniqueid}"`"
          ;;
 
          *)
-            found="`rexekutor mulle-objc-lista \
+            found="`rexekutor "${MULLE_OBJC_LISTA}" \
                                  ${MULLE_TECHNICAL_FLAGS} \
                                  ${MULLE_OBJC_LISTA_FLAGS} \
                                  -s "${library}" 2> /dev/null | rexekutor fgrep "${uniqueid}"`"
@@ -131,6 +131,8 @@ grep_libraries()
    log_entry "grep_libraries" "$@"
 
    local uniqueid="$1"
+
+   [ -z "${LIB_PATH}" ] && internal_fail "LIB_PATH is empty"
 
    IFS="
 "
@@ -220,27 +222,21 @@ search()
          cd "${old}"
 
          IFS="${DEFAULT_IFS}"
+
+         shift
       done
    fi
 }
 
 find_in_libraries()
 {
-   local uniqueid="$1"
+   log_entry "find_in_libraries" "$@"
+
+   local uniqueid="$1"; shift
 
    if [ -z "${LIB_PATH}" ]
    then
-      LIB_PATH="${DEPENDENCY_DIR}/lib:${DEPENDENCY_DIR}/Debug/lib"
-   fi
-
-   if [ -z "`command -v mulle-objc-list`" ]
-   then
-      fail "mulle-objc-list not in PATH"
-   fi
-
-   if [ -z "`command -v mulle-objc-lista`" ]
-   then
-      fail "mulle-objc-lista not in PATH"
+      LIB_PATH="${DEPENDENCY_DIR:-dependency}/lib:${DEPENDENCY_DIR:-dependency}/Debug/lib"
    fi
 
    search "${uniqueid}" "$@" | \
@@ -263,13 +259,17 @@ find_local_words()
 
 find_local_unique_words()
 {
+   log_entry "find_local_unique_words" "$@"
+
    find_local_words | sort -u
 }
 
 
 find_local_uniqueids()
 {
-   find_local_unique_words | CSV=ON rexekutor xargs "${UNIQUEID}"
+   log_entry "find_local_uniqueids" "$@"
+
+   find_local_unique_words | CSV=ON rexekutor xargs "${MULLE_OBJC_UNIQUEID}"
 }
 
 
@@ -362,12 +362,40 @@ main()
    #
    [ -z "${1}" ] && usage
 
-   UNIQUEID="`command -v mulle-objc-uniqueid`"
-   [ -z "${UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+   # prefer sibling mulle-objc-uniqueid
+   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
+   then
+      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid"
+      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
+      then
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid`"
+         [ -z "${MULLE_OBJC_UNIQUEID}" ] && echo "mulle-objc-uniqueid not in PATH" >&2 && exit 1
+      fi
+   fi
+
+   if [ -z "${MULLE_OBJC_LIST}" ]
+   then
+      MULLE_OBJC_LIST="${0%/*}/mulle-objc-list"
+      if [ ! -x "${MULLE_OBJC_LIST}" ]
+      then
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-list`"
+         [ -z "${MULLE_OBJC_LIST}" ] && echo "mulle-objc-list not in PATH" >&2 && exit 1
+      fi
+   fi
+
+   if [ -z "${MULLE_OBJC_LISTA}" ]
+   then
+      MULLE_OBJC_LISTA="${0%/*}/mulle-objc-lista"
+      if [ ! -x "${MULLE_OBJC_LISTA}" ]
+      then
+         MULLE_OBJC_LISTA="`command -v mulle-objc-lista`"
+         [ -z "${MULLE_OBJC_LISTA}" ] && echo "mulle-objc-lista not in PATH" >&2 && exit 1
+      fi
+   fi
 
    if [ "${OPTION_SELECTOR}" = "YES" ]
    then
-      uniqueid="`${UNIQUEID} "$1"`"
+      uniqueid="`${MULLE_OBJC_UNIQUEID} "$1"`"
       log_info "@selector( $1) is ${uniqueid}"
    else
       r_prettify_uniqueid "$1"
@@ -376,6 +404,7 @@ main()
 
    [ -z "${uniqueid}" ] && fail "malformed input \"$1\""
    shift
+
 
 
    if [ "${OPTION_LOCAL}" = "YES" ]

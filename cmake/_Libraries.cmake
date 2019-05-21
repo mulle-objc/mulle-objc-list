@@ -5,7 +5,7 @@ if( MULLE_TRACE_INCLUDE)
    message( STATUS "# Include \"${CMAKE_CURRENT_LIST_FILE}\"" )
 endif()
 
-# sourcetree: DL;no-all-load,no-cmakeinherit,no-import,no-load-all,no-public,no-require,only-os-mingw;dl,dlfcn
+# sourcetree: DL;no-all-load,no-cmakeinherit,no-import,no-public,no-require,only-os-mingw;dl,dlfcn
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    if( NOT DL_LIBRARY)
       find_library( DL_LIBRARY NAMES dl dlfcn)
@@ -57,7 +57,7 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 
-# sourcetree: DL;no-all-load,no-cmakeinherit,no-import,no-load-all,no-os-mingw,no-public,no-require;dl,dlfcn
+# sourcetree: DL;no-all-load,no-cmakeinherit,no-import,no-os-mingw,no-public,no-require;dl,dlfcn
 if( NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    if( NOT DL_LIBRARY)
       find_library( DL_LIBRARY NAMES dl dlfcn)

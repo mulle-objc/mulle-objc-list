@@ -167,7 +167,8 @@ _do_dump_static_dependencies()
       exekutor "${MULLE_OBJC_LISTA}" ${MULLE_TECHNICAL_FLAGS} \
                                      ${MULLE_OBJC_LISTA_FLAGS} \
                                      --configuration "${OPTION_CONFIGURATION}" \
-                                     -d "${filename}"
+                                     -d "${filename}" \
+                                     ${listaoptions}
    ) || fail "mulle-objc-lista failed"
 }
 

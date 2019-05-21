@@ -1,4 +1,4 @@
 mulle-objc-runtime;tar;no-header,no-singlephase;1a4c5f04-6d19-477a-bfb7-55a189dd1e54;${MULLE_OBJC_RUNTIME_URL:-https://github.com/mulle-objc/mulle-objc-runtime/archive/${MULLE_OBJC_RUNTIME_BRANCH:-latest}.tar.gz};;;;
-dlfcn;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-load-all,no-public,no-require,no-update,only-os-mingw;0151ead7-a1b8-4e6c-a3f4-92b05fc0b0bb;;;;;aliases=dl,dlfcn
+dlfcn;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-public,no-require,no-update,only-os-mingw;0151ead7-a1b8-4e6c-a3f4-92b05fc0b0bb;;;;;aliases=dl,dlfcn
 psapi;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-public,no-require,no-update,only-os-mingw;b72d651a-29b8-4e38-b2ad-2dc49ec80666;;;;;
-dl;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-load-all,no-os-mingw,no-public,no-require,no-update;31e775e7-3d64-4b93-a71e-7bf9c1f47aa7;;;;;aliases=dl,dlfcn
+dl;none;no-all-load,no-build,no-cmakeinherit,no-delete,no-dependency,no-fs,no-import,no-os-mingw,no-public,no-require,no-update;af1ef018-14f9-498d-9711-b0eb5af50388;;;;;base64:YWxpYXNlcz1kbCxkbGZjbgppbmNsdWRlPWRsZmNuLmgK
