@@ -65,17 +65,17 @@
 #define stringify( x) _stringify( x)
 
 
-
 static int       verbose;
 static int       dump;
 static int       emit_sentinel;
+static int       ignore_empty_args;
 static int       raw_types;
 static uint32_t  loader_classid = MULLE_OBJC_LOADER_CLASSID;
+
 
 static mulle_objc_classid_t      filter_classid;
 static mulle_objc_categoryid_t   filter_categoryid;
 static mulle_objc_methodid_t     filter_methodid;
-
 
 
 static enum
@@ -112,6 +112,7 @@ static void   _usage( void)
 {
    fprintf( stderr,
             "Options:\n"
+            "   -a      : ignore empty filter arguments"
             "   -e      : emit dependencies sentinel field\n"
             "   -l <id> : specify loader-class id for -d (default is 0x%08x)\n"
             "   -f <id> : filter for class with id\n"
@@ -1180,6 +1181,10 @@ int  main( int argc, char *argv[])
          }
 
       // options
+     case 'a':
+         ignore_empty_args = 1;
+         break;
+
       case 'e':
          emit_sentinel = 1;
          break;
@@ -1190,7 +1195,7 @@ int  main( int argc, char *argv[])
          ++i;
 
          filter_classid = strtol( argv[ i], NULL, 16);
-         if( ! filter_classid)
+         if( ! filter_classid && ! ignore_empty_args)
          {
             fprintf( stderr, "Could not parse \"%s\" as classid\n", argv[ i]);
             exit( 1);
@@ -1203,7 +1208,7 @@ int  main( int argc, char *argv[])
          ++i;
 
          filter_categoryid = strtol( argv[ i], NULL, 16);
-         if( ! filter_categoryid)
+         if( ! filter_categoryid && ! ignore_empty_args)
          {
             fprintf( stderr, "Could not parse \"%s\" as categoryid\n", argv[ i]);
             exit( 1);
@@ -1216,7 +1221,7 @@ int  main( int argc, char *argv[])
          ++i;
 
          filter_methodid = strtol( argv[ i], NULL, 16);
-         if( ! filter_methodid)
+         if( ! filter_methodid && ! ignore_empty_args)
          {
             fprintf( stderr, "Could not parse \"%s\" as methodid\n", argv[ i]);
             exit( 1);
