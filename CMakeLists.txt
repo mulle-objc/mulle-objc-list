@@ -31,14 +31,19 @@ endif()
 
 #
 # we just link mulle-objc-runtime as a c library and not with everything
-#
+# but we do need to link atinit and atexit normally
+
 if( LINK_PHASE)
-   set( DEPENDENCY_LIBRARIES
+   list( REMOVE_ITEM ALL_LOAD_DEPENDENCY_LIBRARIES "${MULLE_OBJC_RUNTIME_LIBRARY}")
+   list( INSERT DEPENDENCY_LIBRARIES 0 "${MULLE_OBJC_RUNTIME_LIBRARY}")
+   set( ALL_LOAD_DEPENDENCY_LIBRARIES
       ${ALL_LOAD_DEPENDENCY_LIBRARIES}
+      CACHE INTERNAL "need to cache this"
+   )
+   set( DEPENDENCY_LIBRARIES
       ${DEPENDENCY_LIBRARIES}
       CACHE INTERNAL "need to cache this"
    )
-   unset( ALL_LOAD_DEPENDENCY_LIBRARIES CACHE)
 endif()
 
 include( Executable)

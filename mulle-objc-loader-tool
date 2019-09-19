@@ -98,7 +98,7 @@ _dump_loader_dependencies()
          # new way
          *'/MulleObjCLoader+'*'.h')
             depfile="$1"
-            r_fast_basename "${depfile}"
+            r_basename "${depfile}"
             depname="${RVAL#MulleObjCLoader+}"
             depname="${depname%.h}"
          ;;
@@ -106,8 +106,8 @@ _dump_loader_dependencies()
          # old way
          *'/objc-loader.inc')
             depfile="$1"
-            r_fast_dirname "${depfile}"
-            r_fast_basename "${RVAL}"
+            r_dirname "${depfile}"
+            r_basename "${RVAL}"
             depname="${RVAL}"
          ;;
 
@@ -157,9 +157,9 @@ _do_dump_static_dependencies()
    local filename
    local directory
 
-   r_fast_basename "${LIBRARYFILE}"
+   r_basename "${LIBRARYFILE}"
    filename="${RVAL}"
-   r_fast_dirname "${LIBRARYFILE}"
+   r_dirname "${LIBRARYFILE}"
    directory="${RVAL}"
 
    (

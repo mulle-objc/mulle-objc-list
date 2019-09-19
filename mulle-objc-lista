@@ -663,7 +663,7 @@ ${text}"
    local cfile
    local folder
 
-   r_fast_dirname "${outfile}"
+   r_dirname "${outfile}"
    folder="${RVAL}"
    cfile="${folder}/`basename -- "${outfile}" .o`".c
    redirect_exekutor "${cfile}" echo "${text}"
@@ -729,7 +729,7 @@ _create_shlib()
          (
             exekutor cd "${tmpdir}" || exit 1
 
-            r_fast_basename "${library}"
+            r_basename "${library}"
             libraryname="${RVAL}"
             wholelibrary="`shlib_load_all_library "${libraryname}"`" || exit 1
 
@@ -740,11 +740,11 @@ _create_shlib()
 
             if create_undefined_linkage "${library}" "${undefined}" "."
             then
-               r_fast_basename "${undefined}"
+               r_basename "${undefined}"
                r_concat "${RVAL}" "${files}"
                files="${RVAL}"
             fi
-            r_fast_basename "${shlib}"
+            r_basename "${shlib}"
             shlib="${RVAL}"
 
             eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -nologo "-OUT:'${shlib}'"
