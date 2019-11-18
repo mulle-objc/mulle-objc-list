@@ -675,6 +675,7 @@ ${text}"
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
    exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
                             -Wno-builtin-requires-header \
+                            -Wno-incomplete-setjmp-declaration \
                             -c \
                             -o "${outfile}" \
                             "${cfile}" || exit 1
