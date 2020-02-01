@@ -180,9 +180,7 @@ static char   *simple_typename( char *type)
    case _C_DBL       : return( "double");
    case _C_LNG_DBL   : return( "long double");
    case _C_CHARPTR   : return( "char *");
-#ifdef _C_BOOL
-   case _C_BOOL      : return( "_Bool");
-#endif
+   case _C_BOOL      : return( "BOOL");
 #ifdef _C_UNDEF
    case _C_UNDEF     : return( "undefined");
 #endif

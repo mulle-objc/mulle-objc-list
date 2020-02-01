@@ -9,6 +9,7 @@ set( SCRIPTS
    mulle-objc-encode
    mulle-objc-loader-tool
    mulle-objc-lista
+   mulle-objc-leaks
    mulle-objc-optimize
    mulle-objc-printline
    mulle-objc-searchid
