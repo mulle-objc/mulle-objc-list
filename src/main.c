@@ -366,9 +366,10 @@ static void   print_unsigned_long_long( char *type, char *methodname, char *frag
 //
 static void   _print_struct_or_union( char *type, char *prefix)
 {
-   struct mulle_objc_typeinfo   typeinfo;
-   char                         *element;
-   unsigned int                 i;
+   struct mulle_objc_typeinfo              typeinfo;
+   char                                    *element;
+   unsigned int                            i;
+   struct mulle_objc_signatureenumerator   rover;
 
    element = strchr( type, '=');
    if( ! element)
@@ -389,14 +390,18 @@ static void   _print_struct_or_union( char *type, char *prefix)
    errno = 0;
    i     = 0;
    type  = &element[ 1];
-   while( element = _mulle_objc_signature_supply_next_typeinfo( type, &typeinfo))
+
+   rover = mulle_objc_signature_enumerate( type);
+   while( _mulle_objc_signatureenumerator_next( &rover, &typeinfo))
    {
       print_typeinfo( &typeinfo, NULL, NULL);
-      type = element;
       printf( " f%d; ", i++);
+      type = _mulle_objc_signatureenumerator_get_type( &rover);
       if( *type == '}')
          break;
    }
+   mulle_objc_signatureenumerator_done( &rover);
+
    if( errno == EINVAL)
       printf( "** broken struct/union signature \"%s\" **", type);
 
