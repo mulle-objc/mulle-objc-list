@@ -1,0 +1,50 @@
+#! /usr/bin/env bash
+#
+# Give it the executable to run
+
+
+get_leaks()
+{
+   local logfile="$1"
+
+   sed -n -e 's/^### leak //p' "${logfile}"
+}
+
+
+
+main()
+{
+   local logfile
+
+   logfile="${TMPDIR:-/tmp}/leaks-${USER:-nemo}.log"
+
+   MULLE_TESTALLOCATOR=1 \
+   MULLE_TESTALLOCATOR_TRACE=3 \
+   MULLE_TESTALLOCATOR_DONT_FREE=YES \
+   MULLE_OBJC_DEBUG_ENABLED=YES \
+   MULLE_OBJC_EPHEMERAL_SINGLETON=YES \
+   MULLE_OBJC_PEDANTIC_EXIT=YES \
+   MULLE_OBJC_TRACE_METHOD_CALL=YES \
+   MULLE_OBJC_TRACE_INSTANCE=YES \
+      "$@" 2> "${logfile}" > /dev/null
+
+   local leak
+   local leaks
+   local sep
+
+   for leak in `get_leaks "${logfile}"`
+   do
+      leaks="${leaks}${sep}${leak}"
+      sep='|'
+   done
+
+   if [ ! -z "${leaks}" ]
+   then
+      egrep ${EGREPFLAGS} "^\[==\] (${leaks}) instance .* allocated" "${logfile}"
+   fi
+
+   rm "${logfile}"
+}
+
+
+main "$@"
