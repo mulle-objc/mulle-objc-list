@@ -15,7 +15,7 @@ if( NOT MULLE_DLFCN_HEADER)
    message( STATUS "MULLE_DLFCN_HEADER is ${MULLE_DLFCN_HEADER}")
 
    #
-   # Add to list of header files.
+   # Add MULLE_DLFCN_HEADER to HEADER_ONLY_LIBRARIES list.
    # Disable with: `mulle-sourcetree mark mulle-dlfcn no-cmakeadd`
    #
    set( HEADER_ONLY_LIBRARIES
@@ -85,7 +85,7 @@ if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
    #
    if( MULLE_OBJC_RUNTIME_LIBRARY)
       #
-      # Add to MULLE_OBJC_RUNTIME_LIBRARY list.
+      # Add MULLE_OBJC_RUNTIME_LIBRARY to ALL_LOAD_DEPENDENCY_LIBRARIES list.
       # Disable with: `mulle-sourcetree mark mulle-objc-runtime no-cmakeadd`
       #
       set( ALL_LOAD_DEPENDENCY_LIBRARIES
@@ -158,7 +158,7 @@ endif()
 
 
 #
-# Generated from sourcetree: mulle-atinit;no-bequeath,no-dynamic-link,no-header,no-intermediate-link,no-singlephase;
+# Generated from sourcetree: mulle-atinit;no-bequeath,no-dynamic-link,no-header,no-import,no-intermediate-link,no-singlephase;
 # Disable with: `mulle-sourcetree mark mulle-atinit no-link`
 #
 if( NOT MULLE_ATINIT_LIBRARY)
@@ -170,7 +170,7 @@ if( NOT MULLE_ATINIT_LIBRARY)
    #
    if( MULLE_ATINIT_LIBRARY)
       #
-      # Add to MULLE_ATINIT_LIBRARY list.
+      # Add MULLE_ATINIT_LIBRARY to STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES list.
       # Disable with: `mulle-sourcetree mark mulle-atinit no-cmakeadd`
       #
       set( STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES
@@ -243,7 +243,7 @@ endif()
 
 
 #
-# Generated from sourcetree: mulle-atexit;no-bequeath,no-dynamic-link,no-header,no-intermediate-link,no-singlephase;
+# Generated from sourcetree: mulle-atexit;no-bequeath,no-dynamic-link,no-header,no-import,no-intermediate-link,no-singlephase;
 # Disable with: `mulle-sourcetree mark mulle-atexit no-link`
 #
 if( NOT MULLE_ATEXIT_LIBRARY)
@@ -255,7 +255,7 @@ if( NOT MULLE_ATEXIT_LIBRARY)
    #
    if( MULLE_ATEXIT_LIBRARY)
       #
-      # Add to MULLE_ATEXIT_LIBRARY list.
+      # Add MULLE_ATEXIT_LIBRARY to STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES list.
       # Disable with: `mulle-sourcetree mark mulle-atexit no-cmakeadd`
       #
       set( STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES

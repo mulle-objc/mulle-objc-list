@@ -1,3 +1,10 @@
+## 0.17.0
+
+* adjust to new signature enumeration in mulle-objc-runtime
+* now supports ``_C_BOOL`` as BOOL (not `_Bool\!)`
+* remove some compile ugliness
+
+
 ## 0.16.0
 
 * Various small improvements
