@@ -164,9 +164,9 @@ mulle-sde install --prefix /usr/local \
 
 Install the requirements:
 
-Requirements                                                       | Description
--------------------------------------------------------------------|-----------------------
-[mulle-objc-runtime](//github.com/mulle-objc-runtime/mulle-atinit) | Objective-C runtime
+Requirements                                                     | Description
+-----------------------------------------------------------------|-----------------------
+[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | Objective-C runtime
 
 Install into `/usr/local`:
 
