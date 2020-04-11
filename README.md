@@ -147,7 +147,7 @@ mulle-sde dependency add --c --github mulle-objc mulle-objc-list
 ## Install
 
 See [mulle-objc-developer](//github.com/mulle-objc/mulle-objc-developer) for the preferred
-way to installation mulle-objc-runtime.
+way to install mulle-objc-list.
 
 
 ### mulle-sde
