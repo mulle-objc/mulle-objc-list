@@ -136,21 +136,54 @@ Commands:
 ---------------|--------------|---------------------------------
 [mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://travis-ci.org/mulle-objc/mulle-objc-runtime.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://travis-ci.org/mulle-objc/mulle-objc-runtime.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime)
 
-## How to build it
+## Add 
 
-#### Manually with cmake
-
-Install all above prerequisites:
-
-now build the project
+Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project:
 
 ```
-mkdir build
-cd build
-cmake ..
+mulle-sde dependency add --c --github mulle-objc mulle-objc-list
 ```
 
-#### Conveniently with mulle-sde
+## Install
 
-Install [mulle-sde](//github.com/mulle-sde) and run `mulle-sde craft`.
+See [mulle-objc-developer](//github.com/mulle-objc/mulle-objc-developer) for the preferred
+way to installation mulle-objc-runtime.
 
+
+### mulle-sde
+
+Use [mulle-sde](//github.com/mulle-sde) to build and install mulle-objc-list and all dependencies:
+
+```
+mulle-sde install --prefix /usr/local \
+   https://github.com/mulle-objc/mulle-objc-list/archive/latest.tar.gz
+```
+
+### Manual Installation
+
+
+Install the requirements:
+
+Requirements                                                       | Description
+-------------------------------------------------------------------|-----------------------
+[mulle-objc-runtime](//github.com/mulle-objc-runtime/mulle-atinit) | Objective-C runtime
+
+Install into `/usr/local`:
+
+```
+mkdir build 2> /dev/null
+(
+   cd build ;
+   cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
+         -DCMAKE_PREFIX_PATH=/usr/local \
+         -DCMAKE_BUILD_TYPE=Release .. ;
+   make install
+)
+```
+
+
+## Author
+
+[Nat!](//www.mulle-kybernetik.com/weblog) for
+[Mulle kybernetiK](//www.mulle-kybernetik.com) and
+[Codeon GmbH](//www.codeon.de)
