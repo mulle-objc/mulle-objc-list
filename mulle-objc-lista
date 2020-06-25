@@ -479,7 +479,6 @@ EOF
    return 1
 }
 EOF
-
 }
 
 
@@ -493,6 +492,65 @@ is_clang_builtin()
 
    _is_clang_builtin "$@"
 }
+
+
+# also change in mulle-objc-unarchive
+
+CLANG_FUNCTIONS="_GLOBAL_OFFSET_TABLE_"
+
+crt_functions()
+{
+   echo "struct i_am_bogus;"
+
+   IFS=':'
+   for name in ${CRT_FUNCTIONS}
+   do
+      echo "void   ${name}( struct i_am_bogus *p) {}"
+   done
+   IFS="${DEFAULT_IFS}"
+}
+
+
+print_crt_function_case()
+{
+   crt_functions | \
+      mulle-clang -cc1 -fsyntax-only -x c 2>&1 | \
+      sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
+}
+
+
+print_crt_function()
+{
+   cat <<EOF
+_is_crt_function()
+{
+   case "\$1" in
+EOF
+
+   print_crt_function_case
+
+   cat <<EOF
+   esac
+
+   return 1
+}
+EOF
+
+}
+
+
+is_crt_symbol()
+{
+   if [ -z "${is_crt_function_defined}" ]
+   then
+      eval "`print_crt_function`" || exit 1
+      is_crt_function_defined="YES"
+   fi
+
+   _is_crt_function "$@"
+}
+
+
 
 #
 # read symbols from .a file, figure out the ones that we need to "spoof"
@@ -593,10 +651,10 @@ create_undefined_linkage_c()
          ;;
 
          *)
-            # if ! is_clang_builtin "$i"
-            # then
+            if ! is_crt_symbol "$i"
+            then
                emit "$i"
-            # fi
+            fi
          ;;
       esac
    done
