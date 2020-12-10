@@ -54,7 +54,7 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 
-#include "version.h"
+#include "mulle-objc-list-version.h"
 
 
 #define MULLE_OBJC_LOADER_CLASSID  0x47a9beb6
@@ -462,7 +462,7 @@ static void   print_pointer( char *type, char *methodname, char *fragment)
 {
    struct mulle_objc_typeinfo   typeinfo;
 
-   if( _mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo))
+   if( mulle_objc_signature_supply_typeinfo( ++type, NULL, &typeinfo))
    {
       // fprintf( stderr, ">>> %s: %.1s\n",  fragment ? fragment : methodname, typeinfo.type);
       switch( *typeinfo.type)
@@ -495,7 +495,7 @@ static void   print_array( char *type, char *methodname, char *fragment)
       size += *type - '0';
    }
 
-   if( _mulle_objc_signature_supply_next_typeinfo( ++type, &typeinfo))
+   if( mulle_objc_signature_supply_typeinfo( ++type, NULL, &typeinfo))
       print_typeinfo( &typeinfo, NULL, NULL);
    else
       printf( "** broken array signature \"%s\" **", type);
@@ -635,7 +635,7 @@ static void   method_dump( struct _mulle_objc_method *method,
    types = _mulle_objc_method_get_signature( method);
    i     = 0;
 
-   while( types = mulle_objc_signature_supply_next_typeinfo( types, &typeinfo))
+   while( types = mulle_objc_signature_supply_typeinfo( types, NULL, &typeinfo))
    {
       putchar( ! i ? ';' : ',');
 
@@ -853,7 +853,7 @@ static void   ivar_dump( struct _mulle_objc_ivar *ivar)
 
    putchar(';');
    type = _mulle_objc_ivar_get_signature( ivar);
-   if( _mulle_objc_signature_supply_next_typeinfo( type, &typeinfo))
+   if( mulle_objc_signature_supply_typeinfo( type, NULL, &typeinfo))
       print_typeinfo( &typeinfo, _mulle_objc_ivar_get_name( ivar), _mulle_objc_ivar_get_name( ivar));
    else
       printf( "** broken ivar signature \"%s\" **", type);
@@ -1264,7 +1264,7 @@ int  main( int argc, char *argv[])
          {
             struct mulle_objc_typeinfo   typeinfo;
 
-            if( _mulle_objc_signature_supply_next_typeinfo( argv[ i], &typeinfo))
+            if( mulle_objc_signature_supply_typeinfo( argv[ i], NULL, &typeinfo))
             {
                print_typeinfo( &typeinfo, NULL, NULL);
                return( 0);

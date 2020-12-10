@@ -13,12 +13,17 @@
 #define _mulle_objc_list_include_h__
 
 // How to tweak the following mulle-dlfcn #include
-//    remove:          `mulle-sourcetree mark mulle-dlfcn no-header`
-//    rename:          `mulle-sourcetree mark mulle-dlfcn set include whatever.h`
-//    toggle #import:  `mulle-sourcetree mark mulle-dlfcn [no-]import`
-//    toggle public:   `mulle-sourcetree mark mulle-dlfcn [no-]public`
-//    toggle optional: `mulle-sourcetree mark mulle-dlfcn [no-]require`
-//    remove for os:   `mulle-sourcetree mark mulle-dlfcn no-os-<osname>`
-# include <mulle-dlfcn/mulle-dlfcn.h>   // mulle-dlfcn
+//    remove:             `mulle-sourcetree mark mulle-dlfcn no-header`
+//    rename:             `mulle-sde dependency|library set mulle-dlfcn include whatever.h`
+//    toggle #import:     `mulle-sourcetree mark mulle-dlfcn [no-]import`
+//    toggle localheader: `mulle-sourcetree mark mulle-dlfcn [no-]localheader`
+//    toggle public:      `mulle-sourcetree mark mulle-dlfcn [no-]public`
+//    toggle optional:    `mulle-sourcetree mark mulle-dlfcn [no-]require`
+//    remove for os:      `mulle-sourcetree mark mulle-dlfcn no-os-<osname>`
+# if defined( __has_include) && __has_include("mulle-dlfcn.h")
+#   include "mulle-dlfcn.h"   // mulle-dlfcn
+# else
+#   include <mulle-dlfcn/mulle-dlfcn.h>   // mulle-dlfcn
+#endif
 
 #endif

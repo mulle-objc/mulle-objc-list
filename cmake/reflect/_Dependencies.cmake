@@ -7,8 +7,8 @@ if( MULLE_TRACE_INCLUDE)
 endif()
 
 #
-# Generated from sourcetree: mulle-dlfcn;no-all-load,no-import,no-link,no-singlephase;
-# Disable with: `mulle-sourcetree mark mulle-dlfcn no-link`
+# Generated from sourcetree: mulle-dlfcn;no-actual-link,no-all-load,no-bequeath,no-import,no-singlephase;
+# Disable with: `mulle-sourcetree mark mulle-dlfcn no-header`
 #
 if( NOT MULLE_DLFCN_HEADER)
    find_file( MULLE_DLFCN_HEADER NAMES mulle-dlfcn.h mulle-dlfcn/mulle-dlfcn.h)
@@ -74,7 +74,7 @@ endif()
 
 #
 # Generated from sourcetree: mulle-objc-runtime;no-bequeath,no-header,no-import,no-singlephase;
-# Disable with: `mulle-sourcetree mark mulle-objc-runtime no-link`
+# Disable with: `mulle-sourcetree mark mulle-objc-runtime no-header`
 #
 if( NOT MULLE_OBJC_RUNTIME_LIBRARY)
    find_library( MULLE_OBJC_RUNTIME_LIBRARY NAMES ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-objc-runtime${CMAKE_STATIC_LIBRARY_SUFFIX} mulle-objc-runtime NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
@@ -159,7 +159,7 @@ endif()
 
 #
 # Generated from sourcetree: mulle-atinit;no-bequeath,no-dynamic-link,no-header,no-import,no-intermediate-link,no-singlephase;
-# Disable with: `mulle-sourcetree mark mulle-atinit no-link`
+# Disable with: `mulle-sourcetree mark mulle-atinit no-header`
 #
 if( NOT MULLE_ATINIT_LIBRARY)
    find_library( MULLE_ATINIT_LIBRARY NAMES ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-atinit${CMAKE_STATIC_LIBRARY_SUFFIX} mulle-atinit NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)
@@ -244,7 +244,7 @@ endif()
 
 #
 # Generated from sourcetree: mulle-atexit;no-bequeath,no-dynamic-link,no-header,no-import,no-intermediate-link,no-singlephase;
-# Disable with: `mulle-sourcetree mark mulle-atexit no-link`
+# Disable with: `mulle-sourcetree mark mulle-atexit no-header`
 #
 if( NOT MULLE_ATEXIT_LIBRARY)
    find_library( MULLE_ATEXIT_LIBRARY NAMES ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-atexit${CMAKE_STATIC_LIBRARY_SUFFIX} mulle-atexit NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH)

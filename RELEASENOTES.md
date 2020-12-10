@@ -1,3 +1,8 @@
+## 0.18.0
+
+* adapt to changes in mulle-objc-runtime
+
+
 ### 0.17.1
 
 * new mulle-sde project structure

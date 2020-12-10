@@ -4,5 +4,5 @@
 # enough for you. If you don't have this file, there will be 
 # not git operations. 
 #
-# VERSIONFILE=
+VERSIONFILE="src/mulle-objc-list-version.h"
 # VERSIONNAME=

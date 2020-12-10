@@ -1,10 +1,15 @@
 # mulle-objc-list
 
-📒 Lists mulle-objc runtime information contained in executables.
+#### 📒 Lists mulle-objc runtime information contained in executables.
 
 The functionality is based on `mulle-objc-list` which loads a shared
 library and dumps the mulle-objc load information contained within as
 [CSV, euro-style](https://en.wikipedia.org/wiki/Comma-separated_values).
+
+| Release Version
+|-----------------------------------
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-list/workflows)
+
 
 Also contains:
 
@@ -134,9 +139,9 @@ Commands:
 
   Name         | Build Status | Release Version
 ---------------|--------------|---------------------------------
-[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://travis-ci.org/mulle-objc/mulle-objc-runtime.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://travis-ci.org/mulle-objc/mulle-objc-runtime.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime)
+[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime)
 
-## Add 
+## Add
 
 Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project:
 

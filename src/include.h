@@ -23,6 +23,6 @@
 
 /* You can add some more include statements here */
 
-#include "version.h"
+#include "mulle-objc-list-version.h"
 
 #endif
