@@ -1,0 +1,22 @@
+{
+   "name" : "mulle-objc-list",
+   "version" : "0.18.0",
+   "description" : "📒 Lists mulle-objc runtime information contained in executables.",
+   "homepage" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list
+https://github.com/mulle-objc/mulle-objc-list",
+   "bugs" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list
+https://github.com/mulle-objc/mulle-objc-list/issues",
+   "keywords" : [],
+   "license" : "UNLICENSED",
+   "repository" : {
+      "type" : "git",
+      "url" : "mulle-kybernetik-tv/mulle-objc-list
+mulle-objc/mulle-objc-list"
+   },
+   "dependencies" : {
+      "mulle-objc-runtime" : "mulle-objc/mulle-objc-runtime",
+      "mulle-dlfcn" : "mulle-core/mulle-dlfcn",
+      "mulle-atinit" : "mulle-core/mulle-atinit",
+      "mulle-atexit" : "mulle-core/mulle-atexit"
+   }
+}
