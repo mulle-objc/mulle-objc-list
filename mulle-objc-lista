@@ -85,7 +85,7 @@ setup_cc_environment()
          esac
 
 
-         # filnd the ms linker
+         # find the ms linker
          IFS=":"
          for item in $PATH
          do
@@ -178,7 +178,7 @@ shlib_ldflags()
 
    case "${MULLE_UNAME}" in
       darwin)
-         echo "-dynamiclib -Os -flat_namespace -undefined suppress"
+         echo "-dynamiclib -Os -flat_namespace -undefined suppress -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
       ;;
 
       mingw)

@@ -347,6 +347,15 @@ main()
 
    options_setup_trace "${MULLE_TRACE}"
 
+   if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   then
+      MULLE_VIRTUAL_ROOT="`mulle-sde project-dir`"
+      [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+   fi
+
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_CRAFT_DEPENDENCY_DIR}}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_VIRTUAL_ROOT}/${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}}"
+
    if [ "${OPTION_DUMP_WORDS}" = "YES" ]
    then
       find_local_words

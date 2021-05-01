@@ -451,6 +451,15 @@ main()
    C_DEFAULT_NAME="`lib_pretension`_c`lib_extension`"
    OBJC_DEFAULT_NAME="`lib_pretension`_ObjC.`lib_extension`"
 
+   if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   then
+      MULLE_VIRTUAL_ROOT="`mulle-sde project-dir`"
+      [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+   fi
+
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_CRAFT_DEPENDENCY_DIR}}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_VIRTUAL_ROOT}/${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}}"
+
    while [ $# -ne 0 ]
    do
       if options_technical_flags "$1"

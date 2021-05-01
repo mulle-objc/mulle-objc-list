@@ -177,7 +177,7 @@ _dump_dependencies()
 {
    log_entry "_dump_dependencies" "$@"
 
-   [ -z "${DEPENDENCY_DIR}" ] && fail "DEPENDENCY_DIR not set"
+   [ -z "${DEPENDENCY_DIR}" ] && internal_fail "DEPENDENCY_DIR not set"
 
    local rval
 
@@ -293,6 +293,15 @@ main()
    done
 
    options_setup_trace "${MULLE_TRACE}"
+
+   if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   then
+      MULLE_VIRTUAL_ROOT="`mulle-sde project-dir`"
+      [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+   fi
+
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_CRAFT_DEPENDENCY_DIR}}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_VIRTUAL_ROOT}/${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}}"
 
    local name
 
