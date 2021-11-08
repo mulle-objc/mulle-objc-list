@@ -4,6 +4,7 @@
 #include "include.h"
 #include <stdio.h>
 
+#define MULLE_OBJC_LIST_HOOK   // queried by MulleObjC
 
 // clang speciality
 #ifdef __has_include

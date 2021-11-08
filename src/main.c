@@ -45,9 +45,6 @@
 
 #include "include-private.h"
 
-// direct load instead of dependencies.h because its a debug header
-#include <mulle-objc-runtime/mulle-objc-csvdump.h>
-
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>

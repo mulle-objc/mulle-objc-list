@@ -936,7 +936,9 @@ main()
    local directory
    local rval
 
-   directory="`make_tmp_directory "lista"`"
+   r_make_tmp_directory "lista" || exit 1
+   directory="${RVAL}"
+
    shlib="`create_shlib "${library}" "${directory}"`" || exit 1
    cmdline="${cmdline} '${shlib}'"
 
@@ -958,6 +960,16 @@ main()
 
 _init()
 {
+   #
+   # leading backslash ? looks like we're getting called from
+   # mingw via a .BAT or so
+   #
+   case "$PATH" in
+      '\\'*)
+         PATH="`tr '\\' '/' <<< "${PATH}"`"
+      ;;
+   esac
+
    if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
    then
       MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions-env "libexec-dir" 2> /dev/null`"
@@ -967,17 +979,14 @@ _init()
    fi
 
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
+
+   shell_enable_pipefail
+   shell_enable_extglob
 }
 
-#
-# leading backslash ? looks like we're getting called from
-# mingw via a .BAT or so
-#
-case "$PATH" in
-   '\\'*)
-      PATH="`tr '\\' '/' <<< "${PATH}"`"
-   ;;
-esac
+
+MULLE_EXECUTABLE="${MULLE_EXECUTABLE:-${BASH_SOURCE[0]:-${(%):-%x}}}"
 
 _init "$@"
+
 main "$@"

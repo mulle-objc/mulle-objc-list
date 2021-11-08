@@ -635,7 +635,8 @@ main()
 
    if [ -z "${OPTIMIZE_DIR}" ]
    then
-      OPTIMIZE_DIR="`make_tmp_directory "optimize"`"
+      r_make_tmp_directory "optimize"
+      OPTIMIZE_DIR="${RVAL}"
       log_fluff "OPTIMIZE_DIR is ${OPTIMIZE_DIR}"
       CLEANUP="${OPTION_CLEANUP_TMP:-YES}"
    fi
