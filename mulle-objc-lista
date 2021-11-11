@@ -121,94 +121,110 @@ setup_cc_environment()
 }
 
 
-shlib_extension()
+r_shlib_extension()
 {
-   log_entry "shlib_extension" "$@"
+   log_entry "r_shlib_extension" "$@"
 
    case "${MULLE_UNAME}" in
       darwin)
-         echo "dylib"
+         RVAL="dylib"
       ;;
 
       mingw*)
-         echo "dll"
+         RVAL="dll"
       ;;
 
       *)
-         echo "so"
+         RVAL="so"
        ;;
    esac
 }
 
 
-shlib_cflags()
+r_shlib_cflags()
 {
-   log_entry "shlib_cflags" "$@"
+   log_entry "r_shlib_cflags" "$@"
 
    case "${MULLE_UNAME}" in
       darwin)
-         echo "-fno-common"
+         RVAL="-fno-common"
       ;;
 
       mingw*)
          case "${OPTION_CONFIGURATION}" in
             Release)
                # MD (kernel32.lib)
-               echo "-MD"
+               RVAL="-MD"
             ;;
 
             Debug)
                # MDd
-               echo "-MDd"
+               RVAL="-MDd"
             ;;
          esac
 
        ;;
 
       *)
-         echo "-fPIC -fno-common"
-       ;;
+         RVAL="-fPIC -fno-common"
+      ;;
    esac
 }
 
 
-shlib_ldflags()
+r_macos_sdk_path()
 {
-   log_entry "shlib_ldflags" "$@"
+   log_entry "r_macos_sdk_path" "$@"
+
+   RVAL="`rexekutor xcrun --show-sdk-path 2> /dev/null`"
+   RVAL="${RVAL:-/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk}"
+}
+
+
+r_shlib_ldflags()
+{
+   log_entry "r_shlib_ldflags" "$@"
 
    case "${MULLE_UNAME}" in
       darwin)
-         echo "-dynamiclib -Os -flat_namespace -undefined suppress -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
+         local usr_lib 
+
+         r_macos_sdk_path 
+         r_filepath_concat "${RVAL}" "/usr/lib"
+         usr_lib="${RVAL}"
+
+         printf "-dynamiclib -Os -flat_namespace -undefined suppress -L'%s'\n" 
+                "${usr_lib}"
       ;;
 
       mingw)
-         echo "-DLL" # "-NODEFAULTLIB"
+         RVAL="-DLL" # "-NODEFAULTLIB"
       ;;
 
       *)
-         echo "-shared"
+         RVAL="-shared"
       ;;
    esac
 }
 
 
-shlib_load_all_library()
+r_shlib_load_all_library()
 {
-   log_entry "shlib_load_all_library" "$@"
+   log_entry "r_shlib_load_all_library" "$@"
 
    local library="$1"
 
    case "${MULLE_UNAME}" in
       darwin)
-         echo "'${library}' -force_load '${library}'"
+         RVAL="'${library}' -force_load '${library}'"
       ;;
 
       mingw)
-         echo "'-WHOLEARCHIVE:${library}'"
+         RVAL="'-WHOLEARCHIVE:${library}'"
       ;;
 
       *)
-         echo "-Wl,--whole-archive" "'${library}'" "-Wl,--no-whole-archive"
+         RVAL="-Wl,--whole-archive" "'${library}'" "-Wl,--no-whole-archive"
       ;;
    esac
 }
@@ -723,12 +739,16 @@ ${text}"
 
    r_dirname "${outfile}"
    folder="${RVAL}"
-   cfile="${folder}/`basename -- "${outfile}" .o`".c
+
+   r_basename "${outfile}"
+   cfile="${folder}/${RVAL%\.o}.c"
+   
    redirect_exekutor "${cfile}" echo "${text}"
 
    local cflags
 
-   cflags="`shlib_cflags`"
+   r_shlib_cflags
+   cflags="${RVAL}"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
    exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
@@ -754,7 +774,8 @@ create_mingw_aux_linkage()
 
    local cflags
 
-   cflags="`shlib_cflags`"
+   r_shlib_cflags
+   cflags="${RVAL}"
 
    log_fluff "Compile auxiliary linkage \"${auxfile}\"..."
    exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
@@ -780,7 +801,8 @@ _create_shlib()
    local wholelibrary
    local libraryname
 
-   ldflags="`shlib_ldflags`"
+   r_shlib_ldflags
+   ldflags="${RVAL}"
 
    case "${MULLE_UNAME}" in
       mingw*)
@@ -790,7 +812,8 @@ _create_shlib()
 
             r_basename "${library}"
             libraryname="${RVAL}"
-            wholelibrary="`shlib_load_all_library "${libraryname}"`" || exit 1
+            r_shlib_load_all_library "${libraryname}"
+            wholelibrary="${RVAL}" || exit 1
 
             files="${wholelibrary}"
 
@@ -806,7 +829,7 @@ _create_shlib()
             r_basename "${shlib}"
             shlib="${RVAL}"
 
-            eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -nologo "-OUT:'${shlib}'"
+            eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -nologo "-OUT:'${shlib}'"
          ) >&2 || exit 1
          return
       ;;
@@ -814,14 +837,15 @@ _create_shlib()
 
    # just a bit faster than mingw needing to copy the library
    # for path reasons
-   wholelibrary="`shlib_load_all_library "${library}"`"
+   r_shlib_load_all_library "${library}"
+   wholelibrary="${RVAL}"
    files="${wholelibrary}"
 
    if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
    then
       files="${undefined} ${files}"
    fi
-   eval_exekutor "'${LD}'" ${ldflags} ${files} ${LIBRARIES} -o "'${shlib}'" \
+   eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -o "'${shlib}'" \
     || fail "Linking temporary shared library failed"
 }
 
@@ -844,9 +868,12 @@ create_shlib()
    local ext
    local ldflags
 
-   ext="`shlib_extension`"
+   r_shlib_extension
+   ext="${RVAL}"
 
-   name="`basename "${library}" .a`"
+   r_basename "${library}"
+   name="${RVAL%\.a}"
+
    undefined="${directory}/${name}.undef.o"
    shlib="${directory}/${name}.${ext}"
 
