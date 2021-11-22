@@ -193,8 +193,7 @@ r_shlib_ldflags()
          r_filepath_concat "${RVAL}" "/usr/lib"
          usr_lib="${RVAL}"
 
-         printf "-dynamiclib -Os -flat_namespace -undefined suppress -L'%s'\n" 
-                "${usr_lib}"
+         RVAL="-dynamiclib -Os -flat_namespace -undefined suppress -L'${usr_lib}'"
       ;;
 
       mingw)
@@ -224,7 +223,7 @@ r_shlib_load_all_library()
       ;;
 
       *)
-         RVAL="-Wl,--whole-archive" "'${library}'" "-Wl,--no-whole-archive"
+         RVAL="-Wl,--whole-archive '${library}' -Wl,--no-whole-archive"
       ;;
    esac
 }
@@ -586,7 +585,7 @@ create_undefined_linkage_c()
       redirect_exekutor "${tmpdir}/defined_globals" sort -u
 
    # fgrep behaves funny with empty files
-   if [ -z "`cat ${tmpdir}/defined_globals`" ]
+   if [ -z "`cat "${tmpdir}/defined_globals" `" ]
    then
       # remove defined globals from undefined
       nm_global_undefined_names "${infile}" | \
