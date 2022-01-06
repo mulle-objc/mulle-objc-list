@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#! /bin/sh
 #
 # Give it the executable to run
 

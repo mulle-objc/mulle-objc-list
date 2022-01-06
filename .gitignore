@@ -2,11 +2,15 @@
 *.bak
 *.old
 tmp.*
+*.*-workspace
 
 var/
 build*.d/
 build/
 kitchen/
+old-test-code/
+
+builtin-clang-functions.*
 
 .gitignore
 .vscode/
