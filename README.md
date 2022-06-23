@@ -166,7 +166,6 @@ mulle-sde install --prefix /usr/local \
 
 ### Manual Installation
 
-
 Install the requirements:
 
 Requirements                                                     | Description
@@ -185,6 +184,12 @@ mkdir build 2> /dev/null
    make install
 )
 ```
+
+> #### musl incompatibility
+>
+> With musl static linking, mulle-objc-list lacks the capability to load
+> shared libraries, rendering it useless.
+>
 
 
 ## Author

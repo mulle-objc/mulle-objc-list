@@ -1,3 +1,8 @@
+### 0.20.1
+
+* don't install mulle-objc-list binaries, when musl based
+* various changes to support Windows
+
 ## 0.20.0
 
 * Various small improvements

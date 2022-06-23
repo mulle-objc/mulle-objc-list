@@ -1,3 +1,19 @@
+# if( "$ENV{CC}" MATCHES "^musl-mulle-*")
+#    unset( ENV{CC})
+#    message( STATUS "Ignore CC environment, as mulle-objc-list can't be built with musl-mulle")
+#    set( ENV{CFLAGS} "-fPIC -fno-common")
+#    message( STATUS "Set ENV{CFLAGS} to $ENV{CFLAGS}")
+# endif()
+#
+
+# try_compile(), triggered by project( mulle-objc-list C) will have problems
+# linking an executable, but we don't care
+
+if( "$ENV{CC}" MATCHES "^musl-mulle-*")
+   set( CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+   set( SKIP_EXECUTABLE_INSTALL ON)
+endif()
+
 cmake_minimum_required( VERSION 3.15)
 
 project( mulle-objc-list C)
@@ -48,33 +64,37 @@ if( LINK_PHASE)
 endif()
 
 include( Executable)
-include( InstallExecutable)
 
-# need this for mulle-atexit
-if( LINK_PHASE AND UNIX)
-   target_link_options( "${EXECUTABLE_NAME}"
-      PUBLIC
-         "SHELL:LINKER:--export-dynamic"
-   )
-endif()
+if( NOT SKIP_EXECUTABLE_INSTALL)
+
+   include( InstallExecutable)
+
+   # need this for mulle-atexit
+   if( LINK_PHASE AND UNIX)
+      target_link_options( "${EXECUTABLE_NAME}"
+         PUBLIC
+            "SHELL:LINKER:--export-dynamic"
+      )
+   endif()
 
 #
 # see: https://john.nachtimwald.com/2012/07/15/calling-functions-in-exe-from-plugins-in-windows/
 #
-if( LINK_PHASE AND MSVC)
-   target_link_libraries( "${EXECUTABLE_NAME}"
-      "-export:__mulle_objc_loadinfo_callback"
-      "-export:__mulle_objc_list_callback"
-   )
-endif()
+   if( LINK_PHASE AND MSVC)
+      target_link_libraries( "${EXECUTABLE_NAME}"
+         "-export:__mulle_objc_loadinfo_callback"
+         "-export:__mulle_objc_list_callback"
+      )
+   endif()
 
 
-install( FILES ${SCRIPTS}
+   install( FILES ${SCRIPTS}
 PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
             GROUP_EXECUTE GROUP_READ
             WORLD_EXECUTE WORLD_READ
 DESTINATION "bin")
 
+endif()
 
 include( FinalOutput OPTIONAL)
 
