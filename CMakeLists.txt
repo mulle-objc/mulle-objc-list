@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.1)
+cmake_minimum_required( VERSION 3.15)
 
 project( mulle-objc-list C)
 
@@ -49,6 +49,14 @@ endif()
 
 include( Executable)
 include( InstallExecutable)
+
+# need this for mulle-atexit
+if( LINK_PHASE AND UNIX)
+   target_link_options( "${EXECUTABLE_NAME}"
+      PUBLIC
+         "SHELL:LINKER:--export-dynamic"
+   )
+endif()
 
 #
 # see: https://john.nachtimwald.com/2012/07/15/calling-functions-in-exe-from-plugins-in-windows/

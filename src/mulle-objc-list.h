@@ -26,7 +26,7 @@ static inline void   mulle_objc_list_install_hook( struct _mulle_objc_universe *
 #if __APPLE__
 # define MULLE_OBJC_DLSYM_HANDLE   RTLD_MAIN_ONLY
 #else
-# if __linux__
+# if defined( __linux__) || defined( _WIN32)
 #  define MULLE_OBJC_DLSYM_HANDLE  0  // RTLD_DEFAULT (often), but don't want to force GNUSOURCE YET
 # else
 #  error "figure out a good value for main handle"

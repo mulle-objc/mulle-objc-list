@@ -1,5 +1,14 @@
 #! /bin/sh
 #
+# shellcheck shell=bash
+# shellcheck disable=SC2236
+# shellcheck disable=SC2120
+# shellcheck disable=SC2166
+# shellcheck disable=SC2034
+# shellcheck disable=SC2006
+# shellcheck disable=SC1090
+# shellcheck disable=SC1091
+#
 #   Copyright (c) 2017 Nat! - Mulle kybernetiK
 #   All rights reserved.
 #
@@ -62,6 +71,7 @@ fi
 #
 if [ "$1" != --no-auto-shell ]
 then
+   # shellcheck source=/home/src/srcM/mulle-bashfunctions/src/mulle-boot.sh
    . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
 else
    shift    # get rid of --no-auto-shell
@@ -76,6 +86,7 @@ fi
 #
 # Do this first to get aliases
 #
+# shellcheck source=../../../srcM/mulle-bashfunctions/src/mulle-bashfunctions.sh
 . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
 
 ###
@@ -110,10 +121,10 @@ setup_cc_environment()
    log_entry "setup_cc_environment" "$@"
 
    case "${MULLE_UNAME}" in
-      mingw*)
-         CC="mulle-clang-cl"
-         LD="link"
-         NM="mulle-nm"
+      windows|mingw*)
+         CC="mulle-clang-cl${MULLE_EXE_EXTENSION}"
+         LD="link${MULLE_EXE_EXTENSION}"
+         NM="mulle-nm${MULLE_EXE_EXTENSION}"
          EXTERN_GLOBAL_PREFIX="__declspec( dllexport) "
          EXTERN_SYMBOL_PREFIX="__imp__"
 
@@ -135,17 +146,14 @@ setup_cc_environment()
 
 
          # find the ms linker
-         IFS=":"
-         for item in $PATH
-         do
+         .foreachpath item in $PATH
+         .do
             if [ -x "${item}/cl.exe" -a -x "${item}/link.exe" ]
             then
                LD="${item}/link.exe"
-               break
+               .break
             fi
-         done
-         IFS="
-"
+         .done
       ;;
 
       *)
@@ -179,7 +187,7 @@ r_shlib_extension()
          RVAL="dylib"
       ;;
 
-      mingw*)
+      windows|mingw*)
          RVAL="dll"
       ;;
 
@@ -199,7 +207,7 @@ r_shlib_cflags()
          RVAL="-fno-common"
       ;;
 
-      mingw*)
+      windows|mingw*)
          case "${OPTION_CONFIGURATION}" in
             Release)
                # MD (kernel32.lib)
@@ -245,7 +253,7 @@ r_shlib_ldflags()
          RVAL="-dynamiclib -Os -flat_namespace -undefined suppress -L'${usr_lib}'"
       ;;
 
-      mingw)
+      windows|mingw)
          RVAL="-DLL" # "-NODEFAULTLIB"
       ;;
 
@@ -267,7 +275,7 @@ r_shlib_load_all_library()
          RVAL="'${library}' -force_load '${library}'"
       ;;
 
-      mingw)
+      windows|mingw)
          RVAL="'-WHOLEARCHIVE:${library}'"
       ;;
 
@@ -291,7 +299,7 @@ _nm_global_defined_names()
             sed 's/^_//'
       ;;
 
-      mingw*)
+      windows|mingw*)
          #
          # -p no sort, -P posix style (name first)
          # get rid of ??_C@_07DPFPOHBA@atexit?3?$AA@ and stuff like that
@@ -328,7 +336,7 @@ _nm_global_undefined_names()
             sed 's/^_//'
       ;;
 
-      mingw*)
+      windows|mingw*)
          # -p no sort, -P posix style (name first)
          exekutor ${NM} -g --undefined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
@@ -411,9 +419,10 @@ emit()
    local symbol="$1"
 
    case "${MULLE_UNAME}" in
-      mingw)
+      windows|mingw)
          case "$1" in
             __imp__*)
+               log_debug "ignore imp $i"
             ;;
 
             *)
@@ -441,9 +450,10 @@ emit_no_return()
    local symbol="$1"
 
    case "${MULLE_UNAME}" in
-      mingw)
+      windows|mingw)
          case "$1" in
             __imp__*)
+               log_debug "ignore imp $i"
             ;;
 
             *)
@@ -522,7 +532,7 @@ mulle_clang_library_functions()
 print_mulle_clang_builtin_case()
 {
    mulle_clang_library_functions | \
-      mulle-clang -cc1 -fsyntax-only -x c 2>&1 | \
+      "${CC}" -cc1 -fsyntax-only -x c 2>&1 | \
       sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
 }
 
@@ -578,7 +588,7 @@ crt_functions()
 print_crt_function_case()
 {
    crt_functions | \
-      mulle-clang -cc1 -fsyntax-only -x c 2>&1 | \
+      "${CC}" -cc1 -fsyntax-only -x c 2>&1 | \
       sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
 }
 
@@ -627,8 +637,6 @@ create_undefined_linkage_c()
    local infile="$1"
    local tmpdir="$2"
 
-   local undefined_symbols
-
    # global, defined
    nm_global_defined_names "${infile}" | \
       redirect_exekutor "${tmpdir}/defined_globals" sort -u
@@ -642,7 +650,7 @@ create_undefined_linkage_c()
    else
       nm_global_undefined_names "${infile}" | \
          redirect_exekutor "${tmpdir}/undefined_globals" \
-            fgrep -v -f "${tmpdir}/defined_globals"
+            fgrep -v -x -f "${tmpdir}/defined_globals"
    fi
 
    local i
@@ -659,17 +667,21 @@ create_undefined_linkage_c()
    for i in `rexekutor cat "${tmpdir}/undefined_globals"`
    do
       case $i in
-         "") ;;
+         "")
+         ;;
 
 #         NSLog) ;;
 #         NSLogv) ;;
 #
 # some windows stuff
+# probably need to add a lot more which is in "ucrt"
 #
-#
-         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi|getenv|_getenv|__acrt_iob_func|free|_free|atexit|_atexit|_beginthreadex|_endthreadex)
+         __security_cookie|_errno|__errno|perror|_perror|_wassert|atoi|_atoi\
+|getenv|_getenv|__acrt_iob_func|free|_free|atexit|_atexit|_beginthreadex\
+|_endthreadex|fclose|fopen|strncmp|__stdio_common_vsprintf|__stdio_common_vfprintf)
             case "${MULLE_UNAME}" in
-               mingw)
+               windows|mingw)
+                  log_debug "ignore $i"
                ;;
 
                *)
@@ -678,9 +690,15 @@ create_undefined_linkage_c()
             esac
          ;;
 
+         # don't want to clobber dlsym, which we need
+         dlsym|_dlsym)
+            log_debug "ignore $i"
+         ;;
+
          exit|_exit)
             case "${MULLE_UNAME}" in
-               mingw)
+               windows|mingw)
+                  log_debug "ignore $i"
                ;;
 
                *)
@@ -691,11 +709,13 @@ create_undefined_linkage_c()
 
          abort|_abort)
             case "${MULLE_UNAME}" in
-               mingw)
+               windows|mingw)
+                  log_debug "ignore $i"
                ;;
 
                *)
                # ignore
+                  log_debug "ignore $i"
                ;;
             esac
          ;;
@@ -705,7 +725,8 @@ create_undefined_linkage_c()
 
          mulle_objc_loadinfo_enqueue_nofail)
             case "${MULLE_UNAME}" in
-               mingw)
+               windows|mingw)
+                  log_debug "ignore $i"
                ;;
 
                *)
@@ -718,6 +739,8 @@ create_undefined_linkage_c()
             if ! is_crt_symbol "$i"
             then
                emit "$i"
+            else
+               log_debug "ignore "non crt" $i"
             fi
          ;;
       esac
@@ -775,23 +798,31 @@ create_undefined_linkage()
    local prelude
 
    case "${MULLE_UNAME}" in
-      mingw)
-         prelude="`emit_dllmain`"
+      windows|mingw)
+         prelude="`emit_dllmain`" || exit 1
          text="${prelude}
 ${text}"
       ;;
    esac
 
-   local cfile
    local folder
 
    r_dirname "${outfile}"
    folder="${RVAL}"
 
+   local cfile
+
    r_basename "${outfile}"
    cfile="${folder}/${RVAL%\.o}.c"
    
    redirect_exekutor "${cfile}" echo "${text}"
+
+   if [ "${OPTION_WSL}" = 'YES' ]
+   then
+      cfile="`rexekutor wslpath -w "${cfile}" `" || exit 1
+      exekutor touch "${outfile}" || exit 1 # have to touch for now as long as wslpath is broken
+      outfile="`rexekutor wslpath -w "${outfile}" `" || exit 1
+   fi
 
    local cflags
 
@@ -799,12 +830,12 @@ ${text}"
    cflags="${RVAL}"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
-                            -Wno-builtin-requires-header \
-                            -Wno-incomplete-setjmp-declaration \
-                            -c \
-                            -o "${outfile}" \
-                            "${cfile}" || exit 1
+   exekutor "${CC}" ${cflags} -Wno-incompatible-library-redeclaration \
+                              -Wno-builtin-requires-header \
+                              -Wno-incomplete-setjmp-declaration \
+                              -c \
+                              -o "${outfile}" \
+                              "${cfile}" || exit 1
 }
 
 
@@ -817,7 +848,7 @@ create_mingw_aux_linkage()
 
    local auxfile
 
-   auxfile="`basename -- "${outfile}" .o`".c
+   auxfile="`basename -- "${outfile}" .o`".c || exit 1
    redirect_exekutor "${auxfile}" emit_enqueue
 
    local cflags
@@ -826,12 +857,58 @@ create_mingw_aux_linkage()
    cflags="${RVAL}"
 
    log_fluff "Compile auxiliary linkage \"${auxfile}\"..."
-   exekutor ${CC} ${cflags} -Wno-incompatible-library-redeclaration \
-                            -Wno-builtin-requires-header \
-                            -c \
-                            -o \
-                            "${outfile}" \
-                            "${auxfile}" || exit 1
+   exekutor "${CC}" ${cflags} -Wno-incompatible-library-redeclaration \
+                              -Wno-builtin-requires-header \
+                              -c \
+                              -o \
+                              "${outfile}" \
+                              "${auxfile}" || exit 1
+}
+
+_create_shlib_windows()
+{
+   log_entry "_create_shlib_windows" "$@"
+
+   local shlib="$1"
+   local library="$2"
+   local undefinedofile="$3"
+   local tmpdir="$4"
+   local ldflags="$5"
+
+   log_debug "${tmpdir} ($PWD#${MULLE_USER_PWD}/})"
+
+   exekutor cp "${library}" "${tmpdir}"
+   (
+      exekutor cd "${tmpdir}" || exit 1
+
+      local libraryname
+
+      r_basename "${library}"
+      libraryname="${RVAL}"
+
+      local wholelibrary
+
+      r_shlib_load_all_library "${libraryname}"
+      wholelibrary="${RVAL}" || exit 1
+
+      local files
+
+      files="${wholelibrary}"
+
+      create_mingw_aux_linkage "auxiliary.o" || exit 1
+      files="${files} auxiliary.o" &&
+
+      if create_undefined_linkage "${library}" "${undefinedofile}" "."
+      then
+         r_basename "${undefinedofile}"
+         r_concat "${RVAL}" "${files}"
+         files="${RVAL}"
+      fi
+      r_basename "${shlib}"
+      shlib="${RVAL}"
+
+      eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -nologo "-OUT:'${shlib}'"
+   ) >&2 || exit 1
 }
 
 
@@ -841,58 +918,36 @@ _create_shlib()
 
    local shlib="$1"
    local library="$2"
-   local undefined="$3"
+   local undefinedofile="$3"
    local tmpdir="$4"
 
-   local files
    local ldflags
-   local wholelibrary
-   local libraryname
 
    r_shlib_ldflags
    ldflags="${RVAL}"
 
    case "${MULLE_UNAME}" in
-      mingw*)
-         exekutor cp "${library}" "${tmpdir}"
-         (
-            exekutor cd "${tmpdir}" || exit 1
-
-            r_basename "${library}"
-            libraryname="${RVAL}"
-            r_shlib_load_all_library "${libraryname}"
-            wholelibrary="${RVAL}" || exit 1
-
-            files="${wholelibrary}"
-
-            create_mingw_aux_linkage "auxiliary.o" || exit 1
-            files="${files} auxiliary.o" &&
-
-            if create_undefined_linkage "${library}" "${undefined}" "."
-            then
-               r_basename "${undefined}"
-               r_concat "${RVAL}" "${files}"
-               files="${RVAL}"
-            fi
-            r_basename "${shlib}"
-            shlib="${RVAL}"
-
-            eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -nologo "-OUT:'${shlib}'"
-         ) >&2 || exit 1
-         return
+      windows|mingw*)
+         _create_shlib_windows "$@" "${ldflags}"
+         return $?
       ;;
    esac
 
    # just a bit faster than mingw needing to copy the library
    # for path reasons
+   local wholelibrary
+
    r_shlib_load_all_library "${library}"
    wholelibrary="${RVAL}"
-   files="${wholelibrary}"
 
-   if create_undefined_linkage "${library}" "${undefined}" "${tmpdir}"
+   local files
+
+   files="${wholelibrary}"
+   if create_undefined_linkage "${library}" "${undefinedofile}" "${tmpdir}"
    then
-      files="${undefined} ${files}"
+      files="${undefinedofile} ${files}"
    fi
+
    eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -o "'${shlib}'" \
     || fail "Linking temporary shared library failed"
 }
@@ -908,27 +963,33 @@ create_shlib()
    local library="$1"
    local directory="$2"
 
-   local name
-   local undefined
-   local files
-   local shlib
-
    local ext
-   local ldflags
 
    r_shlib_extension
    ext="${RVAL}"
 
+   local name
+
    r_basename "${library}"
    name="${RVAL%\.a}"
 
-   undefined="${directory}/${name}.undef.o"
+   local undefinedofile
+   local shlib
+
+   undefinedofile="${directory}/${name}.undef.o"
+   log_debug "Undefined: ${undefinedofile}"
+
    shlib="${directory}/${name}.${ext}"
 
    log_fluff "Create shlib \"${shlib}\"..."
-   _create_shlib "${shlib}" "${library}" "${undefined}" "${directory}"
+   _create_shlib "${shlib}" "${library}" "${undefinedofile}" "${directory}"
 
-   rexekutor echo "${shlib}"
+   if [ "${OPTION_KEEP}" != 'YES' ]
+   then
+      remove_file_if_present "${undefinedofile}"
+   fi
+
+   rexekutor printf "%s\n" "${shlib}"
 }
 
 
@@ -939,17 +1000,19 @@ main()
    local shlib
 
    local OPTION_CONFIGURATION="Release"
-   local OPTION_KEEP_SHLIB='NO'
+   local OPTION_KEEP='NO'
+   local OPTION_WSL='NO'
 
    # prefer sibling mulle-objc-list
    MULLE_OBJC_LIST="${0%/*}/mulle-objc-list"
    if [ ! -x "${MULLE_OBJC_LIST}" ]
    then
-      MULLE_OBJC_LIST="`command -v mulle-objc-list`"
-      [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
+      MULLE_OBJC_LIST="`command -v "mulle-objc-list${MULLE_EXE_EXTENSION}"`"
+      [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list${MULLE_EXE_EXTENSION} not in PATH"
    fi
 
-   cmdline="'${MULLE_OBJC_LIST}'"
+   r_absolutepath "${MULLE_OBJC_LIST}"
+   cmdline="'${RVAL}'"
 
    case "$1" in
       -h|--help|help)
@@ -977,8 +1040,14 @@ main()
             continue
          ;;
 
+         --wsl)
+            OPTION_WSL='YES'
+            shift
+            continue
+         ;;
+
          --keep|--keep-shlib)
-            OPTION_KEEP_SHLIB='YES'
+            OPTION_KEEP='YES'
             shift
             continue
          ;;
@@ -1011,22 +1080,51 @@ main()
    local directory
    local rval
 
-   r_make_tmp_directory "lista" || exit 1
-   directory="${RVAL}"
+   # for windows we can't use "tmp" here because WSL tmp is not accessible from
+   # wsl. Need to figure something out
+   case "${MULLE_UNAME}" in
+      mingw|windows)
+         _r_make_tmp_in_dir "${PWD}" "lista" "d"
+         directory="${RVAL}"
+      ;;
+
+      *)
+         r_make_tmp_directory "lista" || exit 1
+         directory="${RVAL}"
+      ;;
+   esac
 
    shlib="`create_shlib "${library}" "${directory}"`" || exit 1
-   cmdline="${cmdline} '${shlib}'"
+
+   local shlibdir
+   local shlibfile
+
+   r_dirname "${shlib}"
+   shlibdir="${RVAL}"
+
+   r_basename "${shlib}"
+   shlibfile="${RVAL}"
+
+   cmdline="${cmdline} '${shlibfile}'"
 
    log_verbose "Run mulle-objc-list on shared library \"${shlib}\"..."
 
-   eval_exekutor ${cmdline}
+   # easy workaround to avoid wslpath, don't change unless you know
+   # it works on windows
+   (
+      rexekutor cd "${shlibdir}" &&
+      eval_exekutor "${cmdline}"
+   )
    rval=$?
 
-   if [ "${OPTION_KEEP_SHLIB}" != 'YES' ]
+   if [ $rval -eq 0 ]
    then
-      rmdir_safer "${directory}"
-   else
-      log_verbose "Keeping \"${shlib}\" alive"
+      if [ "${OPTION_KEEP}" != 'YES' ]
+      then
+         rmdir_safer "${directory}"
+      else
+         log_verbose "Keeping \"${shlib}\" alive"
+      fi
    fi
    return $rval
 }

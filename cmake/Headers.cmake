@@ -7,6 +7,7 @@
 set( INCLUDE_DIRS
 src
 src/reflect
+src/generic
 )
 
 

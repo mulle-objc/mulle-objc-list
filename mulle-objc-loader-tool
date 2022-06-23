@@ -1,5 +1,14 @@
 #! /bin/sh
 #
+# shellcheck shell=bash
+# shellcheck disable=SC2236
+# shellcheck disable=SC2120
+# shellcheck disable=SC2166
+# shellcheck disable=SC2034
+# shellcheck disable=SC2006
+# shellcheck disable=SC1090
+# shellcheck disable=SC1091
+#
 #   Copyright (c) 2017 Nat! - Mulle kybernetiK
 #   All rights reserved.
 #
@@ -36,14 +45,75 @@ MULLE_EXECUTABLE_VERSION=0.9.1
 MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
 MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
 
+# Special code for mulle-objc-loader-tool. Try to find a -p option and
+# add argument to PATH. Then decide if too bo
+#
+# Prelude to be placed at top of each script. Rerun this script either in
+# bash or zsh, if not already running in either (which can happen!)
+# Allows script to run on systems that either have bash (linux) or
+# zsh (macOS) only by default.
+#
+if [ "${1:-}" != --no-auto-shell ]
+then
+      #
+      # Quote incoming arguments for shell expansion
+      #
+      last=""
+      args=""
+      for arg in "$@"
+      do
+         # True bourne sh doesn't know ${a//b/c} and <<<
+         case "${arg}" in
+            *\'*)
+               # Use cat instead of echo to avoid possible echo -n
+               # problems. Escape single quotes in string.
+               arg="`cat <<EOF | sed -e s/\'/\'\\\"\'\\\"\'/g
+${arg}
+EOF
+`"
+            ;;
+         esac
 
-##########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-# #
-# # PRELUDE - Standard startup code for loading mulle-bashfunctions
-# #
-###
+         if [ -z "${args}" ]
+         then
+            args="'${arg}'"
+         else
+            if [ "${last}" = "-p" ]
+            then
+               if [ ! -z "${arg}" ]
+               then
+                  PATH="${HOME}/${arg}:${PATH}"
+                  export PATH
+               fi
+            fi
+            args="${args} '${arg}'"
+         fi
+         last="${arg}"
+      done
+
+   # bourne shell does not know "! -v" for checking for undefined
+   if [ -z "${BASH_VERSION}" -a -z "${ZSH_VERSION}" ]
+   then
+      exe_shell="`command -v "bash" `"
+      exe_shell="${exe_shell:-`command -v "zsh" `}"
+
+      script="$0"
+
+
+      #
+      # bash/zsh will use arg after -c <arg> as $0, convenient!
+      #
+
+      exec "${exe_shell:-bash}" -c ". ${script} --no-auto-shell ${args}" "${script}"
+   fi
+
+   if [ ${BASH_VERSION+x} ]
+   then
+      set +o posix
+   fi
+else
+   shift    # get rid of --no-auto-shell
+fi
 
 #
 # Figure out MULLE_BASHFUNCTIONS_LIBEXEC_DIR on this machine if needed.
@@ -52,17 +122,6 @@ if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
 then
    MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
    export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
-fi
-
-#
-# The booter reruns the executable either with bash or zsh, whatever the
-# system provides. On the second run --no-auto-shell will be set first.
-#
-if [ "$1" != --no-auto-shell ]
-then
-   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
-else
-   shift    # get rid of --no-auto-shell
 fi
 
 
@@ -130,10 +189,21 @@ _dump_loader_dependencies()
    local depfile
    local depname
    local categoryid
+   local filename
 
    while [ $# -ne 0 ]
    do
-      case "$1" in
+      filename="$1"
+      if [ "${OPTION_WSL}" = 'YES' ]
+      then
+         case "${filename}" in
+            *\\*)
+               filename="`wslpath -u "${filename}"`" || exit 1
+            ;;
+         esac
+      fi
+
+      case "${filename}" in
          "")
             log_warning "Empty dependency"
             continue
@@ -141,7 +211,7 @@ _dump_loader_dependencies()
 
          # new way
          *'/MulleObjCLoader+'*'.h')
-            depfile="$1"
+            depfile="${filename}"
             r_basename "${depfile}"
             depname="${RVAL#MulleObjCLoader+}"
             depname="${depname%.h}"
@@ -149,20 +219,20 @@ _dump_loader_dependencies()
 
          # old way
          *'/objc-loader.inc')
-            depfile="$1"
+            depfile="${filename}"
             r_dirname "${depfile}"
             r_basename "${RVAL}"
             depname="${RVAL}"
          ;;
 
          *:*)
-            depfile="${1#:*}"
-            depname="${1%%*:}"
+            depfile="${filename#:*}"
+            depname="${filename%%*:}"
          ;;
 
          *)
-            depfile="${DEPENDENCY_DIR}/include/$1/objc-loader.inc"
-            depname="$1"
+            depfile="${DEPENDENCY_DIR}/include/${filename}/objc-loader.inc"
+            depname="${filename}"
          ;;
       esac
 
@@ -173,7 +243,7 @@ _dump_loader_dependencies()
 
       if [ -z "${depname}" ]
       then
-         fail "No name given or found for dependency \"$1\""
+         fail "No name given or found for dependency \"${filename}\""
       fi
 
       case "${depname}" in
@@ -206,13 +276,22 @@ _do_dump_static_dependencies()
    r_dirname "${LIBRARYFILE}"
    directory="${RVAL}"
 
+   local options
+
+   options=""
+   if [ "${OPTION_WSL}" = 'YES' ]
+   then
+      options="--wsl"
+   fi
+
    (
       exekutor cd "${directory}" &&
       exekutor "${MULLE_OBJC_LISTA}" ${MULLE_TECHNICAL_FLAGS} \
                                      ${MULLE_OBJC_LISTA_FLAGS} \
+                                     ${options} \
                                      --configuration "${OPTION_CONFIGURATION}" \
-                                     -d "${filename}" \
-                                     ${listaoptions}
+                                     -d "${filename}"
+
    ) || fail "mulle-objc-lista failed"
 }
 
@@ -268,6 +347,8 @@ main()
    local OPTION_CONFIGURATION="Release"
    local OPTION_SDK="Default"
    local OPTION_FORCE="NO"
+   local OPTION_WSL="NO"
+
    local OUTPUT
 
    while [ $# -ne 0 ]
@@ -312,11 +393,23 @@ main()
             OUTPUT="$1"
          ;;
 
+         -p)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            # ignore, taken care of by the booter already
+         ;;
+
+
          -s|--sdk)
             [ $# -eq 1 ] && echo "missing argument to $1"
             shift
 
             OPTION_SDK="$1"
+         ;;
+
+         --wsl)
+            OPTION_WSL='YES'
          ;;
 
          -|--)
@@ -347,9 +440,32 @@ main()
    DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_CRAFT_DEPENDENCY_DIR}}"
    DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_VIRTUAL_ROOT}/${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}}"
 
+   if [ "${OPTION_WSL}" = 'YES' ]
+   then
+      if [ ! -z "${BUILDPATH}" ]
+      then
+         BUILDPATH="`wslpath -u "${BUILDPATH}"`" || exit 1
+      fi
+
+      if [ ! -z "${OUTPUT}" ]
+      then
+         OUTPUT="`wslpath -u "${OUTPUT}"`" || exit 1
+      fi
+   fi
+
+   #
+   # for windows
+   #
+   if [ -z "${DEPENDENCY_DIR}" ]
+   then
+      DEPENDENCY_DIR="`mulle-sde dependency-dir`"
+   fi
+   PATH="${PATH}:${DEPENDENCY_DIR}/bin"
+
    local name
 
    name="$1"
+
    [ -z "${name}" ] && usage
    shift
 
@@ -358,6 +474,15 @@ main()
       ;;
 
       *)
+         if [ "${OPTION_WSL}" = 'YES' ]
+         then
+            case "${name}" in
+               *\\*|*:*)
+                  name="`wslpath -u "${name}"`" || exit 1
+               ;;
+            esac
+         fi
+
          if [ -f "${name}" ]
          then
             LIBRARYFILE="${name}" # assume
@@ -408,10 +533,10 @@ main()
    # prefer sibling mulle-objc-lista
    if [ -z "${MULLE_OBJC_UNIQUEID}" ]
    then
-      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid"
+      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid${MULLE_EXE_EXTENSION}"
       if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
       then
-         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid`"
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid${MULLE_EXE_EXTENSION}`"
          [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
       fi
    fi
@@ -441,7 +566,7 @@ Is whole archive load working on this platform ?"
    then
       log_info "Done"
 
-      exekutor echo "$result"
+      exekutor printf "%s\n" "${result}"
       return 0
    fi
 
