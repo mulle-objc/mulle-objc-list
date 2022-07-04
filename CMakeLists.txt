@@ -70,7 +70,7 @@ if( NOT SKIP_EXECUTABLE_INSTALL)
    include( InstallExecutable)
 
    # need this for mulle-atexit
-   if( LINK_PHASE AND UNIX)
+   if( LINK_PHASE AND UNIX AND NOT APPLE)
       target_link_options( "${EXECUTABLE_NAME}"
          PUBLIC
             "SHELL:LINKER:--export-dynamic"

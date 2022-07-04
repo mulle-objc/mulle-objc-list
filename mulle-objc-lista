@@ -294,9 +294,9 @@ _nm_global_defined_names()
 
    case "${MULLE_UNAME}" in
       darwin)
-         exekutor ${NM} -g -U -j "${filename}" | \
-            egrep -v ':$|^$' | \
-            sed 's/^_//'
+         exekutor "${NM}" -g -U -j "${filename}" \
+            | egrep -v ':$|^$' \
+            | sed 's/^_//'
       ;;
 
       windows|mingw*)
@@ -304,7 +304,7 @@ _nm_global_defined_names()
          # -p no sort, -P posix style (name first)
          # get rid of ??_C@_07DPFPOHBA@atexit?3?$AA@ and stuff like that
          #
-         exekutor ${NM} -g --defined-only -p -P "${filename}" \
+         exekutor "${NM}" -g --defined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | grep -v '@_' \
             | sed 's/^__imp_//' \
@@ -315,7 +315,7 @@ _nm_global_defined_names()
 
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor ${NM} -g --defined-only -p -P "${filename}" \
+         exekutor "${NM}" -g --defined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | egrep -v ':$|^$'
       ;;
@@ -331,14 +331,14 @@ _nm_global_undefined_names()
 
    case "${MULLE_UNAME}" in
       darwin)
-         exekutor ${NM} -g -u -j "${filename}" | \
-            egrep -v ':$|^$' | \
-            sed 's/^_//'
+         exekutor "${NM}" -g -u -j "${filename}" \
+            | egrep -v ':$|^$' \
+            | sed 's/^_//'
       ;;
 
       windows|mingw*)
          # -p no sort, -P posix style (name first)
-         exekutor ${NM} -g --undefined-only -p -P "${filename}" \
+         exekutor "${NM}" -g --undefined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | grep -v '@_' \
             | sed 's/^__imp_//' \
@@ -349,7 +349,7 @@ _nm_global_undefined_names()
 
       linux|*)
          # -p no sort, -P posix style (name first)
-         exekutor ${NM} -g --undefined-only -p -P "${filename}" \
+         exekutor "${NM}" -g --undefined-only -p -P "${filename}" \
             | awk '{ print $1} ' \
             | egrep -v ':$|^$'
       ;;
@@ -638,19 +638,43 @@ create_undefined_linkage_c()
    local tmpdir="$2"
 
    # global, defined
-   nm_global_defined_names "${infile}" | \
-      redirect_exekutor "${tmpdir}/defined_globals" sort -u
+   nm_global_defined_names "${infile}" \
+      | redirect_exekutor "${tmpdir}/defined_globals" cat
 
    # fgrep behaves funny with empty files
    if [ -z "`cat "${tmpdir}/defined_globals" `" ]
    then
       # remove defined globals from undefined
-      nm_global_undefined_names "${infile}" | \
-         redirect_exekutor "${tmpdir}/undefined_globals" cat
+      nm_global_undefined_names "${infile}" \
+         | redirect_exekutor "${tmpdir}/undefined_globals" cat
    else
-      nm_global_undefined_names "${infile}" | \
-         redirect_exekutor "${tmpdir}/undefined_globals" \
-            fgrep -v -x -f "${tmpdir}/defined_globals"
+      case "${MULLE_UNAME}" in
+         darwin)
+            # on MacOS big sur fgrep -x is broken, so we need to
+            # use regexpr here. paranoid about the incoming symbols
+            # so escape
+            cat "${tmpdir}/defined_globals" \
+               | sed -e 's/\[/\\[/g' \
+                     -e 's/\]/\\]/g' \
+                     -e 's/\//\\\//g' \
+                     -e 's/\$/\\$/g' \
+                     -e 's/\*/\\*/g' \
+                     -e 's/\./\\./g' \
+                     -e 's/\^/\\^/g' \
+                     -e 's/\(.*\)/^\1$/' \
+               | redirect_exekutor "${tmpdir}/defined_globals_regexp" cat
+
+            nm_global_undefined_names "${infile}" \
+               | redirect_exekutor "${tmpdir}/undefined_globals" egrep \
+                                       -v -f "${tmpdir}/defined_globals_regexp"
+         ;;
+
+         *)
+            nm_global_undefined_names "${infile}" \
+               | redirect_exekutor "${tmpdir}/undefined_globals" fgrep \
+                                          -v -x -f "${tmpdir}/defined_globals"
+         ;;
+      esac
    fi
 
    local i
