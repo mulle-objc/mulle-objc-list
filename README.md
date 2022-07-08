@@ -4,11 +4,11 @@
 
 The functionality is based on `mulle-objc-list` which loads a shared
 library and dumps the mulle-objc load information contained within as
-[CSV, euro-style](https://en.wikipedia.org/wiki/Comma-separated_values).
+[CSV, euro-style](//en.wikipedia.org/wiki/Comma-separated_values).
 
 | Release Version
 |-----------------------------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-list/workflows)
+| ![Mulle kybernetiK tag](//img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](//github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions)
 
 
 Also contains:
@@ -24,7 +24,7 @@ Executable               | Description
 
 ## mulle-objc-list
 
-This is a [mulle-objc](https://github.com/mulle-objc) project.
+This is a [mulle-objc](//github.com/mulle-objc) project.
 
 This tool loads a shared library or executable and prints a CSV list of all
 class and categories or methods it finds. The binary must have been
@@ -139,7 +139,7 @@ Commands:
 
   Name         | Build Status | Release Version
 ---------------|--------------|---------------------------------
-[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://travis-ci.org/mulle-objc/mulle-objc-runtime)
+[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](//github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](//img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](//github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime)
 
 ## Add
 
@@ -161,7 +161,7 @@ Use [mulle-sde](//github.com/mulle-sde) to build and install mulle-objc-list and
 
 ```
 mulle-sde install --prefix /usr/local \
-   https://github.com/mulle-objc/mulle-objc-list/archive/latest.tar.gz
+   //github.com/mulle-objc/mulle-objc-list/archive/latest.tar.gz
 ```
 
 ### Manual Installation
