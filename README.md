@@ -8,7 +8,7 @@ library and dumps the mulle-objc load information contained within as
 
 | Release Version
 |-----------------------------------
-| ![Mulle kybernetiK tag](//img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](//github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions)
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions)
 
 
 Also contains:
@@ -139,13 +139,13 @@ Commands:
 
   Name         | Build Status | Release Version
 ---------------|--------------|---------------------------------
-[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](//github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](//img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](//github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime)
+[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime)
 
 ## Add
 
 Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project:
 
-```
+``` sh
 mulle-sde dependency add --c --github mulle-objc mulle-objc-list
 ```
 
@@ -159,9 +159,9 @@ way to install mulle-objc-list.
 
 Use [mulle-sde](//github.com/mulle-sde) to build and install mulle-objc-list and all dependencies:
 
-```
+``` sh
 mulle-sde install --prefix /usr/local \
-   //github.com/mulle-objc/mulle-objc-list/archive/latest.tar.gz
+   https://github.com/mulle-objc/mulle-objc-list/archive/latest.tar.gz
 ```
 
 ### Manual Installation
@@ -174,15 +174,13 @@ Requirements                                                     | Description
 
 Install into `/usr/local`:
 
-```
-mkdir build 2> /dev/null
-(
-   cd build ;
-   cmake -DCMAKE_INSTALL_PREFIX=/usr/local \
-         -DCMAKE_PREFIX_PATH=/usr/local \
-         -DCMAKE_BUILD_TYPE=Release .. ;
-   make install
-)
+``` sh
+cmake -B build \
+      -DCMAKE_INSTALL_PREFIX=/usr/local \
+      -DCMAKE_PREFIX_PATH=/usr/local \
+      -DCMAKE_BUILD_TYPE=Release &&
+cmake --build build --config Release &&
+cmake --install build --config Release
 ```
 
 > #### musl incompatibility
