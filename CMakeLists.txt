@@ -9,7 +9,7 @@
 # try_compile(), triggered by project( mulle-objc-list C) will have problems
 # linking an executable, but we don't care
 
-if( "$ENV{CC}" MATCHES "^musl-mulle-*")
+if( MULLE_MUSL_STATIC OR COSMOPOLITAN)
    set( CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
    set( SKIP_EXECUTABLE_INSTALL ON)
 endif()
@@ -31,7 +31,7 @@ include( Environment)
 include( Files)
 
 if( HEADERS_PHASE)
-   install( FILES ${PUBLIC_HEADERS} DESTINATION "include/mulle-objc-list")
+   install( FILES ${PUBLIC_HEADERS} DESTINATION "include/${PROJECT_NAME}")
 
    # short cut out
    if( NOT COMPILE_PHASE AND NOT LINK_PHASE)

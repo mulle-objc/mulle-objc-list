@@ -1,3 +1,7 @@
+### 0.20.2
+
+* Various small improvements
+
 ### 0.20.1
 
 * don't install mulle-objc-list binaries, when musl based
