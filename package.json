@@ -1,22 +1,34 @@
 {
    "name" : "mulle-objc-list",
-   "version" : "0.18.0",
+   "version" : "0.20.2",
    "description" : "📒 Lists mulle-objc runtime information contained in executables.",
-   "homepage" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list
-https://github.com/mulle-objc/mulle-objc-list",
-   "bugs" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list
-https://github.com/mulle-objc/mulle-objc-list/issues",
+   "homepage" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list",
+   "bugs" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list/issues",
    "keywords" : [],
    "license" : "UNLICENSED",
    "repository" : {
       "type" : "git",
-      "url" : "mulle-kybernetik-tv/mulle-objc-list
-mulle-objc/mulle-objc-list"
+      "url" : "mulle-kybernetik-tv/mulle-objc-list"
    },
    "dependencies" : {
-      "mulle-objc-runtime" : "mulle-objc/mulle-objc-runtime",
-      "mulle-dlfcn" : "mulle-core/mulle-dlfcn",
-      "mulle-atinit" : "mulle-core/mulle-atinit",
-      "mulle-atexit" : "mulle-core/mulle-atexit"
+      "mulle-objc-runtime" : "git://github.com/mulle-objc/mulle-objc-runtime",
+      "mulle-concurrent" : "git://github.com/mulle-concurrent/mulle-concurrent",
+      "mulle-aba" : "git://github.com/mulle-concurrent/mulle-aba",
+      "mulle-allocator" : "git://github.com/mulle-c/mulle-allocator",
+      "mulle-c11" : "git://github.com/mulle-c/mulle-c11",
+      "mulle-thread" : "git://github.com/mulle-concurrent/mulle-thread",
+      "mintomic" : "git://github.com/mulle-concurrent/mintomic",
+      "mulle-vararg" : "git://github.com/mulle-c/mulle-vararg",
+      "mulle-data" : "git://github.com/mulle-c/mulle-data",
+      "farmhash-c" : "git://github.com/mulle-c/farmhash-c",
+      "mulle-dlfcn" : "git://github.com/mulle-core/mulle-dlfcn",
+      "dlfcn-win32" : "git://github.com/mulle-core/dlfcn-win32",
+      "mulle-atinit" : "git://github.com/mulle-core/mulle-atinit",
+      "mulle-atexit" : "git://github.com/mulle-core/mulle-atexit",
+      "mulle-objc-debug" : "git://github.com/mulle-objc/mulle-objc-debug",
+      "mulle-fprintf" : "git://github.com/mulle-core/mulle-fprintf",
+      "mulle-sprintf" : "git://github.com/mulle-core/mulle-sprintf",
+      "mulle-buffer" : "git://github.com/mulle-c/mulle-buffer",
+      "mulle-utf" : "git://github.com/mulle-c/mulle-utf"
    }
 }
