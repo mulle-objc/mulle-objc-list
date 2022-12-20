@@ -2,13 +2,13 @@
    "name" : "mulle-objc-list",
    "version" : "0.20.2",
    "description" : "📒 Lists mulle-objc runtime information contained in executables.",
-   "homepage" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list",
-   "bugs" : "https://github.com/mulle-kybernetik-tv/mulle-objc-list/issues",
+   "homepage" : "https://github.com/mulle-objc/mulle-objc-list",
+   "bugs" : "https://github.com/mulle-objc/mulle-objc-list/issues",
    "keywords" : [],
    "license" : "UNLICENSED",
    "repository" : {
       "type" : "git",
-      "url" : "mulle-kybernetik-tv/mulle-objc-list"
+      "url" : "github:mulle-objc/mulle-objc-list"
    },
    "dependencies" : {
       "mulle-objc-runtime" : "git://github.com/mulle-objc/mulle-objc-runtime",
