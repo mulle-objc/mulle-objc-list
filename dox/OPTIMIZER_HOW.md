@@ -142,12 +142,12 @@ Assume the generated coverage uses class `Foo.o` but does not include any method
 
 Now relink **myexe** with `lib_c.a` and `lib_ObjC.a` and _none_ of the libraries contained in `dependencies/lib`. The result will be a much smaller executable.
 
-
+<!-- obsolete
 Executable projects created by **mulle-foundation-init** and **mulle-objc-init**
 are already configured to use coverage optimization. Build them using
 `mulle-build -DUSE_OBJC_COVERAGE=ON` and step 1,3,4,5 are taken care off for you.
 You just need to provide the coverage information.
-
+-> 
 
 
 
