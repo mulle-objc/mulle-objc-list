@@ -14,16 +14,6 @@
 #ifndef _mulle_objc_list_include_h__
 #define _mulle_objc_list_include_h__
 
-// You can tweak the following #include with these commands.
-// (Use 315B9D64-1484-402B-AD9E-D8AD1E86AF4B instead of mulle-dlfcn if there are duplicate entries)
-//    remove #include:: `mulle-sde dependency mark mulle-dlfcn no-header`
-//    rename:              `mulle-sde dependency|library set mulle-dlfcn include whatever.h`
-//    reorder:             `mulle-sde dependency move mulle-dlfcn <up|down>`
-//    toggle #include:    `mulle-sde dependency mark mulle-dlfcn [no-]import`
-//    toggle public:       `mulle-sde dependency mark mulle-dlfcn [no-]public`
-//    toggle optional:     `mulle-sde dependency mark mulle-dlfcn [no-]require`
-//    remove for platform: `mulle-sde dependency mark mulle-dlfcn no-platform-<uname>`
-//        (use `mulle-sourcetree-to-c --unames` to list known values)
-#include <mulle-dlfcn/mulle-dlfcn.h>   // mulle-dlfcn
+/* no headers */
 
 #endif

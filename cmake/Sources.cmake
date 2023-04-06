@@ -7,9 +7,9 @@ set( SOURCES
 
 set( SCRIPTS
    mulle-objc-encode
-   mulle-objc-loader-tool
    mulle-objc-lista
    mulle-objc-leaks
+   mulle-objc-loader-tool
    mulle-objc-optimize
    mulle-objc-printline
    mulle-objc-searchid
@@ -17,10 +17,11 @@ set( SCRIPTS
    mulle-objc-uncovered-methods
 )
 
-
 if( MSVC)
    set( SCRIPTS
       ${SCRIPTS}
+      mulle-objc-loader-tool-mingw.bat
+      mulle-objc-list-mingw.bat
       mulle-objc-loader-tool.bat
       mulle-objc-list.bat
    )

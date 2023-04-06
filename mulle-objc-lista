@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /usr/bin/env mulle-bash
 #
 # shellcheck shell=bash
 # shellcheck disable=SC2236
@@ -45,72 +45,19 @@
 
 MULLE_EXECUTABLE_VERSION=0.9.1
 
-MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
-MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
-
-##########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-# #
-# # PRELUDE - Standard startup code for loading mulle-bashfunctions
-# #
-###
-
-#
-# Figure out MULLE_BASHFUNCTIONS_LIBEXEC_DIR on this machine if needed.
-#
-if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
-then
-   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
-   export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
-fi
-
-#
-# The booter reruns the executable either with bash or zsh, whatever the
-# system provides. On the second run --no-auto-shell will be set first.
-#
-if [ "$1" != --no-auto-shell ]
-then
-   # shellcheck source=/home/src/srcM/mulle-bashfunctions/src/mulle-boot.sh
-   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
-else
-   shift    # get rid of --no-auto-shell
-fi
-
-
-#
-# Include mulle-bashfunctions.sh         : default functions
-#         mulle-bashfunctions-none.sh    : almost no functions
-#         mulle-bashfunctions-minimal.sh : few functions for basic scripts
-#         mulle-bashfunctions-all.sh     : everything, even obscure functions
-#
-# Do this first to get aliases
-#
-# shellcheck source=../../../srcM/mulle-bashfunctions/src/mulle-bashfunctions.sh
-. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
-
-###
-# # Now we are in bash or zsh with mulle-bashfunctions loaded
-# #
-###########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-
-MULLE_EXECUTABLE="${BASH_SOURCE[0]:-${(%):-%x}}"
-
 
 
 usage()
 {
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE##*/} [options] <library>
+   ${MULLE_USAGE_NAME} [options] <library>
 
    Use mulle-objc-lista on a static library to create ObjC dependencies
    information and other information types.
 
 EOF
-   "${MULLE_OBJC_LIST}" -U
+   "${MULLE_OBJC_LIST##*/}" -U
 
    exit 1
 }
@@ -474,7 +421,7 @@ emit_no_return()
 }
 
 # also change in mulle-objc-unarchive
-
+# llrint:llrintf:llrintl temporarily removed
 CLANG_FUNCTIONS="_Block_object_assign:_Block_object_dispose:_Exit:__cospi:\
 __cospif:__exp10:__exp10f:__finite:__finitef:__finitel:__sigsetjmp:__sinpi:\
 __sinpif:__tanpi:__tanpif:_byteswap_uint64:_byteswap_ulong:_byteswap_ushort:\
@@ -493,7 +440,7 @@ finitef:finitel:floor:floorf:floorl:fma:fmaf:fmal:fmax:fmaxf:fmaxl:fmin:fminf:\
 fminl:fmod:fmodf:fmodl:fprintf:frexp:frexpf:frexpl:fscanf:getcontext:hypot:\
 hypotf:hypotl:ilogb:ilogbf:ilogbl:index:isalnum:isalpha:isblank:iscntrl:\
 isdigit:isgraph:islower:isprint:ispunct:isspace:isupper:isxdigit:labs:ldexp:\
-ldexpf:ldexpl:lgamma:lgammaf:lgammal:llabs:llrint:llrintf:llrintl:llround:\
+ldexpf:ldexpl:lgamma:lgammaf:lgammal:llabs:llround:\
 llroundf:llroundl:log:log10:log10f:log10l:log1p:log1pf:log1pl:log2:log2f:\
 log2l:logb:logbf:logbl:logf:logl:longjmp:lrint:lrintf:lrintl:lround:lroundf:\
 lroundl:malloc:memchr:memcmp:memcpy:memmove:memset:modf:modff:modfl:nan:nanf:\
@@ -520,12 +467,10 @@ mulle_clang_library_functions()
 {
    echo "struct i_am_bogus;"
 
-   IFS=':'
-   for name in ${CLANG_FUNCTIONS}
-   do
+   .foreachpath name in ${CLANG_FUNCTIONS}
+   .do
       echo "void   ${name}( struct i_am_bogus *p) {}"
-   done
-   IFS="${DEFAULT_IFS}"
+   .done
 }
 
 
@@ -576,12 +521,10 @@ crt_functions()
 {
    echo "struct i_am_bogus;"
 
-   IFS=':'
-   for name in ${CRT_FUNCTIONS}
-   do
+   .foreachpath name in ${CRT_FUNCTIONS}
+   .do
       echo "void   ${name}( struct i_am_bogus *p) {}"
-   done
-   IFS="${DEFAULT_IFS}"
+   .done
 }
 
 

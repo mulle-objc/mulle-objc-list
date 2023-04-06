@@ -1,0 +1,4 @@
+`mulle-objc-list` is a [mulle-objc](//github.com/mulle-objc) tool.
+It's useful when developing mulle-objc projects. It loads a shared library and
+dumps the mulle-objc load information contained within, for instance classes
+or categories. The output is as [CSV, euro-style](//en.wikipedia.org/wiki/Comma-separated_values).

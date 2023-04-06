@@ -1,0 +1,27 @@
+## dependencies_objc-loader.inc:
+      { @selector( MulleObjCLoader), @selector( MulleObjCValueFoundation) },      // 47a9beb6;MulleObjCLoader;535d5103;MulleObjCValueFoundation
+
+## dependencies_db.csv:
+47a9beb6;MulleObjCLoader;535d5103;MulleObjCValueFoundation
+bbc7dbad;Bar;;
+c7e16770;Foo;;
+0db9d6aa;mylib;;
+
+## class_db.csv
+bbc7dbad;Bar;b3a66256;NSObject;Bar.m.o
+c7e16770;Foo;b3a66256;NSObject;Foo.m.o
+0db9d6aa;mylib;b3a66256;NSObject;mylib.m.o
+
+## method_db.csv
+bbc7dbad;Bar;;;6b1d3731;-init;Bar.m.o
+bbc7dbad;Bar;;;9929eb3d;-dealloc;Bar.m.o
+bbc7dbad;Bar;;;9de99ffa;-finalize;Bar.m.o
+c7e16770;Foo;;;6b1d3731;-init;Foo.m.o
+c7e16770;Foo;;;9929eb3d;-dealloc;Foo.m.o
+c7e16770;Foo;;;9de99ffa;-finalize;Foo.m.o
+0db9d6aa;mylib;;;180f24b1;-uncoverMe;mylib.m.o
+0db9d6aa;mylib;;;4fad496e;-coverMe;mylib.m.o
+0db9d6aa;mylib;;;6b1d3731;-init;mylib.m.o
+0db9d6aa;mylib;;;9929eb3d;-dealloc;mylib.m.o
+0db9d6aa;mylib;;;9de99ffa;-finalize;mylib.m.o
+

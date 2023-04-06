@@ -56,3 +56,11 @@ version.old
 .gdb_history
 research/
 .ackrc
+test/10-unarchive-c/tmp
+test/20-unarchive-objc/db/
+test/20-unarchive-objc/.unpack_done
+test/40-optimize/.unpack_done
+wilted/
+mulle-template-composer-*
+mulle-markdown-preview-*.html
+build-*

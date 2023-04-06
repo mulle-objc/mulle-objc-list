@@ -1,0 +1,34 @@
+#! /usr/bin/env mulle-bash
+
+main()
+{
+   local OPTION_KEEP_TMP
+
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   # hardcoded hash values in scripts
+   rexekutor mulle-objc-uniqueid MulleObjCLoader
+   rexekutor mulle-objc-uniqueid load
+   rexekutor mulle-objc-uniqueid dependencies
+}
+
+main ${MULLE_TECHNICAL_FLAGS} "$@"

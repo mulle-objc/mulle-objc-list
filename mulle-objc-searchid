@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /usr/bin/env mulle-bash
 #
 # Look through libraries and find a name for the given
 # uniqueid. Searches classes and methods at the moment.
@@ -10,58 +10,11 @@ MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
 MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
 
 
-##########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-# #
-# # PRELUDE - Standard startup code for loading mulle-bashfunctions
-# #
-###
-
-#
-# Figure out MULLE_BASHFUNCTIONS_LIBEXEC_DIR on this machine if needed.
-#
-if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
-then
-   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
-   export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
-fi
-
-#
-# The booter reruns the executable either with bash or zsh, whatever the
-# system provides. On the second run --no-auto-shell will be set first.
-#
-if [ "$1" != --no-auto-shell ]
-then
-   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
-else
-   shift    # get rid of --no-auto-shell
-fi
-
-
-#
-# Include mulle-bashfunctions.sh         : default functions
-#         mulle-bashfunctions-none.sh    : almost no functions
-#         mulle-bashfunctions-minimal.sh : few functions for basic scripts
-#         mulle-bashfunctions-all.sh     : everything, even obscure functions
-#
-# Do this first to get aliases
-#
-. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
-
-###
-# # Now we are in bash or zsh with mulle-bashfunctions loaded
-# #
-###########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-
-
 usage()
 {
    cat <<EOF >&2
 Usage:
-   ${MULLE_EXECUTABLE} [options] <uniqueid> <library>+
+   ${MULLE_USAGE_NAME} [options] <uniqueid> <library>+
 
    Search though libraries for a string matching a uniqueid, This could be
    amongst other things, a @selector or the mulle_objc_classid_t of a class.
@@ -227,12 +180,8 @@ search()
 
    if [ $# -eq 0 ]
    then
-      IFS=":"
-
-      for folder in ${LIB_PATH}
-      do
-         IFS="${DEFAULT_IFS}"
-
+      .foreachpath folder in ${LIB_PATH}
+      .do
          if [ -d "${folder}" ]
          then
             cd "${folder}"
@@ -242,19 +191,14 @@ search()
                return
             fi
          fi
-      done
-      cd "${old}"
+      .done
 
-      IFS="${DEFAULT_IFS}"
+      cd "${old}"
    else
       while [ $# -ne 0 ]
       do
-         IFS=":"
-
-         for folder in ${LIB_PATH}
-         do
-            IFS="${DEFAULT_IFS}"
-
+         .foreachpath folder in ${LIB_PATH}
+         .do
             if [ -d "${folder}" ]
             then
                cd "${folder}"
@@ -264,11 +208,9 @@ search()
                   return
                fi
             fi
-         done
+         .done
 
          cd "${old}"
-
-         IFS="${DEFAULT_IFS}"
 
          shift
       done
@@ -392,7 +334,7 @@ main()
       shift
    done
 
-   options_setup_trace "${MULLE_TRACE}"
+   options_setup_trace "${MULLE_TRACE}" && set -x
 
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
@@ -400,8 +342,8 @@ main()
       [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
    fi
 
-   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_CRAFT_DEPENDENCY_DIR}}"
-   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_VIRTUAL_ROOT}/${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-`mulle-sde dependency-dir`}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-"${MULLE_VIRTUAL_ROOT}/dependency"}"
 
    if [ "${OPTION_DUMP_WORDS}" = "YES" ]
    then

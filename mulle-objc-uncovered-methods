@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /usr/bin/env mulle-bash
 #
 #   Copyright (c) 2017 Nat! - Mulle kybernetiK
 #   Copyright (c) 2017 Nat! - Codeon GmbH
@@ -31,14 +31,11 @@
 #   POSSIBILITY OF SUCH DAMAGE.
 #
 
-COVERAGE="${1:-method-coverage.csv}"
-METHODS="${2:-methods-list.csv}"
-
 
 coverage_help()
 {
    cat <<EOF
-Coverage file \"${COVERAGE}\" not found."
+Coverage file "${COVERAGE}" not found."
 Create it by running your mulle-objc code like so:
 MULLE_OBJC_COVERAGE="YES" /path/to/binary
 EOF
@@ -48,55 +45,100 @@ EOF
 methods_help()
 {
    cat <<EOF
-Method lists file \"${METHODS}\" not found."
+Method lists file "${METHODS}" not found."
 Create it by running mulle-objc-list on your code like so:
 mulle-objc-list -t /path/to/binary > \"${METHODS}\"
 EOF
 }
 
 
-if [ ! -f "${COVERAGE}" ]
-then
-   coverage_help >&2
-   exit 1
-fi
+# remove_inherited_methods()
+# {
+#    rexekutor awk -F ';' '{ if( $1 == $3 || ! $3){ print $0 } }'
+# }
+#
 
-
-if [ ! -f "${METHODS}" ]
-then
-   methods_help >&2
-   exit 1
-fi
-
-
-remove_inherited_methods()
+remove_last_two_columns()
 {
-   awk -F ';' '{ if( $1 == $3){ print $0} }'
+   rexekutor cut -d';' -f1-6 < "${COVERAGE}"
 }
 
 
-remove_first_two_columns()
+main()
 {
-   cut -d';' -f3- < "${COVERAGE}"
+   local OPTION_KEEP_TMP
+
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         --keep-tmp)
+            OPTION_KEEP_TMP='YES'
+         ;;
+
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}" && set -x
+
+   COVERAGE="${1:-method-coverage.csv}"
+   METHODS="${2:-method-list.csv}"
+
+   if [ ! -f "${COVERAGE}" ]
+   then
+      coverage_help >&2
+      exit 1
+   fi
+
+   if [ ! -f "${METHODS}" ]
+   then
+      methods_help >&2
+      exit 1
+   fi
+
+   local tmpcoverage
+
+   r_make_tmp_file "coverage"
+   tmpcoverage="${RVAL}"
+
+#  remove_inherited_methods | \
+   rexekutor cat "${COVERAGE}" | \
+      rexekutor sort -u > "${tmpcoverage}"
+
+   local tmpmethods
+
+   r_make_tmp_file "methods"
+   tmpmethods="${RVAL}"
+
+
+#  remove_last_two_columns | \
+
+   rexekutor cat "${METHODS}" | \
+      rexekutor sort -u > "${tmpmethods}"
+
+   rexekutor grep -F -s -x -v -f "${tmpcoverage}" "${tmpmethods}"
+
+   if [ "${OPTION_KEEP_TMP}" = 'YES' ]
+   then
+      log_info "Temporary files \"${tmpcoverage}\" and \"${tmpmethods}\" kept on demand"
+   else
+      remove_file_if_present "${tmpcoverage}"
+      remove_file_if_present "${tmpmethods}"
+   fi
 }
 
-
-case "`uname -s`" in
-   Darwin|FreeBSD)
-      tmpcoverage="`mktemp "/tmp/coverage.XXXXXXXX"`" || exit 1
-   ;;
-
-   *)
-      tmpcoverage="`mktemp -t "coverage.XXXXXXXX"`" || exit 1
-   ;;
-esac
-
-
-cat "${COVERAGE}" | \
-   remove_inherited_methods | \
-   remove_first_two_columns | \
-   sort -u | "${tmpcoverage}"
-
-fgrep -s -x -v -f"${tmpcoverage}" "${METHODS}"
-
-rm "${tmpcoverage}"
+main ${MULLE_TECHNICAL_FLAGS} "$@"

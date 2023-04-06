@@ -1,0 +1,55 @@
+#! /usr/bin/env mulle-bash
+
+
+produce_output()
+(
+   [ -d "mylib" ] || fail "Need to run this with cd set to `dirname $0` ($PWD)"
+
+   MULLE_VIRTUAL_ROOT=
+   rexekutor cd mylib &&
+   exekutor mulle-sde craft --release &&
+   rexekutor mulle-sde product --release
+)
+
+main()
+{
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         --)
+            shift
+            break
+         ;;
+
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}" && set -x
+
+   local output
+
+   produce_output > "output.txt" || fail "Could not get mylib output"
+
+   output="`cat "output.txt" `" || fail "Could not read output.txt"
+
+   redirect_exekutor method-list.csv mulle-objc-lista -t "${output}" || fail "mulle-objc-lista failed"
+
+   exekutor mulle-objc-uncovered-methods ${MULLE_TECHNICAL_FLAGS} "$@" || fail "mulle-objc-uncovered-methods failed"
+}
+
+main ${MULLE_TECHNICAL_FLAGS} "$@"

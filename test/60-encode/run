@@ -1,0 +1,33 @@
+#! /usr/bin/env mulle-bash
+
+main()
+{
+   local OPTION_KEEP_TMP
+
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   rexekutor mulle-objc-encode "struct foo { long a; long b; }[ 1]" || fail "mulle-objc-encode fail (1)"
+   rexekutor mulle-objc-encode int                                  || fail "mulle-objc-encode fail (2)"
+   rexekutor mulle-objc-encode -c NSObject "NSObject *"             || fail "mulle-objc-encode fail (3)"
+}
+
+main ${MULLE_TECHNICAL_FLAGS} "$@"

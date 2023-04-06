@@ -1,0 +1,65 @@
+#! /usr/bin/env mulle-bash
+
+
+
+main()
+{
+   local OPTION_KEEP_TMP
+
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         --keep-tmp)
+            OPTION_KEEP_TMP='YES'
+         ;;
+
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}" && set -x
+
+   rmdir_safer "build"
+
+   mulle-make --build-dir build || exit 1
+
+   eval `mulle-platform environment`
+
+   rmdir_safer "tmp"
+   mkdir_if_missing tmp
+
+   log_verbose "PATH=${PATH}"
+
+   exekutor mulle-objc-unarchive ${MULLE_TECHNICAL_FLAGS} \
+               --library-path build \
+               --unarchive-dir tmp || exit 1
+
+   if [ -f "tmp/foo.d/foo.c${MULLE_PLATFORM_OBJECT_SUFFIX}" -o \
+        -f "tmp/foo.d/foo${MULLE_PLATFORM_OBJECT_SUFFIX}" ]
+   then
+      echo "passed"
+      if [ "${OPTION_KEEP_TMP}" != 'YES' ]
+      then
+         rmdir_safer "tmp"
+      fi
+      exit 0
+   fi
+
+   exit 1
+}
+
+main ${MULLE_TECHNICAL_FLAGS} "$@"

@@ -1,9 +1,9 @@
-#! /bin/sh
+#! /usr/bin/env mulle-bash
 
 
 encode_usage()
 {
-   cat "$0" >&2
+   grep -E '^#\ ' "$0" >&2
    exit 1
 }
 
@@ -30,6 +30,12 @@ main()
    #
    while [ $# -ne 0 ]
    do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
       case "$1" in
          -h*|--help|help)
             encode_usage

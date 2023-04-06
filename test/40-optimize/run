@@ -1,0 +1,77 @@
+#! /usr/bin/env mulle-bash
+
+
+main()
+{
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         --)
+            shift
+            break
+         ;;
+
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}" && set -x
+
+   [ -d "mylib" ] || fail "Need to run this with cd set to `dirname $0` ($PWD)"
+
+   rmdir_safer db
+   rmdir_safer intermediate
+
+   r_make_tmp_directory
+   tmp="${RVAL}"
+
+   [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "must be started inside mulle-sde"
+
+   log_verbose "Build libraries"
+   rexekutor mulle-sde ${MULLE_TECHNICAL_FLAGS} \
+               -DMULLE_FETCH_SEARCH_PATH="${MULLE_FETCH_SEARCH_PATH}" \
+               -DMULLE_SOURCETREE_SYMLINK=YES \
+             install \
+               --prefix "${tmp}" \
+               mylib || fail "Install failed"
+
+   log_verbose "Unpack libraries"
+   exekutor mulle-objc-unarchive -vvv -lx -ld -ls  ${MULLE_TECHNICAL_FLAGS} \
+               --library-path "${tmp}/lib" \
+               --unarchive-dir "db"  || fail "Unarchive failed"
+
+
+   log_verbose "Optimize libraries"
+   exekutor mulle-objc-optimize -vvv -lx -ld -ls ${MULLE_TECHNICAL_FLAGS} \
+               --library-dir "output" \
+               --coverage-dir "coverage" \
+               --unarchive-dir "db" \
+               --optimize-dir "intermediate" || fail "Optimize failed"
+
+   local count
+
+   count="`wc -l "intermediate/mylib.d/objc_files" | awk '{ print $1 }' `" || fail "intermediate/mylib.d/objc_files is missing"
+   if [ "${count}" != 1 ]
+   then
+      fail "Proper number of non-optimizable mylib object files is 1 (not $count)"
+   fi
+
+   rmdir_safer "${tmp}"
+}
+
+
+main ${MULLE_TECHNICAL_FLAGS} "$@"

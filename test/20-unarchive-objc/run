@@ -1,0 +1,71 @@
+#! /usr/bin/env mulle-bash
+
+
+main()
+{
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         --)
+            shift
+            break
+         ;;
+
+         -*)
+            fail "${MULLE_EXECUTABLE_FAIL_PREFIX}: Unknown option \"$1\""
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}" && set -x
+
+   [ -d "mylib" ] || fail "Need to run this with cd set to `dirname $0` ($PWD)"
+
+   r_make_tmp_directory
+   tmp="${RVAL}"
+
+   [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "must be started inside mulle-sde"
+
+   log_verbose "Build libraries"
+   rexekutor mulle-sde ${MULLE_TECHNICAL_FLAGS} \
+               -DMULLE_FETCH_SEARCH_PATH="${MULLE_FETCH_SEARCH_PATH}" \
+               -DMULLE_SOURCETREE_SYMLINK=YES \
+             install \
+               --prefix "${tmp}" \
+               mylib || fail "Install failed"
+
+   log_verbose "Unpack libraries"
+   exekutor mulle-objc-unarchive ${MULLE_TECHNICAL_FLAGS} \
+               -vvv -ld -ls \
+               --keep-tmp \
+               --library-path "${tmp}/lib" \
+               --unarchive-dir "db"  || fail "Unarchive failed"
+
+   echo "## dependencies_objc-loader.inc:"
+   cat "db/mylib.d/dependencies-objc-loader.inc" || exit 1
+   echo
+   echo "## dependencies_db.csv:"
+   cat "db/mylib.d/dependencies_db.csv"  || exit 1
+   echo
+   echo "## class_db.csv"
+   cat "db/mylib.d/class_db.csv"  || exit 1
+   echo
+   echo "## method_db.csv"
+   cat "db/mylib.d/method_db.csv"  || exit 1
+   echo
+}
+
+
+main ${MULLE_TECHNICAL_FLAGS} "$@"

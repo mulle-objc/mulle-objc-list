@@ -2,31 +2,45 @@
 
 #### 📒 Lists mulle-objc runtime information contained in executables.
 
-The functionality is based on `mulle-objc-list` which loads a shared
-library and dumps the mulle-objc load information contained within as
-[CSV, euro-style](//en.wikipedia.org/wiki/Comma-separated_values).
+`mulle-objc-list` is a [mulle-objc](//github.com/mulle-objc) tool.
+It's useful when developing mulle-objc projects. It loads a shared library and
+dumps the mulle-objc load information contained within, for instance classes
+or categories. The output is as [CSV, euro-style](//en.wikipedia.org/wiki/Comma-separated_values).
 
-| Release Version
-|-----------------------------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions)
+| Release Version                                       | Release Notes
+|-------------------------------------------------------|--------------
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg?branch=release) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions)| [RELEASENOTES](RELEASENOTES.md) |
 
 
-Also contains:
 
-Executable               | Description
--------------------------|------------------------
-`mulle-objc-loader-tool` | Create "objc-loader.inc" files for MulleObjCLoader categories, to facilitate dependency management of statically linked libraries
-`mulle-objc-lista`       | Compiles a static library into a shared library, then uses `mulle-objc-list` to dump load info
-`mulle-objc-optimize`    | Separate code into ObjC linkable and C linkable according to coverage information
-`mulle-objc-searchid`    | Search through libraries for the name of a classid or @selector
-`mulle-objc-unarchive`   | Unpack Objective-C library as a first step to omptimizing it using coverage information
+## Usage
+
+```
+usage: mulle-objc-list [options] [command] [libraries] <binary>
+
+   The binary is listed. The preceeding libraries are
+   explicitly loaded but their contents aren't listed.
+   Implicitly loaded libraries by binary are listed.
+
+Options:
+   -e      : emit dependencies sentinel field
+   -l <id> : specify loader-class id for -d (default is 0x58bd58d3)   -v      : verbose
+
+Commands:
+   -c      : list classes and categories
+   -d      : list classes and categories as +dependencies. Skips loaders
+   -i      : dump loadinfo version information
+   -m      : list methods (default)
+   -M      : list also root -methods as +methods
+   -t      : terse list methods (coverage like)
+   -T      : terse list methods with root -methods also as +methods
+```
+
 
 
 ## mulle-objc-list
 
-This is a [mulle-objc](//github.com/mulle-objc) project.
-
-This tool loads a shared library or executable and prints a CSV list of all
+`mulle-objc-list` loads a shared library or executable and prints a CSV list of all
 class and categories or methods it finds. The binary must have been
 compiled with **mulle-clang**.
 
@@ -111,51 +125,40 @@ Index | Column name  | Description
 Can be useful to find mixed-in old .o files
 
 
-## Usage
 
-```
-usage: mulle-objc-list [options] [command] [libraries] <binary>
+## Requirements
 
-   The binary is listed. The preceeding libraries are
-   explicitly loaded but their contents aren't listed.
-   Implicitly loaded libraries by binary are listed.
+|   Requirement         | Release Version  | Description
+|-----------------------|------------------|---------------
+| [mulle-objc-runtime](https://github.com/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-runtime/actions/workflows/mulle-sde-ci.yml) | ⏩ A fast, portable Objective-C runtime written 100% in C11
+| [mulle-dlfcn](https://github.com/mulle-core/mulle-dlfcn) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-dlfcn.svg) [![Build Status](https://github.com/mulle-core/mulle-dlfcn/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-dlfcn/actions/workflows/mulle-sde-ci.yml) | ♿️ Shared library helper
+| [mulle-atinit](https://github.com/mulle-core/mulle-atinit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atinit.svg) [![Build Status](https://github.com/mulle-core/mulle-atinit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atinit/actions/workflows/mulle-sde-ci.yml) | 🤱🏼 Compatibility library for deterministic initializers
+| [mulle-atexit](https://github.com/mulle-core/mulle-atexit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atexit.svg) [![Build Status](https://github.com/mulle-core/mulle-atexit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atexit/actions/workflows/mulle-sde-ci.yml) | 👼 Compatibility library to fix atexit
+| [mulle-objc-debug](https://github.com/mulle-objc/mulle-objc-debug) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-debug.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-debug/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-debug/actions/workflows/mulle-sde-ci.yml) | 🐞 Debug support for the mulle-objc-runtime
 
-Options:
-   -e      : emit dependencies sentinel field
-   -l <id> : specify loader-class id for -d (default is 0x58bd58d3)   -v      : verbose
-
-Commands:
-   -c      : list classes and categories
-   -d      : list classes and categories as +dependencies. Skips loaders
-   -i      : dump loadinfo version information
-   -m      : list methods (default)
-   -M      : list also root -methods as +methods
-   -t      : terse list methods (coverage like)
-   -T      : terse list methods with root -methods also as +methods
-```
-
-
-## Required Library
-
-  Name         | Build Status | Release Version
----------------|--------------|---------------------------------
-[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](//travis-ci.org/mulle-objc/mulle-objc-runtime)
 
 ## Add
 
 Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project:
 
 ``` sh
-mulle-sde dependency add --c --github mulle-objc mulle-objc-list
+mulle-sde add github:mulle-objc/mulle-objc-list
 ```
+
+To only add the sources of mulle-objc-list with dependency
+sources use [clib](https://github.com/clibs/clib):
+
+
+``` sh
+clib install --out src/mulle-objc mulle-objc/mulle-objc-list
+```
+
+Add `-isystem src/mulle-objc` to your `CFLAGS` and compile all the sources that were downloaded with your project.
+
 
 ## Install
 
-See [mulle-objc-developer](//github.com/mulle-objc/mulle-objc-developer) for the preferred
-way to install mulle-objc-list.
-
-
-### mulle-sde
+### Install with mulle-sde
 
 Use [mulle-sde](//github.com/mulle-sde) to build and install mulle-objc-list and all dependencies:
 
@@ -166,13 +169,8 @@ mulle-sde install --prefix /usr/local \
 
 ### Manual Installation
 
-Install the requirements:
-
-Requirements                                                     | Description
------------------------------------------------------------------|-----------------------
-[mulle-objc-runtime](//github.com/mulle-objc/mulle-objc-runtime) | Objective-C runtime
-
-Install into `/usr/local`:
+Install the [Requirements](#Requirements) and then
+install **mulle-objc-list** with [cmake](https://cmake.org):
 
 ``` sh
 cmake -B build \
@@ -183,15 +181,8 @@ cmake --build build --config Release &&
 cmake --install build --config Release
 ```
 
-> #### musl incompatibility
->
-> With musl static linking, mulle-objc-list lacks the capability to load
-> shared libraries, rendering it useless.
->
-
-
 ## Author
 
-[Nat!](//www.mulle-kybernetik.com/weblog) for
-[Mulle kybernetiK](//www.mulle-kybernetik.com) and
-[Codeon GmbH](//www.codeon.de)
+[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
+
+

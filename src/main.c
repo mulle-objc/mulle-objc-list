@@ -109,7 +109,7 @@ static void   _usage( void)
 {
    fprintf( stderr,
             "Options:\n"
-            "   -a      : ignore empty filter arguments"
+            "   -a      : ignore empty filter arguments \n"
             "   -e      : emit dependencies sentinel field\n"
             "   -l <id> : specify loader-class id for -d (default is 0x%08x)\n"
             "   -f <id> : filter for class with id\n"
@@ -681,10 +681,11 @@ static void   method_loadclass_dump( struct _mulle_objc_method *method,
    printf( ";");
 
    method_dump( method, type, p->classname);
+   printf( "\n");
+
    if( mode == dump_callable_methods || mode == dump_callable_coverage)
       if( type == '-' && p->superclassid == MULLE_OBJC_NO_CLASSID)
          method_loadclass_dump( method, '+', p, info);
-   printf( "\n");
 }
 
 

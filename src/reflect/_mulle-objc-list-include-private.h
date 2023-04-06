@@ -14,16 +14,6 @@
 #ifndef _mulle_objc_list_include_private_h__
 #define _mulle_objc_list_include_private_h__
 
-// You can tweak the following #include with these commands.
-// (Use 681CC925-1459-4DC1-B45C-1B45ACA89780 instead of mulle-objc-debug if there are duplicate entries)
-//    remove #include:: `mulle-sde dependency mark mulle-objc-debug no-header`
-//    rename:              `mulle-sde dependency|library set mulle-objc-debug include whatever.h`
-//    reorder:             `mulle-sde dependency move mulle-objc-debug <up|down>`
-//    toggle #include:    `mulle-sde dependency mark mulle-objc-debug [no-]import`
-//    toggle public:       `mulle-sde dependency mark mulle-objc-debug [no-]public`
-//    toggle optional:     `mulle-sde dependency mark mulle-objc-debug [no-]require`
-//    remove for platform: `mulle-sde dependency mark mulle-objc-debug no-platform-<uname>`
-//        (use `mulle-sourcetree-to-c --unames` to list known values)
-#include <mulle-objc-debug/mulle-objc-debug.h>   // mulle-objc-debug
+/* no headers */
 
 #endif

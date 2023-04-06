@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /usr/bin/env mulle-bash
 #
 # this script unpacks an .a file and creates a list of defined methods
 # for each .o file
@@ -10,67 +10,20 @@ MULLE_EXECUTABLE_FUNCTIONS_MIN="3.9"
 MULLE_EXECUTABLE_FUNCTIONS_MAX="4"
 
 
-
-##########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-# #
-# # PRELUDE - Standard startup code for loading mulle-bashfunctions
-# #
-###
-
-#
-# Figure out MULLE_BASHFUNCTIONS_LIBEXEC_DIR on this machine if needed.
-#
-if [ -z "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}" ]
-then
-   MULLE_BASHFUNCTIONS_LIBEXEC_DIR="`mulle-bashfunctions libexec-dir`" || exit 1
-   export MULLE_BASHFUNCTIONS_LIBEXEC_DIR
-fi
-
-#
-# The booter reruns the executable either with bash or zsh, whatever the
-# system provides. On the second run --no-auto-shell will be set first.
-#
-if [ "$1" != --no-auto-shell ]
-then
-   . "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-boot.sh" || exit 1
-else
-   shift    # get rid of --no-auto-shell
-fi
-
-
-#
-# Include mulle-bashfunctions.sh         : default functions
-#         mulle-bashfunctions-none.sh    : almost no functions
-#         mulle-bashfunctions-minimal.sh : few functions for basic scripts
-#         mulle-bashfunctions-all.sh     : everything, even obscure functions
-#
-# Do this first to get aliases
-#
-. "${MULLE_BASHFUNCTIONS_LIBEXEC_DIR}/mulle-bashfunctions.sh" || exit 1
-
-###
-# # Now we are in bash or zsh with mulle-bashfunctions loaded
-# #
-###########################################################################
-###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###   ###
-###########################################################################
-
-
 usage()
 {
    cat <<EOF >&2
-Usage) ;;
-
-   ${MULLE_EXECUTABLE} [options] [library]+
+Usage:
+   ${MULLE_USAGE_NAME} [options] [library] ...
 
    Unarchive the given static libraries and prepare them for optimization.
-   If no libraries are given, ${MULLE_EXECUTABLE} will unarchive all static
-   libraries contained in \${DEPENDENCY_DIR}/lib.
+   If no libraries are given, ${MULLE_USAGE_NAME} will unarchive all static
+   libraries contained in \${MULLE_SDK_DIR}/lib unless a different directory
+   has been specified with --library-path.
 
 Options:
-   --unarchive-dir  <dir>    : where to unarchive libraries to
+   --library-path <dir>  : list of directories to unarchive libraries from
+   --unarchive-dir <dir> : where to unarchive libraries to
 
 EOF
 
@@ -80,72 +33,29 @@ EOF
 }
 
 
-
-# ahem
-lib_pretension()
-{
-   case "${MULLE_UNAME}" in
-      mingw*)
-      ;;
-
-      *)
-         echo "lib"
-       ;;
-   esac
-}
-
-
-lib_extension()
-{
-   case "${MULLE_UNAME}" in
-      mingw*)
-         echo "lib"
-      ;;
-
-      *)
-         echo "a"
-       ;;
-   esac
-}
-
-
-shlib_extension()
+r_shlib_cflags()
 {
    case "${MULLE_UNAME}" in
       darwin)
-         echo "dylib"
+         RVAL="-fno-common"
       ;;
 
       *)
-         echo "so"
+         RVAL="-fPIC -fno-common"
        ;;
    esac
 }
 
 
-shlib_cflags()
+r_shlib_ldflags()
 {
    case "${MULLE_UNAME}" in
       darwin)
-         echo "-fno-common"
+         RVAL="-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
       ;;
 
       *)
-         echo "-fPIC -fno-common"
-       ;;
-   esac
-}
-
-
-shlib_ldflags()
-{
-   case "${MULLE_UNAME}" in
-      darwin)
-         echo "-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
-      ;;
-
-      *)
-         echo "-shared"
+         RVAL="-shared"
        ;;
    esac
 }
@@ -406,9 +316,9 @@ create_undefined_linkage_c()
          lgammaf) ;;
          lgammal) ;;
          llabs) ;;
-         llrint) ;;
-         llrintf) ;;
-         llrintl) ;;
+#         llrint) ;;
+#         llrintf) ;;
+#         llrintl) ;;
          llround) ;;
          llroundf) ;;
          llroundl) ;;
@@ -604,56 +514,48 @@ create_undefined_linkage()
    local cfile
    local folder
 
-   folder="`dirname -- "${outfile}"`"
+   r_dirname "${outfile}"
+   folder="${RVAL}"
+
    cfile="${folder}/`basename -- "${outfile}" .o`".c
-   redirect_exekutor  "${cfile}" echo "${text}"
+   redirect_exekutor "${cfile}" echo "${text}"
 
    local cflags
 
-   cflags="`shlib_cflags`"
+   r_shlib_cflags
+   cflags="${RVAL}"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
    exekutor mulle-clang ${cflags} -c -o "${outfile}" "${cfile}" || exit 1
 }
 
 
-name_from_library()
+r_name_from_library()
 {
-   log_entry "name_from_library" "$@"
+   log_entry "r_name_from_library" "$@"
 
    local library="$1"
 
    # remove extension
-   library="`extensionless_basename "${library}"`"
+   r_extensionless_basename "${library}"
 
    # remove prefix
-   case "${library}" in
-      lib*)
-         library="`sed 's/^lib//' <<< "${library}"`"
-      ;;
-   esac
-
-   case "${library}" in
-      *Standalone)
-         library="`sed 's/Standalone$//' <<< "${library}"`"
-      ;;
-   esac
-
-   echo "${library}"
+   RVAL="${RVAL#${MULLE_PLATFORM_LIBRARY_PREFIX}}"
+   # remove Standalone suffix (old)
+   RVAL="${RVAL%Standalone}"
+   RVAL="${RVAL-standalone}"
 }
 
 
-foldername_from_library()
+r_foldername_from_library()
 {
-   log_entry "foldername_from_library" "$@"
+   log_entry "r_foldername_from_library" "$@"
 
    local library="$1"
    local prefix="$2"
 
-   local name
-
-   name="`name_from_library "${library}"`"
-   echo "${prefix}${name}.d"
+   r_name_from_library "${library}"
+   RVAL="${prefix}${RVAL}.d"
 }
 
 
@@ -675,8 +577,9 @@ create_shlibs()
    local ext
    local ldflags
 
-   ext="`shlib_extension`"
-   ldflags="`shlib_ldflags`"
+   ext="${MULLE_PLATFORM_LIBRARY_SUFFIX_DYNAMIC}"
+   r_shlib_ldflags
+   ldflags="${RVAL}"
 
    for i in "${folder}/"*.o
    do
@@ -687,7 +590,7 @@ create_shlibs()
          ;;
 
          #
-         # can happe in non-optimizable case, where we still produce
+         # can happen in non-optimizable case, where we still produce
          # method-db.csv and class-db.csv
          #
          "${folder}/MulleObjCLoader"*)
@@ -695,10 +598,11 @@ create_shlibs()
          ;;
       esac
 
-      name="${folder}/`basename "$i" .o`"
-      undefined="${name}.undef.o"
+      r_basename "$i"
+      name="${RVAL%.o}"
+      undefined="${folder}/${name}.undef.o"
       files="${i}"
-      shlib="${name}.${ext}"
+      shlib="${folder}/${name}${ext}"
 
       if create_undefined_linkage "${i}" "${undefined}"
       then
@@ -707,7 +611,8 @@ create_shlibs()
 
       log_fluff "Create shlib \"${shlib}\"..."
 
-      exekutor mulle-clang ${ldflags} ${files} -o "${shlib}" || fail "Failed to produce \"${shlib}\", can't optimize \"${name}\""
+      exekutor mulle-clang ${ldflags} ${files} -o "${shlib}" \
+      || fail "Failed to produce \"${shlib}\", can't optimize \"${name}\""
 
       if [ "${OPTION_KEEP_TMP}" = "YES" ]
       then
@@ -716,6 +621,8 @@ create_shlibs()
          remove_file_if_present "${undefined}"
       fi
    done
+
+   return 0
 }
 
 
@@ -748,23 +655,6 @@ unpack_library_into_folder()
 }
 
 
-remove_all_extensions()
-{
-   log_entry "remove_all_extensions" "$@"
-
-   local name
-
-   name="`extensionless_basename "$1"`"
-   if [ "${name}" = "$1" ]
-   then
-      echo "${name}"
-      return 0
-   fi
-
-   remove_all_extensions "${name}"
-}
-
-
 emit_loader_source()
 {
    log_entry "emit_loader_source" "$@"
@@ -781,9 +671,9 @@ emit_loader_source()
 {
    static struct _mulle_objc_dependency   dependencies[] =
    {
-#include "loader-dependencies.inc"
-#include "class-dependencies.inc"
-#include "category-dependencies.inc"
+#include "dependencies-objc-loader.inc"
+#include "class-objc-loader.inc"
+#include "category-objc-loader.inc"
       { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }
    };
 
@@ -800,28 +690,38 @@ prepare_for_optimizer()
    log_entry "prepare_for_optimizer" "$*"
 
    local folder="$1"
-   local library="$2"
+   local infofolder="$2"
+   local library="$3"
 
    local name
-   local include
+   local includedir
    local libpath
    local libdir
 
-   libpath="`absolutepath "${library}"`"
-   libdir="`dirname -- "${libpath}"`"
-   name="`name_from_library "${library}"`"
-   include="${libdir}/../include/${name}"
+   r_absolutepath "${library}"
+   libpath="${RVAL}"
+   r_dirname "${libpath}"
+   libdir="${RVAL}"
+   r_name_from_library "${library}"
+   name="${RVAL}"
+   includedir="${libdir}/../include/${name}"
+
+   r_simplified_absolutepath "${includedir}"
+   includedir="${RVAL}"
 
    local count
    local has_objc
+   local loaderinc
+
+   loaderinc="${includedir}/objc-loader.inc"
 
    count="`ls -1 "${folder}/MulleObjCLoader"*.o 2> /dev/null | wc -l | awk '{ print $1 }'`"
    case "${count}" in
       1)
-         if [ ! -f "${include}/objc-loader.inc" ]
+         if [ ! -f "${loaderinc}" ]
          then
-            log_warning "\"${name}\" is not optimizable as \"${include}/objc-loader.inc\" was not found"
-            exekutor touch "${folder}/.unoptimizable" || exit 1
+            log_warning "\"${name}\" is not optimizable as \"${loaderinc}\" was not found"
+            exekutor touch "${infofolder}/.unoptimizable" || exit 1
             return
          fi
          # fall thru
@@ -835,10 +735,10 @@ prepare_for_optimizer()
          if [ -z "${has_objc}" ]
          then
             log_fluff "\"${name}\" has been deemed C only"
-            exekutor touch "${folder}/.c_only" || exit 1
+            exekutor touch "${infofolder}/.c_only" || exit 1
          else
             log_warning "\"${name}\" is not optimizable as it contains no MulleObjCLoader category .o file"
-            exekutor touch "${folder}/.unoptimizable" || exit 1
+            exekutor touch "${infofolder}/.unoptimizable" || exit 1
          fi
 
          return
@@ -846,7 +746,7 @@ prepare_for_optimizer()
 
       *)
          log_warning "\"${name}\" is not optimizable as it contains multiple MulleObjCLoader category .o files"
-         exekutor touch "${folder}/.unoptimizable" || exit 1
+         exekutor touch "${infofolder}/.unoptimizable" || exit 1
 
          return
       ;;
@@ -858,31 +758,37 @@ prepare_for_optimizer()
    local categoryname
 
    loader="`ls -1 "${folder}/MulleObjCLoader"*.o`"
-   filename="`basename -- "${loader}"`"
-   loadername="`remove_all_extensions "${filename}"`"
-   categoryname="`sed 's/MulleObjCLoader[ _+-]*\(.*\)/\1/' <<< "${loadername}"`"
+   r_basename "${loader}"
+   filename="${RVAL}"
+   loadername="${filename%%.*}"
+   categoryname="${loadername/MulleObjCLoader[ _+-]/}"
 
    if [ -z "${categoryname}" ]
    then
       log_info "\"${name}\" is not optimizable as it contains the MulleObjCLoader class .o file"
-      exekutor touch "${folder}/.unoptimizable" || exit 1
+      exekutor touch "${infofolder}/.unoptimizable" || exit 1
       return
    fi
 
    if [ "${categoryname}" != "${name}" ]
    then
-      log_warning "\"${name}\" is not optimizable as it contains \"${filename})\", but expected \"MulleObjCLoader+${name}.o\""
-      exekutor touch "${folder}/.unoptimizable" || exit 1
+      log_warning "\"${name}\" is not optimizable as it contains \"${filename}\", but expected \"MulleObjCLoader+${name}.o\""
+      exekutor touch "${infofolder}/.unoptimizable" || exit 1
       return 1
    fi
 
    log_fluff "Loader \"${filename}\" and \"objc-loader.inc\" found"
 
-   redirect_exekutor "${folder}/dependencies_db.csv" sed 's|^.*// *||' "${include}/objc-loader.inc"
-   exekutor egrep '// *58bd58d3' "${include}/objc-loader.inc"  | \
-      redirect_exekutor "${folder}/loader-dependencies.inc" fgrep -v ';;'
+   # keep comments only
+   redirect_exekutor "${folder}/dependencies_db.csv" \
+      sed 's|^.*// *||' "${loaderinc}"
 
-   redirect_exekutor "${folder}/MulleObjCLoader+${name}.m" emit_loader_source "${name}"
+   # Grab MulleObjCLoader statements (47a9beb6->MulleObjCLoader)
+   exekutor egrep '// *47a9beb6;' "${loaderinc}" \
+   | redirect_exekutor "${infofolder}/dependencies-objc-loader.inc" fgrep -v ';;'
+
+   redirect_exekutor "${folder}/MulleObjCLoader+${name}.m" \
+      emit_loader_source "${name}"
 
    #
    # remove the loader that we will regenerate later
@@ -900,48 +806,61 @@ unpack_library()
    local library="$1"
 
    local folder
+   local infofolder
    local name
 
    [ ! -f "${library}" ] && fail "\"${library}\" not found"
 
-   folder="`foldername_from_library "${library}" "${UNARCHIVE_PREFIX}"`"
+   r_foldername_from_library "${library}" "${UNARCHIVE_PREFIX}"
+   folder="${RVAL}"
 
    if [ "${OPTION_FORCE}" = "NO" ] && [ "${folder}/.unpack_done" -nt "${library}" ]
    then
-      log_fluff "${folder} is up to date"
+      log_verbose "${folder} is up to date"
       return 0
    fi
 
-   name="`name_from_library "${library}"`"
-   log_fluff "Unpacking ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} ..."
+   r_name_from_library "${library}"
+   name="${RVAL}"
+
+   log_info "Unpacking ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} ..."
 
    unpack_library_into_folder "${library}" "${folder}" || fail "unpack failed"
 
-   prepare_for_optimizer "${folder}" "${library}"
-
-   if [ ! -f "${folder}/.c_only" ]
+   if [ "${OPTION_JUST_UNPACK}" = 'YES' ]
    then
-      if [ ! -f "${folder}/.unoptimizable" ]
-      then
-         create_shlibs "${folder}" || return 1
-
-         log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as ObjC"
-
-         #
-         # only in this case do we want to post-process
-         #
-         echo "${library}"
-      else
-         log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as unoptimizable ObjC"
-      fi
+      log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE}"
    else
-      log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as C"
+      r_foldername_from_library "${library}" "${UNARCHIVE_INFO_PREFIX}"
+      infofolder="${RVAL}"
+
+      mkdir_if_missing "${infofolder}"
+      prepare_for_optimizer "${folder}" "${infofolder}" "${library}"
+
+      if [ ! -f "${infofolder}/.c_only" ]
+      then
+         if [ ! -f "${infofolder}/.unoptimizable" ]
+         then
+            create_shlibs "${folder}"
+
+            log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as ObjC"
+
+            #
+            # only in this case do we want to post-process
+            #
+            echo "${library}"
+         else
+            log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as unoptimizable ObjC"
+         fi
+      else
+         log_verbose "Unpacked ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} as C"
+      fi
    fi
 
-   touch "${folder}/.unpack_done"
+   exekutor touch "${folder}/.unpack_done"
 
-   # global marker that somethings changed
-   touch "${UNARCHIVE_PREFIX}.unpack_done"
+   # global marker that something has changed
+   exekutor touch "${UNARCHIVE_PREFIX}.unpack_done"
 }
 
 
@@ -966,29 +885,40 @@ create_method_csv()
    local folder="$1"
 
    local ext
-   local i
+   local ofile
    local name
    local sedexpr
    local shlib
+   local libname
 
-   ext="`shlib_extension`"
+   ext="${MULLE_PLATFORM_LIBRARY_SUFFIX_DYNAMIC}"
 
-   for shlib in *".${ext}"
-   do
-      if [ "${shlib}" = "*.${ext}" ]
-      then
-         log_fluff "No shared libraries were produced"
-         continue
-      fi
+# namespacing not needed because files are optimized within their folder only
+#   r_basename "${folder}"
+#   libname="${RVAL}"
 
-      name="`basename -- "${shlib}" ".${ext}"`"
-      i="${name}.o"
+   (
+      cd "${folder}" || exit 1
 
-      log_fluff "Create entries for methods of \"$i\"..."
+      for shlib in *"${ext}"
+      do
+         if [ "${shlib}" = "*${ext}" ]
+         then
+            log_fluff "No shared libraries were produced"
+            continue
+         fi
 
-      sedexpr="s|\$|;${folder}\/${i}|"
-      ( exekutor mulle-objc-list -T "${shlib}" | exekutor sed "${sedexpr}" ) || return 1
-   done
+         r_basename "${shlib}" "${ext}"
+         name="${RVAL%${ext}}"
+#         r_filepath_concat "${folder}" "${name}.o"
+         ofile="${name}.o"
+
+         log_fluff "Create entries for methods of \"${ofile}\"..."
+
+         sedexpr="s|\$|;${ofile}|"
+         ( rexekutor mulle-objc-list -T "${shlib}" | rexekutor sed -e "${sedexpr}" ) || exit 1
+      done
+   )
 }
 
 
@@ -1004,25 +934,36 @@ create_class_csv()
    local name
    local sedexpr
    local shlib
+   local ofile
+#   local libname
 
-   ext="`shlib_extension`"
+   ext="${MULLE_PLATFORM_LIBRARY_SUFFIX_DYNAMIC}"
 
-   for shlib in *".${ext}"
-   do
-      if [ "${shlib}" = "*.${ext}" ]
-      then
-         log_fluff "No shared libraries were produced"
-         continue
-      fi
+#   r_basename "${folder}"
+#   libname="${RVAL}"
+   (
+      cd "${folder}" || exit 1
 
-      name="`basename -- "${shlib}" ".${ext}"`"
-      ofile="${name}.o"
+      for shlib in *"${ext}"
+      do
+         if [ "${shlib}" = "*${ext}" ]
+         then
+            log_fluff "No shared libraries were produced"
+            continue
+         fi
 
-      log_fluff "Create entries for classes of \"$ofile\"..."
+         r_basename "${shlib}" "${ext}"
+         name="${RVAL%${ext}}"
+#         r_filepath_concat "${folder}" "${name}.o"
+         ofile="${name}.o"
 
-      sedexpr="s|\$|;${folder}\/${ofile}|"
-      ( exekutor mulle-objc-list -C "${shlib}" | exekutor sed "${sedexpr}" ) || return 1
-   done
+         log_fluff "Create entries for classes of \"$ofile\"..."
+
+         sedexpr="s|\$|;${ofile}|"
+         ( exekutor mulle-objc-list -C "${shlib}" | exekutor sed "${sedexpr}" ) \
+         || fail "mulle-objc-list \"${shlib}\" failed"
+      done
+   )
 }
 
 
@@ -1031,10 +972,12 @@ create_method_csv_db()
    log_entry "create_method_csv_db" "$*"
 
    local folder="$1"
+   local infofolder="$2"
 
    log_fluff "Add methods in \"${folder}\" ..."
 
-   redirect_exekutor "method_db.csv" create_method_csv "${folder}" || fail "failed to produce method_db.csv"
+   redirect_exekutor "${infofolder}/method_db.csv" \
+      create_method_csv "${folder}" || fail "failed to produce method_db.csv"
 }
 
 
@@ -1043,10 +986,12 @@ create_class_csv_db()
    log_entry "create_class_csv_db" "$*"
 
    local folder="$1"
+   local infofolder="$2"
 
    log_fluff "Add classes in \"${folder}\" ..."
 
-   redirect_exekutor "class_db.csv" create_class_csv "${folder}" || fail "failed to produce class_db.csv"
+   redirect_exekutor "${infofolder}/class_db.csv" \
+      create_class_csv "${folder}" || fail "failed to produce class_db.csv"
 }
 
 
@@ -1056,11 +1001,13 @@ clean_folder_tmp()
 
    local folder="$1"
 
-   ext="`shlib_extension`"
+   ext="${MULLE_PLATFORM_LIBRARY_SUFFIX_DYNAMIC}"
 
    log_fluff "Removing shlibs in \"${folder}\" ..."
 
-   exekutor rm -f *."${ext}" 2> /dev/null
+   (
+      cd "${folder}" && exekutor rm -f *"${ext}" 2> /dev/null
+   )
 }
 
 
@@ -1072,7 +1019,8 @@ create_databases()
 
    [ -e "${UNARCHIVE_PREFIX}.unpack_done" ] || internal_fail "\"${UNARCHIVE_PREFIX}.unpack_done\" is missing"
 
-   if [ "${OPTION_FORCE}" = "NO" ] && [ "${UNARCHIVE_PREFIX}.unarchive_done" -nt "${UNARCHIVE_PREFIX}.unpack_done" ]
+   if [ "${OPTION_FORCE}" = "NO" ] &&
+      [ "${UNARCHIVE_INFO_PREFIX}.unarchive_done" -nt "${UNARCHIVE_PREFIX}.unpack_done" ]
    then
       log_info "Database files are up to date"
       return
@@ -1081,44 +1029,45 @@ create_databases()
    local old
    local lib
    local folder
+   local infofolder
    local name
 
-   IFS="
-"
-   for lib in ${libraries}
-   do
-      IFS="${DEFAULT_IFS}"
+   .foreachline lib in ${libraries}
+   .do
+      r_foldername_from_library "${lib}" "${UNARCHIVE_PREFIX}"
+      folder="${RVAL}"
+      r_foldername_from_library "${lib}" "${UNARCHIVE_INFO_PREFIX}"
+      infofolder="${RVAL}"
 
-      folder="`foldername_from_library "${lib}" "${UNARCHIVE_PREFIX}"`"
-      name="`name_from_library "${lib}"`"
+      r_name_from_library "${lib}"
+      name="${RVAL}"
+
+      log_setting "name       : ${name}"
+      log_setting "folder     : ${folder}"
+      log_setting "infofolder : ${infofolder}"
 
       [ -e "${folder}/.unpack_done" ] || internal_fail "\"${folder}/.unpack_done\" is missing"
 
-      old="${PWD}"
-      if [ ! -f "${folder}/.c_only" ]
+      if [ ! -f "${infofolder}/.c_only" ]
       then
          log_verbose "Create databases for ${C_MAGENTA}${C_BOLD}${name}${C_VERBOSE} ..."
 
-         rexekutor cd "${folder}" || return 1
-
-         create_method_csv_db "${folder}"
-         create_class_csv_db "${folder}"
+         create_method_csv_db "${folder}" "${infofolder}"
+         create_class_csv_db "${folder}" "${infofolder}"
 
          if [ "${OPTION_KEEP_TMP}" = "NO" ]
          then
             clean_folder_tmp "${folder}"
          fi
-         rexekutor cd "${old}"
 
-         exekutor touch "${folder}/.unarchive_done"
+         exekutor touch "${infofolder}/.unarchive_done"
       else
          log_fluff "${lib} is C only"
       fi
-   done
+   .done
 
-   exekutor touch "${UNARCHIVE_PREFIX}.unarchive_done"
-
-   IFS="${DEFAULT_IFS}"
+   mkdir_if_missing "${UNARCHIVE_INFO_PREFIX}"
+   exekutor touch "${UNARCHIVE_INFO_PREFIX}.unarchive_done"
 }
 
 
@@ -1126,50 +1075,51 @@ unarchive()
 {
    log_entry "unarchive" "$@"
 
-   if [ $# -eq 0 ]
+   if [ $# -ne 0 ]
    then
-      [ -z "${DEPENDENCY_DIR}" ] && usage
-
-      if [ ! -d "${DEPENDENCY_DIR}/lib" ]
-      then
-         fail "\"${DEPENDENCY_DIR}/lib\" not found"
-      fi
-
-      local libext
-      local lib
-      local i
-
-      log_info "Unpacking libraries found in ${C_RESET}${C_BOLD}${DEPENDENCY_DIR}/lib${C_INFO} ..."
-
-      libext="`lib_extension`"
-      IFS="
-"
-      for i in `ls -1 "${DEPENDENCY_DIR}/lib"/*.${libext}`
-      do
-         IFS="${DEFAULT_IFS}"
-
-         unpack_library "$i" || return 1
-      done
-      IFS="${DEFAULT_IFS}"
-   else
       log_info "Unpacking libraries ..."
       unpack_all "$@"
+      return $?
    fi
+
+   [ -z "${LIBRARY_PATH}" ] && usage
+
+   local directory
+   local libext
+   local lib
+   local i
+
+   .foreachpath directory in ${LIBRARY_PATH}
+   .do
+      if [ ! -d "${directory}" ]
+      then
+         .continue
+      fi
+
+      log_info "Unpacking libraries found in ${C_RESET}${C_BOLD}${directory}${C_INFO} ..."
+
+      libext="${MULLE_PLATFORM_LIBRARY_SUFFIX_STATIC}"
+
+      IFS=$'\n'
+      for i in `ls -1 "${directory}"/*${libext}`
+      do
+         unpack_library "$i" || return 1
+      done
+   .done
+
+   return 0
 }
 
 
 main()
 {
-   local MULLE_FLAG_EXEKUTOR_DRY_RUN="NO"
-   local MULLE_FLAG_LOG_DEBUG="NO"
-   local MULLE_FLAG_LOG_EXEKUTOR="NO"
-   local MULLE_FLAG_LOG_TERSE="NO"
-   local MULLE_TRACE
-   local MULLE_TRACE_POSTPONE="NO"
    local UNARCHIVE_PREFIX=""
+   local UNARCHIVE_INFO_PREFIX=""
    local DB_PREFIX=""
    local OPTION_FORCE="NO"
    local OPTION_KEEP_TMP="NO"
+   local LIBRARY_PATH
+   local OPTION_JUST_UNPACK='NO'
 
    while [ $# -ne 0 ]
    do
@@ -1187,11 +1137,22 @@ main()
          ;;
 
          -f|--force)
-            OPTION_FORCE="YES"
+            OPTION_FORCE='YES'
          ;;
 
          --keep-tmp)
-            OPTION_KEEP_TMP="YES"
+            OPTION_KEEP_TMP='YES'
+         ;;
+
+         --just-unpack)
+            OPTION_JUST_UNPACK='YES'
+         ;;
+
+         --library-path)
+            [ $# -eq 1 ] && fail "missing argument to $1"
+            shift
+
+            LIBRARY_PATH="$1"
          ;;
 
          --unarchive-dir)
@@ -1199,14 +1160,15 @@ main()
             shift
 
             UNARCHIVE_PREFIX="$1"
-            case "${UNARCHIVE_PREFIX}" in
-               */|"")
-               ;;
+            UNARCHIVE_PREFIX="${UNARCHIVE_PREFIX%%/}/"
+         ;;
 
-               *)
-                  UNARCHIVE_PREFIX="${UNARCHIVE_PREFIX}/"
-               ;;
-            esac
+         --unarchive-info-dir)
+            [ $# -eq 1 ] && fail "missing argument to $1"
+            shift
+
+            UNARCHIVE_INFO_PREFIX="$1"
+            UNARCHIVE_INFO_PREFIX="${UNARCHIVE_INFO_PREFIX%%/}/"
          ;;
 
          -h|--help)
@@ -1225,7 +1187,7 @@ main()
       shift
    done
 
-   options_setup_trace "${MULLE_TRACE}"
+   options_setup_trace "${MULLE_TRACE}" && set -x
 
    if [ -z "${MULLE_VIRTUAL_ROOT}" ]
    then
@@ -1233,32 +1195,61 @@ main()
       [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
    fi
 
-   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_CRAFT_DEPENDENCY_DIR}}"
-   DEPENDENCY_DIR="${DEPENDENCY_DIR:-${MULLE_VIRTUAL_ROOT}/${MULLE_CRAFT_DEPENDENCY_DIRNAME:-dependency}}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-`mulle-sde dependency-dir`}"
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-"${MULLE_VIRTUAL_ROOT}/dependency"}"
 
-   # your code follows here
-   if [ -z "`command -v mulle-objc-list`" ]
+   LIBRARY_DIR="${LIBRARY_DIR:-"${DEPENDENCY_DIR}/lib"}"
+
+   # default fallback
+   UNARCHIVE_INFO_PREFIX="${UNARCHIVE_INFO_PREFIX:-${UNARCHIVE_PREFIX}}"
+
+   if [ -z "`command -v mulle-platform`" ]
    then
-      fail "mulle-objc-list not in PATH"
+      fail "mulle-platform not in PATH"
    fi
-   if [ -z "`command -v mulle-objc-lista`" ]
-   then
-      fail "mulle-objc-lista not in PATH"
-   fi
+
+   local MULLE_PLATFORM_FRAMEWORK_PATH_LDFLAG
+   local MULLE_PLATFORM_FRAMEWORK_PREFIX
+   local MULLE_PLATFORM_FRAMEWORK_SUFFIX
+   local MULLE_PLATFORM_LIBRARY_LDFLAG
+   local MULLE_PLATFORM_LIBRARY_PATH_LDFLAG
+   local MULLE_PLATFORM_LIBRARY_PREFIX
+   local MULLE_PLATFORM_LIBRARY_SUFFIX_STATIC
+   local MULLE_PLATFORM_LIBRARY_SUFFIX_DYNAMIC
+   local MULLE_PLATFORM_LINK_MODE
+   local MULLE_PLATFORM_RPATH_LDFLAG
+   local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_DEFAULT
+   local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_STATIC
+
+   eval_rexekutor `mulle-platform environment`
+
+   log_setting "LIBRARY_DIR=${LIBRARY_DIR}"
+   log_setting "UNARCHIVE_PREFIX=${UNARCHIVE_PREFIX}"
+   log_setting "UNARCHIVE_INFO_PREFIX=${UNARCHIVE_INFO_PREFIX}"
 
    local libraries
 
-   libraries="`unarchive "$@"`" || exit 1
+   libraries="`unarchive "$@"`" || fail "Unpacking failed, exiting"
 
    if [ ! -z "${libraries}" ]
    then
-      log_info "Creating databases..."
+      # your code follows here
+      if [ -z "`command -v mulle-objc-list`" ]
+      then
+         fail "mulle-objc-list not in PATH"
+      fi
+      if [ -z "`command -v mulle-objc-lista`" ]
+      then
+         fail "mulle-objc-lista not in PATH"
+      fi
+
+      log_info "Creating object databases..."
 
       create_databases "${libraries}"
 
       log_info "Done"
    else
-      log_info "Databases are up to date."
+      log_info "Object databases are up to date."
    fi
 }
 
