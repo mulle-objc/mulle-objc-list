@@ -1,3 +1,8 @@
+## 0.21.0
+
+* rewrote optimizing scripts
+
+
 ### 0.20.2
 
 * Various small improvements

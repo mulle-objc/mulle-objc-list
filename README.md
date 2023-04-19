@@ -9,7 +9,7 @@ or categories. The output is as [CSV, euro-style](//en.wikipedia.org/wiki/Comma-
 
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg?branch=release) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions)| [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag//mulle-objc-list.svg?branch=release) [![Build Status](https://github.com//mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com//mulle-objc-list/actions)| [RELEASENOTES](RELEASENOTES.md) |
 
 
 
@@ -130,11 +130,11 @@ Can be useful to find mixed-in old .o files
 
 |   Requirement         | Release Version  | Description
 |-----------------------|------------------|---------------
-| [mulle-objc-runtime](https://github.com/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-runtime/actions/workflows/mulle-sde-ci.yml) | ⏩ A fast, portable Objective-C runtime written 100% in C11
-| [mulle-dlfcn](https://github.com/mulle-core/mulle-dlfcn) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-dlfcn.svg) [![Build Status](https://github.com/mulle-core/mulle-dlfcn/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-dlfcn/actions/workflows/mulle-sde-ci.yml) | ♿️ Shared library helper
-| [mulle-atinit](https://github.com/mulle-core/mulle-atinit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atinit.svg) [![Build Status](https://github.com/mulle-core/mulle-atinit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atinit/actions/workflows/mulle-sde-ci.yml) | 🤱🏼 Compatibility library for deterministic initializers
-| [mulle-atexit](https://github.com/mulle-core/mulle-atexit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atexit.svg) [![Build Status](https://github.com/mulle-core/mulle-atexit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atexit/actions/workflows/mulle-sde-ci.yml) | 👼 Compatibility library to fix atexit
-| [mulle-objc-debug](https://github.com/mulle-objc/mulle-objc-debug) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-debug.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-debug/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-debug/actions/workflows/mulle-sde-ci.yml) | 🐞 Debug support for the mulle-objc-runtime
+| [mulle-objc-runtime](https://github.com/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | ⏩ A fast, portable Objective-C runtime written 100% in C11
+| [mulle-dlfcn](https://github.com/mulle-core/mulle-dlfcn) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | ♿️ Shared library helper
+| [mulle-atinit](https://github.com/mulle-core/mulle-atinit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 🤱🏼 Compatibility library for deterministic initializers
+| [mulle-atexit](https://github.com/mulle-core/mulle-atexit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 👼 Compatibility library to fix atexit
+| [mulle-objc-debug](https://github.com/mulle-objc/mulle-objc-debug) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag//.svg) [![Build Status](https://github.com///workflows/CI/badge.svg?branch=release)](https://github.com///actions/workflows/mulle-sde-ci.yml) | 🐞 Debug support for the mulle-objc-runtime
 
 
 ## Add
@@ -142,7 +142,7 @@ Can be useful to find mixed-in old .o files
 Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project:
 
 ``` sh
-mulle-sde add github:mulle-objc/mulle-objc-list
+mulle-sde add github:/
 ```
 
 To only add the sources of mulle-objc-list with dependency
@@ -150,10 +150,10 @@ sources use [clib](https://github.com/clibs/clib):
 
 
 ``` sh
-clib install --out src/mulle-objc mulle-objc/mulle-objc-list
+clib install --out src/ /
 ```
 
-Add `-isystem src/mulle-objc` to your `CFLAGS` and compile all the sources that were downloaded with your project.
+Add `-isystem src/` to your `CFLAGS` and compile all the sources that were downloaded with your project.
 
 
 ## Install
@@ -164,7 +164,7 @@ Use [mulle-sde](//github.com/mulle-sde) to build and install mulle-objc-list and
 
 ``` sh
 mulle-sde install --prefix /usr/local \
-   https://github.com/mulle-objc/mulle-objc-list/archive/latest.tar.gz
+   https://github.com///archive/latest.tar.gz
 ```
 
 ### Manual Installation
