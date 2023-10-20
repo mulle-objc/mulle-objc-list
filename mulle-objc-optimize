@@ -443,7 +443,8 @@ _optimize_folder()
 
    exekutor [ ! -f "${srcfile}" ] && _internal_fail "\"${srcfile}\" is missing"
 
-   eval_exekutor mulle-clang -c \
+   eval_exekutor mulle-clang -w \
+                             -c \
                              -o "'${ofile}'" \
                              "${CPPFLAGS}" \
                              "${CFLAGS}" \

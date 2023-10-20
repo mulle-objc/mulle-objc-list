@@ -38,15 +38,15 @@ main()
 
    [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "must be started inside mulle-sde"
 
-   log_verbose "Build libraries"
+   echo "Build libraries"
    rexekutor mulle-sde ${MULLE_TECHNICAL_FLAGS} \
                -DMULLE_FETCH_SEARCH_PATH="${MULLE_FETCH_SEARCH_PATH}" \
                -DMULLE_SOURCETREE_SYMLINK=YES \
+               -vv \
              install \
                --prefix "${tmp}" \
                mylib || fail "Install failed"
-
-   log_verbose "Unpack libraries"
+   echo "Unpack libraries"
    exekutor mulle-objc-unarchive ${MULLE_TECHNICAL_FLAGS} \
                -vvv -ld -ls \
                --keep-tmp \

@@ -126,7 +126,7 @@ EOF
    case "`uname`" in
       Darwin)
          sdkpath="`xcrun --show-sdk-path`"
-         eval mulle-clang -isysroot "'${sdkpath}'" ${includepath} -o "'${exefile}'" "'${srcfile}'" || exit 1
+         eval mulle-clang -w -isysroot "'${sdkpath}'" ${includepath} -o "'${exefile}'" "'${srcfile}'" || exit 1
       ;;
 
       *)

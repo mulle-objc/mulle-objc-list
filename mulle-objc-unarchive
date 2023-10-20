@@ -526,7 +526,10 @@ create_undefined_linkage()
    cflags="${RVAL}"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor mulle-clang ${cflags} -c -o "${outfile}" "${cfile}" || exit 1
+   exekutor mulle-clang ${cflags} -w \
+                                  -c \
+                                  -o "${outfile}" \
+                                  "${cfile}" || exit 1
 }
 
 

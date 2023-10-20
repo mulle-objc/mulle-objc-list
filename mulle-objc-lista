@@ -477,7 +477,7 @@ mulle_clang_library_functions()
 print_mulle_clang_builtin_case()
 {
    mulle_clang_library_functions | \
-      "${CC}" -cc1 -fsyntax-only -x c 2>&1 | \
+      "${CC}" -cc1 -w -fsyntax-only -x c 2>&1 | \
       sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
 }
 
@@ -531,7 +531,7 @@ crt_functions()
 print_crt_function_case()
 {
    crt_functions | \
-      "${CC}" -cc1 -fsyntax-only -x c 2>&1 | \
+      "${CC}" -cc1 -w -fsyntax-only -x c 2>&1 | \
       sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
 }
 
@@ -797,9 +797,7 @@ ${text}"
    cflags="${RVAL}"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor "${CC}" ${cflags} -Wno-incompatible-library-redeclaration \
-                              -Wno-builtin-requires-header \
-                              -Wno-incomplete-setjmp-declaration \
+   exekutor "${CC}" ${cflags} -w \
                               -c \
                               -o "${outfile}" \
                               "${cfile}" || exit 1
@@ -823,9 +821,8 @@ create_mingw_aux_linkage()
    r_shlib_cflags
    cflags="${RVAL}"
 
-   log_fluff "Compile auxiliary linkage \"${auxfile}\"..."
-   exekutor "${CC}" ${cflags} -Wno-incompatible-library-redeclaration \
-                              -Wno-builtin-requires-header \
+   log_fluff "Compile mingw auxiliary linkage \"${auxfile}\"..."
+   exekutor "${CC}" ${cflags} -w \
                               -c \
                               -o \
                               "${outfile}" \
