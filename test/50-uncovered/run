@@ -7,7 +7,7 @@ produce_output()
 
    MULLE_VIRTUAL_ROOT=
    rexekutor cd mylib &&
-   exekutor mulle-sde craft --release &&
+   exekutor mulle-sde craft --clean --release &&
    rexekutor mulle-sde product --release
 )
 
