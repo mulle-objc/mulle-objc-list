@@ -7,9 +7,11 @@ It's useful when developing mulle-objc projects. It loads a shared library and
 dumps the mulle-objc load information contained within, for instance classes
 or categories. The output is as [CSV, euro-style](//en.wikipedia.org/wiki/Comma-separated_values).
 
+
+
 | Release Version                                       | Release Notes
 |-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag//mulle-objc-list.svg?branch=release) [![Build Status](https://github.com//mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com//mulle-objc-list/actions)| [RELEASENOTES](RELEASENOTES.md) |
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg?branch=release) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg?branch=release)](//github.com/mulle-objc/mulle-objc-list/actions) | [RELEASENOTES](RELEASENOTES.md) |
 
 
 
@@ -126,6 +128,12 @@ Can be useful to find mixed-in old .o files
 
 
 
+### You are here
+
+![Overview](overview.dot.svg)
+
+
+
 ## Requirements
 
 |   Requirement         | Release Version  | Description
@@ -139,10 +147,17 @@ Can be useful to find mixed-in old .o files
 
 ## Add
 
+**This project is a component of the [mulle-core](//github.com/mulle-core/mulle-core) library. As such you usually will *not* add or install it
+individually, unless you specifically do not want to link against
+`mulle-core`.**
+
+
+### Add as an individual component
+
 Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project:
 
 ``` sh
-mulle-sde add github:/
+mulle-sde add github:mulle-objc/mulle-objc-list
 ```
 
 To only add the sources of mulle-objc-list with dependency
@@ -150,10 +165,10 @@ sources use [clib](https://github.com/clibs/clib):
 
 
 ``` sh
-clib install --out src/ /
+clib install --out src/mulle-objc mulle-objc/mulle-objc-list
 ```
 
-Add `-isystem src/` to your `CFLAGS` and compile all the sources that were downloaded with your project.
+Add `-isystem src/mulle-objc` to your `CFLAGS` and compile all the sources that were downloaded with your project.
 
 
 ## Install
@@ -181,8 +196,10 @@ cmake --build build --config Release &&
 cmake --install build --config Release
 ```
 
+
 ## Author
 
-[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK
+[Nat!](https://mulle-kybernetik.com/weblog) for Mulle kybernetiK  
+
 
 

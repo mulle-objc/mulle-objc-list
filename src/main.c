@@ -111,7 +111,7 @@ static void   _usage( void)
             "Options:\n"
             "   -a      : ignore empty filter arguments \n"
             "   -e      : emit dependencies sentinel field\n"
-            "   -l <id> : specify loader-class id for -d (default is 0x%08x)\n"
+            "   -l <id> : specify loader-class id for -d (default is 0x%08lx)\n"
             "   -f <id> : filter for class with id\n"
             "   -F <id> : filter for category with id (specify -f as well)\n"
             "   -M <id> : filter for methods with id\n"
@@ -132,7 +132,7 @@ static void   _usage( void)
             "   -s      : list classes, categories, methods (mixed CSV)\n"
             "   -t      : terse list methods (coverage like)\n"
             "\n"
-            , loader_classid);
+            , (unsigned long) loader_classid);
    exit( 1);
 }
 
@@ -392,7 +392,7 @@ static void   _print_struct_or_union( char *type, char *prefix)
    while( _mulle_objc_signatureenumerator_next( &rover, &typeinfo))
    {
       print_typeinfo( &typeinfo, NULL, NULL);
-      printf( " f%d; ", i++);
+      printf( " f%u; ", i++);
       type = _mulle_objc_signatureenumerator_get_type( &rover);
       if( *type == '}')
          break;
@@ -523,7 +523,7 @@ static void   print_typeinfo( struct mulle_objc_typeinfo *typeinfo,
       end = strchr( s, '"');
       if( ! end || ! *s)
       {
-         printf( "**%s named signature \"%s\" **", s ? "malformed" : "NULL", s ? s : "");
+         printf( "**%s named signature \"%s\" **", *s ? "malformed" : "empty", s);
          return;
       }
 
@@ -574,9 +574,9 @@ static void  hackish_emit_dependencies( struct _mulle_objc_method *method,
 
    while( dependencies->classid != MULLE_OBJC_NO_CLASSID)
    {
-      printf( "%08x;;%08x;\n",
-         dependencies->classid,
-         dependencies->categoryid);
+      printf( "%08lx;;%08lx;\n",
+         (unsigned long) dependencies->classid,
+         (unsigned long) dependencies->categoryid);
       ++dependencies;
    }
 }
@@ -607,7 +607,7 @@ static void   method_dump( struct _mulle_objc_method *method,
    char                         *fragment;
    char                         *tokenizer;
 
-   printf( ";%08x", _mulle_objc_method_get_methodid( method));
+   printf( ";%08lx", (unsigned long) _mulle_objc_method_get_methodid( method));
    printf( ";%c%s", type, _mulle_objc_method_get_name( method));
 
    if( mode != dump_search && mode != dump_methods && mode != dump_callable_methods)
@@ -616,7 +616,7 @@ static void   method_dump( struct _mulle_objc_method *method,
    if( raw_types)
    {
       printf( ";%s", _mulle_objc_method_get_signature( method));
-      printf( ";0x%x", _mulle_objc_method_get_bits( method));
+      printf( ";0x%lx", (unsigned long) _mulle_objc_method_get_bits( method));
       return;
    }
 
@@ -624,7 +624,7 @@ static void   method_dump( struct _mulle_objc_method *method,
     * emit bits first, so that types can contain ';' for CSV parsing
     */
    printf( method->descriptor.bits & _mulle_objc_method_variadic ? ";..." : ";");
-   printf( ";0x%x", method->descriptor.bits);
+   printf( ";0x%lx", (unsigned long) method->descriptor.bits);
 
    methodname =_mulle_objc_method_get_name( method);
    tokenizer  = mulle_strdup( methodname);
@@ -675,7 +675,7 @@ static void   method_loadclass_dump( struct _mulle_objc_method *method,
    if( filter_methodid && method->descriptor.methodid != filter_methodid)
       return;
 
-   printf( "%08x", p->classid);
+   printf( "%08lx", (unsigned long) p->classid);
    printf( ";%s",  p->classname);
    printf( ";");
    printf( ";");
@@ -706,9 +706,9 @@ static void   method_loadcategory_dump( struct _mulle_objc_method *method,
       return;
    }
 
-   printf( "%08x",  p->classid);
+   printf( "%08lx", (unsigned long) p->classid);
    printf( ";%s",   p->classname);
-   printf( ";%08x", p->categoryid);
+   printf( ";%08lx", (unsigned long) p->categoryid);
    printf( ";%s",   p->categoryname);
 
    method_dump( method, type, p->classname);
@@ -763,7 +763,7 @@ static void   methodlist_loadcategory_dump( struct _mulle_objc_methodlist *list,
  */
 static void   property_dump( struct _mulle_objc_property *property)
 {
-   printf( ";%08x", _mulle_objc_property_get_propertyid( property));
+   printf( ";%08lx", (unsigned long) _mulle_objc_property_get_propertyid( property));
    printf( ";%s", _mulle_objc_property_get_name( property));
    printf( ";%s", _mulle_objc_property_get_signature( property));
 }
@@ -772,7 +772,7 @@ static void   property_dump( struct _mulle_objc_property *property)
 static void   property_loadclass_dump( struct _mulle_objc_property *property,
                                        struct _mulle_objc_loadclass *p)
 {
-   printf( "%08x", p->classid);
+   printf( "%08lx", (unsigned long) p->classid);
    printf( ";%s",  p->classname);
    property_dump( property);
    printf( "\n");
@@ -782,9 +782,9 @@ static void   property_loadclass_dump( struct _mulle_objc_property *property,
 static void   property_loadcategory_dump( struct _mulle_objc_property *property,
                                           struct _mulle_objc_loadcategory *p)
 {
-   printf( "%08x",  p->classid);
+   printf( "%08lx", (unsigned long) p->classid);
    printf( ";%s",   p->classname);
-   printf( ";%08x", p->categoryid);
+   printf( ";%08lx", (unsigned long) p->categoryid);
    printf( ";%s",   p->categoryname);
    property_dump( property);
    printf( "\n");
@@ -839,7 +839,7 @@ static void   ivar_dump( struct _mulle_objc_ivar *ivar)
    char                         *type;
    struct mulle_objc_typeinfo   typeinfo;
 
-   printf( ";%08x", _mulle_objc_ivar_get_ivarid( ivar));
+   printf( ";%08lx", (unsigned long) _mulle_objc_ivar_get_ivarid( ivar));
    printf( ";%s", _mulle_objc_ivar_get_name( ivar));
    printf( ";%ld", (long) _mulle_objc_ivar_get_offset( ivar));
 
@@ -861,7 +861,7 @@ static void   ivar_dump( struct _mulle_objc_ivar *ivar)
 static void   ivar_loadclass_dump( struct _mulle_objc_ivar *ivar,
                                    struct _mulle_objc_loadclass *p)
 {
-   printf( "%08x", p->classid);
+   printf( "%08lx", (unsigned long) p->classid);
    printf( ";%s",  p->classname);
 
    ivar_dump( ivar);
@@ -905,23 +905,23 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    {
    case dump_classes_categories :
    case dump_search :
-      printf( "%08x;%s\n", p->classid, p->classname);
+      printf( "%08lx;%s\n", (unsigned long) p->classid, p->classname);
       break;
 
    case dump_classes :
-      printf( "%08x;%s;", p->classid, p->classname);
+      printf( "%08lx;%s;", (unsigned long) p->classid, p->classname);
       if( p->superclassid == MULLE_OBJC_NO_CLASSID)
          printf( "MULLE_OBJC_NO_CLASSID;\n");
       else
-         printf( "%08x;%s\n", p->superclassid, p->superclassname);
+         printf( "%08lx;%s\n", (unsigned long) p->superclassid, p->superclassname);
       break;
 
    case dump_dependencies :
       if( p->classid != loader_classid)
          printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
-                "      // %08x;%s;;\n",
+                "      // %08lx;%s;;\n",
                 p->classname,
-                p->classid,
+                (unsigned long) p->classid,
                 p->classname);
       break;
    }
@@ -970,12 +970,12 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
       if( p->classid != loader_classid)
       {
          printf( "      { @selector( %s), @selector( %s) },"
-                 "      // %08x;%s;%08x;%s\n",
+                 "      // %08lx;%s;%08lx;%s\n",
                     p->classname,
                     p->categoryname,
-                    p->classid,
+                    (unsigned long) p->classid,
                     p->classname,
-                    p->categoryid,
+                    (unsigned long) p->categoryid,
                     p->categoryname);
       }
       break;
@@ -1175,9 +1175,9 @@ int  main( int argc, char *argv[])
          {
          case 'v' :
             fprintf( stderr, "%u.%u.%u\n",
-                    (MULLE_OBJC_LIST_VERSION >> 20),
-                    ((MULLE_OBJC_LIST_VERSION >> 8) & 0xFFF),
-                    MULLE_OBJC_LIST_VERSION & 0xFF);
+                    (unsigned int) (MULLE_OBJC_LIST_VERSION >> 20),
+                    (unsigned int) ((MULLE_OBJC_LIST_VERSION >> 8) & 0xFFF),
+                    (unsigned int) (MULLE_OBJC_LIST_VERSION & 0xFF));
             return( 0);
          }
 
@@ -1390,7 +1390,7 @@ int  main( int argc, char *argv[])
          free( path);
 
       if( verbose && universe)
-         fprintf( stderr, "Loaded \"%s\". (universe: \"%s\" %x (%p), dlmode: %u)\n",
+         fprintf( stderr, "Loaded \"%s\". (universe: \"%s\" %x (%p), dlmode: %d)\n",
                argv[ i],
                universe->universename ? universe->universename : "*default*",
                universe ? universe->universeid : 0,
