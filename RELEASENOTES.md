@@ -1,3 +1,7 @@
+### 0.21.1
+
+* fix output to long for 16 bit systems
+
 ## 0.21.0
 
 * rewrote optimizing scripts
