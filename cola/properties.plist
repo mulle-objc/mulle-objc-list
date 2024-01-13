@@ -20,14 +20,6 @@
          user="mulle-objc";
       },
       {
-         description="♿️ Shared library helper";
-         domain="github";
-         name="mulle-dlfcn";
-         repo="mulle-dlfcn";
-         url="https://github.com/mulle-core/mulle-dlfcn";
-         user="mulle-core";
-      },
-      {
          description="🤱🏼 Compatibility library for deterministic initializers";
          domain="github";
          name="mulle-atinit";
@@ -42,14 +34,6 @@
          repo="mulle-atexit";
          url="https://github.com/mulle-core/mulle-atexit";
          user="mulle-core";
-      },
-      {
-         description="🐞 Debug support for the mulle-objc-runtime";
-         domain="github";
-         name="mulle-objc-debug";
-         repo="mulle-objc-debug";
-         url="https://github.com/mulle-objc/mulle-objc-debug";
-         user="mulle-objc";
       }
-   )
+   );
 }
