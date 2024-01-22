@@ -1,3 +1,7 @@
+### 0.21.2
+
+* fix for cosmopolitan
+
 ### 0.21.1
 
 * fix output to long for 16 bit systems
