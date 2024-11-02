@@ -515,7 +515,7 @@ is_clang_builtin()
 
 # also change in mulle-objc-unarchive
 
-CLANG_FUNCTIONS="_GLOBAL_OFFSET_TABLE_"
+CRT_FUNCTIONS="_GLOBAL_OFFSET_TABLE_"
 
 crt_functions()
 {
@@ -525,14 +525,30 @@ crt_functions()
    .do
       echo "void   ${name}( struct i_am_bogus *p) {}"
    .done
+
+   cat <<EOF
+int   main( void)
+{
+   return( 0);
+}
+EOF
 }
 
 
+# memo: the CC -cc1 is make pretendd and only works with clang hmmm
 print_crt_function_case()
 {
-   crt_functions | \
-      "${CC}" -cc1 -w -fsyntax-only -x c 2>&1 | \
-      sed -n "s/.*'\\(.*\\)' is a builtin with .*/      \\1) return 0 ;;/p"
+   local filename
+
+   r_make_tmp_file "x" "exe"
+   filename="${RVAL}"
+
+   crt_functions \
+   | ( LANG=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 LC_MESSAGES=en_US.UTF-8 \
+     "${CC}" ${CFLAGS} -o "${filename}" -x c - || true ) 2>&1 \
+   | sed -n "s/.*multiple definition of [\`']\\(.*\\)[\`'].*/      \\1) return 0 ;;/p"
+
+   remove_file_if_present "${filename}"
 }
 
 
@@ -566,7 +582,6 @@ is_crt_symbol()
 
    _is_crt_function "$@"
 }
-
 
 
 #
@@ -797,10 +812,10 @@ ${text}"
    cflags="${RVAL}"
 
    log_fluff "Compile undefined symbol linkage \"${cfile}\"..."
-   exekutor "${CC}" ${cflags} -w \
-                              -c \
-                              -o "${outfile}" \
-                              "${cfile}" || exit 1
+   exekutor "${CC}" ${CFLAGS} ${cflags} -w \
+                                        -c \
+                                        -o "${outfile}" \
+                                        "${cfile}" || exit 1
 }
 
 
@@ -822,11 +837,11 @@ create_mingw_aux_linkage()
    cflags="${RVAL}"
 
    log_fluff "Compile mingw auxiliary linkage \"${auxfile}\"..."
-   exekutor "${CC}" ${cflags} -w \
-                              -c \
-                              -o \
-                              "${outfile}" \
-                              "${auxfile}" || exit 1
+   exekutor "${CC}" ${CFLAGS} ${cflags} -w \
+                                        -c \
+                                        -o \
+                                        "${outfile}" \
+                                        "${auxfile}" || exit 1
 }
 
 _create_shlib_windows()
@@ -871,7 +886,7 @@ _create_shlib_windows()
       r_basename "${shlib}"
       shlib="${RVAL}"
 
-      eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -nologo "-OUT:'${shlib}'"
+      eval_exekutor "'${LD}'" "${CFLAGS}" "${LDFLAGS}" "${ldflags}" "${files}" "${LIBRARIES}" -nologo "-OUT:'${shlib}'"
    ) >&2 || exit 1
 }
 
@@ -912,7 +927,7 @@ _create_shlib()
       files="${undefinedofile} ${files}"
    fi
 
-   eval_exekutor "'${LD}'" "${ldflags}" "${files}" "${LIBRARIES}" -o "'${shlib}'" \
+   eval_exekutor "'${LD}'" "${CFLAGS}" "${LDFLAGS}" "${ldflags}" "${files}" "${LIBRARIES}" -o "'${shlib}'" \
     || fail "Linking temporary shared library failed"
 }
 
@@ -967,6 +982,18 @@ main()
    local OPTION_KEEP='NO'
    local OPTION_WSL='NO'
 
+   case "$1" in
+      -h|--help|help)
+         usage
+      ;;
+
+      --print-crt-function)
+         setup_cc_environment
+         print_crt_function
+         exit 0
+      ;;
+   esac
+
    # prefer sibling mulle-objc-list
    MULLE_OBJC_LIST="${0%/*}/mulle-objc-list"
    if [ ! -x "${MULLE_OBJC_LIST}" ]
@@ -978,11 +1005,6 @@ main()
    r_absolutepath "${MULLE_OBJC_LIST}"
    cmdline="'${RVAL}'"
 
-   case "$1" in
-      -h|--help|help)
-         usage
-      ;;
-   esac
 
    #
    # collect options for mulle-objc-list

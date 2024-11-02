@@ -298,7 +298,6 @@ main()
             # ignore, taken care of by the booter already
          ;;
 
-
          -s|--sdk)
             [ $# -eq 1 ] && echo "missing argument to $1"
             shift

@@ -40,6 +40,7 @@
 
 #define __MULLE_OBJC_NO_TPS__ 1
 #define __MULLE_OBJC_NO_FCS__ 1
+#define __MULLE_OBJC_NO_TAO__ 1
 
 #include <mulle-objc-runtime/mulle-objc-runtime.h>
 
@@ -1050,7 +1051,7 @@ int  __mulle_objc_list_callback( struct _mulle_objc_loadinfo *info)
          return(0);
       }
 
-      s = mulle_objc_loadinfo_get_originator( info);
+      s = mulle_objc_loadinfo_get_origin( info);
       if( s)
          log_printf( "Dumping loadinfo %s ...\n", s);
 

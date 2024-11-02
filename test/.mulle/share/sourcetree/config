@@ -1,1 +1,1 @@
-mulle-objc-list;${MULLE__OBJC__LIST_NODETYPE:-tar};;53E94B98-C984-4D32-BEF3-303C7DDE776B;${MULLE__OBJC__LIST_URL:-https://github.com/nat/mulle-objc-list/archive/${MULLE_TAG}.tar.gz};${MULLE__OBJC__LIST_BRANCH};${MULLE__OBJC__LIST_TAG:-latest};;
+mulle-objc-list;${MULLE__OBJC__LIST_NODETYPE:-tar};;CA5550FA-A545-44AD-8574-C2013C49C027;${MULLE__OBJC__LIST_URL:-https://github.com/nat/mulle-objc-list/archive/${MULLE_TAG}.tar.gz};${MULLE__OBJC__LIST_BRANCH};${MULLE__OBJC__LIST_TAG:-latest};;
