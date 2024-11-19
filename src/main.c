@@ -1433,7 +1433,8 @@ struct _mulle_objc_universe  *
    if( _mulle_objc_universe_is_uninitialized( universe))
    {
       _mulle_objc_universe_bang( universe, 0, NULL, NULL);
-       universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
+      universe->config.skip_consistency_checks = 1;
+      universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
    }
    return( universe);
 }
