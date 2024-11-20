@@ -1,3 +1,10 @@
+## 0.22.0
+
+
+
+* adapt to changes in mulle-objc-runtime
+
+
 ### 0.21.2
 
 * fix for cosmopolitan
