@@ -185,6 +185,7 @@ static char   *simple_typename( char *type)
 #ifdef _C_ATOM
    case _C_ATOM      : return( "char *");
 #endif
+   default           : break;
    }
    return( 0);
 }
@@ -299,6 +300,7 @@ static void   print_int( char *type, char *methodname, char *fragment)
       case isNSInteger        : printf( "NSInteger"); return;
       case isNSStringEncoding : printf( "NSStringEncoding"); return;
       case isBOOL             : printf( "BOOL"); return;
+      default                 : break;
    }
    printf( "int");
 }
@@ -310,6 +312,7 @@ static void   print_unsigned_int( char *type, char *methodname, char *fragment)
    {
       case isNSUInteger       : printf( "NSUInteger"); return;
       case isNSStringEncoding : printf( "NSStringEncoding"); return;
+      default                 : break;
    }
    printf( "unsigned int");
 }
@@ -321,6 +324,7 @@ static void   print_long( char *type, char *methodname, char *fragment)
    {
       case isNSInteger        : printf( "NSInteger"); return;
       case isNSStringEncoding : printf( "NSStringEncoding"); return;
+      default                 : break;
    }
    printf( "long");
 }
@@ -332,6 +336,7 @@ static void   print_unsigned_long( char *type, char *methodname, char *fragment)
    {
       case isNSUInteger       : printf( "NSUInteger"); return;
       case isNSStringEncoding : printf( "NSStringEncoding"); return;
+      default                 : break;
    }
    printf( "unsigned long");
 }
@@ -343,6 +348,7 @@ static void   print_long_long( char *type, char *methodname, char *fragment)
    {
       case isNSInteger        : printf( "NSInteger"); return;
       case isNSStringEncoding : printf( "NSStringEncoding"); return;
+      default                 : break;
    }
    printf( "long long");
 }
@@ -354,6 +360,7 @@ static void   print_unsigned_long_long( char *type, char *methodname, char *frag
    {
       case isNSUInteger       : printf( "NSUInteger"); return;
       case isNSStringEncoding : printf( "NSStringEncoding"); return;
+      default                 : break;
    }
    printf( "unsigned long long");
 }
@@ -429,6 +436,8 @@ static void   print_struct( char *type, char *methodname, char *fragment)
    {
       case isNSRange : printf( "NSRange"); return;
       case isNSZone  : printf( "NSZone"); return;
+      default:
+         break;
    }
 
    _print_struct_or_union( ++type, "struct");
@@ -470,6 +479,8 @@ static void   print_pointer( char *type, char *methodname, char *fragment)
          {
             case isBOOLPointer    : printf( "BOOL *"); return;
             case isUnicharPointer : printf( "unichar *"); return;
+            default:
+               break;
          }
       }
 
@@ -555,6 +566,8 @@ static void   print_typeinfo( struct mulle_objc_typeinfo *typeinfo,
    case _C_STRUCT_B : print_struct( typeinfo->type, methodname, fragment); return;
    case _C_UNION_B  : print_union( typeinfo->type, methodname, fragment); return;
    case _C_BFLD     : print_bitfield( typeinfo->type, methodname, fragment); return;
+   default:
+         break;
    }
 
    printf( "**unknown type signature**");
@@ -924,6 +937,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                 p->classname,
                 (unsigned long) p->classid,
                 p->classname);
+   default:
       break;
    }
 
@@ -944,6 +958,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    case dump_coverage :
       methodlist_loadclass_dump( p->classmethods, '+', p, info);
       methodlist_loadclass_dump( p->instancemethods, '-', p, info);
+   default:
       break;
    }
 }
@@ -984,6 +999,7 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
    case dump_loader :
       if( p->classid == loader_classid)
          methodlist_loadcategory_dump( p->classmethods, '+', p, info);
+   default:
       break;
    }
 
@@ -999,6 +1015,7 @@ static void   loadcategory_walk( struct _mulle_objc_loadcategory *p,
    case dump_coverage :
       methodlist_loadcategory_dump( p->classmethods, '+', p, info);
       methodlist_loadcategory_dump( p->instancemethods, '-', p, info);
+   default:
       return;
    }
 }
@@ -1060,6 +1077,8 @@ int  __mulle_objc_list_callback( struct _mulle_objc_loadinfo *info)
       case dump_info :
          mulle_objc_loadinfo_csvdump_terse_to_fp( info, stdout);
          return( 0);
+   default:
+         break;
       }
 
       loadclasslist_walk( info->loadclasslist, info);
@@ -1132,7 +1151,7 @@ int  main( int argc, char *argv[])
       extern void   mulle_objc_dotdump( void);
 
       universe = __mulle_objc_global_get_universe( __MULLE_OBJC_UNIVERSEID__);
-      mulle_objc_class_dotdump_to_directory( universe, ".");
+      mulle_objc_universe_dotdump_to_directory( universe, ".");
       abort();
    }
 #endif
