@@ -16,7 +16,7 @@ if( NOT __CMAKE_TWEAKS_C_CMAKE__)
    set_property( GLOBAL PROPERTY USE_FOLDERS ON)
 
    if( APPLE)
-      cmake_minimum_required (VERSION 3.0)
+      cmake_minimum_required (VERSION 3.15)
 
       # CMAKE_OSX_SYSROOT must be set for CMAKE_OSX_DEPLOYMENT_TARGET (cmake bug)
       if( NOT CMAKE_OSX_SYSROOT)
@@ -38,10 +38,10 @@ if( NOT __CMAKE_TWEAKS_C_CMAKE__)
    else()
       if( WIN32)
          # may not be enough though...
-         cmake_minimum_required( VERSION 3.4)
+         cmake_minimum_required( VERSION 3.15)
       else()
          # UNIXy gcc based
-         cmake_minimum_required( VERSION 3.0)
+         cmake_minimum_required( VERSION 3.15)
       endif()
       #
       # so we build static libs, but they might be linked into code

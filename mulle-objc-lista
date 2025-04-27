@@ -924,11 +924,15 @@ _create_shlib()
    files="${wholelibrary}"
    if create_undefined_linkage "${library}" "${undefinedofile}" "${tmpdir}"
    then
-      files="${undefinedofile} ${files}"
+      files="'${undefinedofile}' ${files}"
    fi
 
-   eval_exekutor "'${LD}'" "${CFLAGS}" "${LDFLAGS}" "${ldflags}" "${files}" "${LIBRARIES}" -o "'${shlib}'" \
-    || fail "Linking temporary shared library failed"
+   if ! (
+      eval_exekutor "'${LD}'" "${CFLAGS}" "${LDFLAGS}" "${ldflags}" "${files}" "${LIBRARIES}" -o "'${shlib}'"
+   ) 2> >( grep -v -E "^dyld.*missing from root" >&2)
+   then
+      fail "Linking temporary shared library failed"
+   fi
 }
 
 
@@ -1096,11 +1100,13 @@ main()
    log_verbose "Run mulle-objc-list on shared library \"${shlib}\"..."
 
    # easy workaround to avoid wslpath, don't change unless you know
-   # it works on windows
+   # it works on windows. the grep is supposed to squelch complaints
+   # about unresolved variables by the darwin dyld, which we don't care about
+   # here
    (
       rexekutor cd "${shlibdir}" &&
       eval_exekutor "${cmdline}"
-   )
+   ) 2> >( grep -v -E "^dyld.*missing from root" >&2)
    rval=$?
 
    if [ $rval -eq 0 ]

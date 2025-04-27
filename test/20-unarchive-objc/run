@@ -42,13 +42,11 @@ main()
    rexekutor mulle-sde ${MULLE_TECHNICAL_FLAGS} \
                -DMULLE_FETCH_SEARCH_PATH="${MULLE_FETCH_SEARCH_PATH}" \
                -DMULLE_SOURCETREE_SYMLINK=YES \
-               -vv \
              install \
                --prefix "${tmp}" \
                mylib || fail "Install failed"
    echo "Unpack libraries"
    exekutor mulle-objc-unarchive ${MULLE_TECHNICAL_FLAGS} \
-               -vvv -ld -ls \
                --keep-tmp \
                --library-path "${tmp}/lib" \
                --unarchive-dir "db"  || fail "Unarchive failed"

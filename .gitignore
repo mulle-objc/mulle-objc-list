@@ -68,3 +68,7 @@ coverage*.html
 *.gcda
 *.gcno
 cola/wilted/
+CMakeLists.txt.bak
+.mulle/etc/make/build-dir
+test/50-uncovered/output.txt
+vgcore.*

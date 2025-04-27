@@ -72,7 +72,7 @@ if( NOT SKIP_EXECUTABLE_INSTALL)
 
    # need this for mulle-atexit
    if( LINK_PHASE AND UNIX AND NOT APPLE)
-      target_link_options( "${EXECUTABLE_NAME}"
+      target_link_options( "${EXECUTABLE_LINK_TARGET}"
          PUBLIC
             "SHELL:LINKER:--export-dynamic"
       )
@@ -82,12 +82,20 @@ if( NOT SKIP_EXECUTABLE_INSTALL)
 # see: https://john.nachtimwald.com/2012/07/15/calling-functions-in-exe-from-plugins-in-windows/
 #
    if( LINK_PHASE AND MSVC)
-      target_link_libraries( "${EXECUTABLE_NAME}"
+      target_link_libraries( "${EXECUTABLE_LINK_TARGET}"
          "-export:__mulle_objc_loadinfo_callback"
          "-export:__mulle_objc_list_callback"
       )
    endif()
 
+# not sure why this is suddenly needed "Executable" used to do this ?
+#
+   if( LINK_PHASE AND APPLE)
+      set_target_properties("${EXECUTABLE_LINK_TARGET}" PROPERTIES
+          INSTALL_RPATH "@loader_path/../lib/;@loader_path/../Frameworks/"
+          BUILD_RPATH "@loader_path/../lib/;@loader_path/../Frameworks/"
+      )
+   endif()
 
    install( FILES ${SCRIPTS}
 PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ

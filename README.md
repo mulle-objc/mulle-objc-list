@@ -9,9 +9,9 @@ or categories. The output is as [CSV, euro-style](//en.wikipedia.org/wiki/Comma-
 
 
 
-| Release Version                                       | Release Notes
-|-------------------------------------------------------|--------------
-| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg)](//github.com/mulle-objc/mulle-objc-list/actions) | [RELEASENOTES](RELEASENOTES.md) |
+| Release Version                                       | Release Notes  | AI Documentation
+|-------------------------------------------------------|----------------|---------------
+| ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-list.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-list/workflows/CI/badge.svg)](//github.com/mulle-objc/mulle-objc-list/actions) | [RELEASENOTES](RELEASENOTES.md) | [DeepWiki for mulle-objc-list](https://deepwiki.com/mulle-objc/mulle-objc-list)
 
 
 

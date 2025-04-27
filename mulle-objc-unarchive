@@ -918,8 +918,11 @@ create_method_csv()
 
          log_fluff "Create entries for methods of \"${ofile}\"..."
 
+         # funny grep squelched dyld warnings which are meaningless to us
          sedexpr="s|\$|;${ofile}|"
-         ( rexekutor mulle-objc-list -T "${shlib}" | rexekutor sed -e "${sedexpr}" ) || exit 1
+         (
+            rexekutor mulle-objc-list -T "${shlib}" | rexekutor sed -e "${sedexpr}"
+         ) 2> >( grep -v -E "^dyld.*missing from root" >&2) || exit 1
       done
    )
 }

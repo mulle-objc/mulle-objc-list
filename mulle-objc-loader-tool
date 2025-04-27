@@ -427,6 +427,7 @@ You would then maintain \"src\reflect\objc-loader.inc\" manually"
       fail "fgrep not found in PATH ($PATH)"
    fi
 
+   # MEMO: we don't use this at all, its probably just an early check
    # prefer sibling mulle-objc-list
    if [ -z "${MULLE_OBJC_LIST}" ]
    then
