@@ -14,7 +14,7 @@ if( MULLE_MUSL_STATIC OR COSMOPOLITAN)
    set( SKIP_EXECUTABLE_INSTALL ON)
 endif()
 
-cmake_minimum_required( VERSION 3.14)
+cmake_minimum_required( VERSION 3.13...99.99)
 
 
 project( mulle-objc-list VERSION 0.22.1 LANGUAGES C)
