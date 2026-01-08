@@ -244,6 +244,7 @@ main()
    local OPTION_FORCE="NO"
    local OPTION_CONFIGURATION="Release"
    local OPTION_SDK="Default"
+   local OPTION_PLATFORM="Default"
    local OPTION_FORCE="NO"
    local OPTION_WSL="NO"
 
@@ -295,7 +296,15 @@ main()
             [ $# -eq 1 ] && echo "missing argument to $1"
             shift
 
-            # ignore, taken care of by the booter already
+            # this is supposed to be a PATH argument for mingw 
+            # ignore, taken care of by the booter already (what booter ?)
+         ;;
+
+         --platform)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OPTION_PLATFORM="$1"
          ;;
 
          -s|--sdk)
@@ -328,7 +337,7 @@ main()
 
    options_setup_trace "${MULLE_TRACE}" && set -x
 
-   MULLE_PLATFORM="${MULLE_PLATFORM:-"`command -v mulle-platform`"}"
+   MULLE_PLATFORM="${MULLE_PLATFORM:-"`command -v 'mulle-platform'`"}"
    if [ -z "${MULLE_PLATFORM}" ]
    then
       fail "mulle-platform of mulle-sde needs to be installed for mulle-objc-loader-tool.
@@ -360,7 +369,12 @@ You would then maintain \"src\reflect\objc-loader.inc\" manually"
    local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_DEFAULT
    local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_STATIC
 
-   eval_rexekutor `mulle-platform environment --platform darwin`
+   if [ "${OPTION_PLATFORM}" = 'Default' ]
+   then
+      OPTION_PLATFORM="${MULLE_UNAME}"
+   fi
+
+   eval_rexekutor `"${MULLE_PLATFORM}" environment --platform "${OPTION_PLATFORM}"`
 
    if [ -z "${DEPENDENCY_DIR}" ]
    then
@@ -431,10 +445,10 @@ You would then maintain \"src\reflect\objc-loader.inc\" manually"
    # prefer sibling mulle-objc-list
    if [ -z "${MULLE_OBJC_LIST}" ]
    then
-      MULLE_OBJC_LIST="${0%/*}/mulle-objc-list"
+      MULLE_OBJC_LIST="${0%/*}/mulle-objc-list${MULLE_EXE_EXTENSION}"
       if [ ! -x "${MULLE_OBJC_LIST}" ]
       then
-         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list`}"
+         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list${MULLE_EXE_EXTENSION}`}"
          [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
       fi
    fi

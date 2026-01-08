@@ -35,6 +35,26 @@
 #pragma clang diagnostic ignored "-Wparentheses"
 #pragma clang diagnostic ignored "-Wswitch"
 
+// need this to get proper export for win. STANDALONE_MULLE_OBJC is some
+// legacy unused shared library scheme
+#ifndef STANDALONE_MULLE_OBJC
+# define MULLE_OBJC_DEFINE__register_mulle_objc_universe
+#endif
+
+
+#include <mulle-c11/mulle-c11.h>
+#include <stdint.h>
+
+typedef uint32_t   mulle_objc_universeid_t;
+
+//MULLE_C_EXTERN_GLOBAL
+//MULLE_C_CONST_RETURN
+//MULLE_C_WEAK
+//struct _mulle_objc_universe  *
+//   __register_mulle_objc_universe( mulle_objc_universeid_t universeid,
+//                                   char *universename);
+//
+
 // we don't really load any code, so this is
 // the minimal setup
 
@@ -43,6 +63,7 @@
 #define __MULLE_OBJC_NO_TAO__ 1
 
 #include <mulle-objc-runtime/mulle-objc-runtime.h>
+#include <mulle-dlfcn/mulle-dlfcn.h>
 
 #include "include-private.h"
 
@@ -176,7 +197,9 @@ static char   *simple_typename( char *type)
    case _C_USHT      : return( "unsigned short");
    case _C_FLT       : return( "float");
    case _C_DBL       : return( "double");
+#ifdef _C_LNG_DBL
    case _C_LNG_DBL   : return( "long double");
+#endif
    case _C_CHARPTR   : return( "char *");
    case _C_BOOL      : return( "BOOL");
 #ifdef _C_UNDEF
@@ -1439,9 +1462,10 @@ int  main( int argc, char *argv[])
 }
 
 
+
+
 #ifndef STANDALONE_MULLE_OBJC
 
-MULLE_C_CONST_RETURN  // always returns same value (in same thread)
 struct _mulle_objc_universe  *
    __register_mulle_objc_universe( mulle_objc_universeid_t universeid,
                                    char *universename)
@@ -1457,7 +1481,6 @@ struct _mulle_objc_universe  *
    }
    return( universe);
 }
-
 
 # ifdef __APPLE__
 //

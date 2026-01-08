@@ -143,6 +143,19 @@ Can be useful to find mixed-in old .o files
 | [mulle-atexit](https://github.com/mulle-core/mulle-atexit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atexit.svg) [![Build Status](https://github.com/mulle-core/mulle-atexit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atexit/actions/workflows/mulle-sde-ci.yml) | 👼 Compatibility library to fix atexit
 
 
+## Quickstart
+
+
+``` sh
+mulle-sde init -d my-project -m mulle-objc/objc-developer executable
+cd my-project
+mulle-sde vibecoding on
+mulle-sde run
+```
+
+You are done, skip the following "Add" step.
+
+
 ## Add
 
 Use [mulle-sde](//github.com/mulle-sde) to add mulle-objc-list to your project.

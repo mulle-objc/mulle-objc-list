@@ -3,6 +3,8 @@
    {
       description="📒 Lists mulle-objc runtime information contained in executables.";
       domain="github";
+      language="c";
+      dialect="c";
       name="mulle-objc-list";
       user="mulle-objc";
       repo="mulle-objc-list";
