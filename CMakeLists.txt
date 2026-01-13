@@ -17,7 +17,7 @@ endif()
 cmake_minimum_required( VERSION 3.13...99.99)
 
 
-project( mulle-objc-list VERSION 0.22.1 LANGUAGES C)
+project( mulle-objc-list VERSION 0.22.2 LANGUAGES C)
 
 
 ### mulle-sde environment

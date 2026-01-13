@@ -9,4 +9,11 @@
  *
  *      mulle-sde environment set MULLE_MATCH_TO_C_RUN DISABLE
  */
+#ifndef _mylib__provide_h__
+#define _mylib__provide_h__
+
+
 // no headers
+
+
+#endif

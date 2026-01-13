@@ -20,15 +20,22 @@ endif()
 #
 # CMAKE_INSTALL_RPATH must be defined before add_executable or add_library
 #
+# https://cmake.org/cmake/help/latest/prop_tgt/INSTALL_RPATH.html#prop_tgt:INSTALL_RPATH
+#
 if( MULLE_NO_CMAKE_INSTALL_RPATH)
    # for cosmopolitan and musl static builds RPATH can be a hindrance
    set( CMAKE_SKIP_BUILD_RPATH ON)
 else()
    if( APPLE)
-      set( CMAKE_INSTALL_RPATH
-         "@loader_path/../lib/"
-         "@loader_path/../Frameworks/"
-      )
+      # Modern CMake handles lib path automatically (at least for libraries
+      # it seems, for executable apparently not and there it is handled
+      # with a separate target property install)
+      if( CMAKE_VERSION VERSION_LESS 3.20)
+         set(CMAKE_INSTALL_RPATH
+            "@loader_path/../lib/"
+            "@loader_path/../Frameworks/"
+         )
+      endif()
    else()
       set( CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
    endif()

@@ -10,7 +10,7 @@ if( NOT __UNWANTED_WARNINGS_C_CMAKE__)
    endif()
 
    if( NOT DEFINED UNWANTED_WARNINGS)
-      option( UNWANTED_WARNINGS "Turn off some unwanted compiler warnings" ON)
+      option( UNWANTED_WARNINGS "Squelch some unwanted compiler warnings" ON)
    endif()
 
    if( UNWANTED_WARNINGS)
@@ -32,6 +32,19 @@ if( NOT __UNWANTED_WARNINGS_C_CMAKE__)
          set( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
          set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ignore:4221")
          set( CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
+      endif()
+   endif()
+
+   if( NOT DEFINED WANTED_WARNINGS)
+      option( WANTED_WARNINGS "Enable some desirable compiler warnings" ON)
+   endif()
+
+   if( WANTED_WARNINGS)
+      #
+      # move this to ObjC
+      #
+      if( "${MULLE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang|MulleClang|GNU)$")
+         set( WANTED_C_WARNINGS "-Wuninitialized -Wunused")
       endif()
    endif()
 

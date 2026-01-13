@@ -36,7 +36,6 @@ main()
    r_make_tmp_directory
    tmp="${RVAL}"
 
-   [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "must be started inside mulle-sde"
 
    echo "Build libraries"
    rexekutor mulle-sde ${MULLE_TECHNICAL_FLAGS} \
@@ -45,6 +44,11 @@ main()
              install \
                --prefix "${tmp}" \
                mylib || fail "Install failed"
+
+   # why ? for mulle-objc-unarchive to be in path
+
+   [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "must be started inside mulle-sde"
+
    echo "Unpack libraries"
    exekutor mulle-objc-unarchive ${MULLE_TECHNICAL_FLAGS} \
                --keep-tmp \

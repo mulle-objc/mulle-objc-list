@@ -12,19 +12,17 @@ endif()
 if( NOT EXECUTABLE_NAME)
    set( EXECUTABLE_NAME "${PROJECT_NAME}")
 endif()
-if( NOT EXECUTABLE_IDENTIFIER)
-   string( MAKE_C_IDENTIFIER "${EXECUTABLE_NAME}" EXECUTABLE_IDENTIFIER)
-endif()
 
 include( StringCase)
 
+if( NOT EXECUTABLE_IDENTIFIER)
+   snakeCaseString( "${EXECUTABLE_NAME}" EXECUTABLE_IDENTIFIER)
+endif()
 if( NOT EXECUTABLE_UPCASE_IDENTIFIER)
-   snakeCaseString( "${EXECUTABLE_IDENTIFIER}" EXECUTABLE_UPCASE_IDENTIFIER)
-   string( TOUPPER "${EXECUTABLE_UPCASE_IDENTIFIER}" EXECUTABLE_UPCASE_IDENTIFIER)
+   string( TOUPPER "${EXECUTABLE_IDENTIFIER}" EXECUTABLE_UPCASE_IDENTIFIER)
 endif()
 if( NOT EXECUTABLE_DOWNCASE_IDENTIFIER)
-   snakeCaseString( "${EXECUTABLE_IDENTIFIER}" EXECUTABLE_DOWNCASE_IDENTIFIER)
-   string( TOLOWER "${EXECUTABLE_DOWNCASE_IDENTIFIER}" EXECUTABLE_DOWNCASE_IDENTIFIER)
+   string( TOLOWER "${EXECUTABLE_IDENTIFIER}" EXECUTABLE_DOWNCASE_IDENTIFIER)
 endif()
 
 
@@ -39,7 +37,7 @@ endif()
 include( PreExecutable OPTIONAL)
 
 if( NOT EXECUTABLE_SOURCES)
-   message( FATAL_ERROR "There are no sources to compile for executable ${EXECUTABLE_NAME}. Did `mulle-sde reflect` run yet ?")
+   message( SEND_ERROR "There are no sources to compile for executable ${EXECUTABLE_NAME}. Did `mulle-sde reflect` run yet ?")
 endif()
 
 
@@ -64,10 +62,11 @@ set_target_properties( ${EXECUTABLE_COMPILE_TARGET}
 
 target_compile_definitions( ${EXECUTABLE_COMPILE_TARGET} PRIVATE "${EXECUTABLE_UPCASE_IDENTIFIER}_BUILD")
 
-# RPATH must be ahead of add_executable
-include( InstallRpath OPTIONAL)
 
 if( LINK_PHASE)
+   # RPATH must be ahead of add_executable
+   include( InstallRpath OPTIONAL)
+
    add_executable( "${EXECUTABLE_NAME}"
       ${ALL_OBJECT_FILES}
       ${PROJECT_HEADERS}
@@ -85,6 +84,17 @@ if( LINK_PHASE)
          CXX_STANDARD 11
 #         DEFINE_SYMBOL "${EXECUTABLE_UPCASE_IDENTIFIER}_SHARED_BUILD"
    )
+
+   #
+   # not __really__ sure why this seems to be need now (cmake >= 4)
+   # used to work fine without
+   #
+   if( APPLE)
+      set_target_properties("${EXECUTABLE_NAME}" PROPERTIES
+          INSTALL_RPATH "@loader_path/../lib/;@loader_path/../Frameworks/"
+          BUILD_RPATH "@loader_path/../lib/;@loader_path/../Frameworks/"
+      )
+   endif()
 
    target_compile_definitions( "${EXECUTABLE_NAME}" PRIVATE "${EXECUTABLE_UPCASE_IDENTIFIER}_BUILD")
 
@@ -148,12 +158,13 @@ If these are regular C libraries, be sure, that they are marked as
 Frameworks aren't force loaded.")
       endif()
 
-
+      # mulle-atinit and mulle-atexit end up here, not good if you
+      # just used mulle-sde/c-developer
       if( STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES)
          message( FATAL_ERROR "STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES \
-\"${STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES}\" are not linked to ${EXECUTABLE_NAME}.
-STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES is an Objective-C feature, but this
-project is seemingly not setup for Objective-C.")
+\"${STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES}\" are not linked to ${EXECUTABLE_NAME}. \
+STARTUP_ALL_LOAD_DEPENDENCY_LIBRARIES is a mulle-c/c-developer feature, but this \
+project is seemingly not setup for it.")
       endif()
 
       if( FORCE_STARTUP_ALL_LOAD_DEPENDENCY_FRAMEWORKS)
@@ -190,6 +201,13 @@ Frameworks aren't force loaded.")
       )
    endif()
 
+   # MEMO: its probably better to not have a big EXECUTABLE_LIBRARY_LIST but
+   #       instead break it up into multiple target_link_libraries calls, 
+   #       where we can set the WHOLEARCHIVE property separately
+   #
+   #       foreach( library ${ALL_LOAD_DEPENDENCY_LIBRARIES})
+   #          target_link_libraries( "${EXECUTABLE_NAME}" "$<LINK_LIBRARY:WHOLE_ARCHIVE,${library}>")
+   #       endforeach()   
    target_link_libraries( "${EXECUTABLE_NAME}"
       ${EXECUTABLE_LIBRARY_LIST}
    )

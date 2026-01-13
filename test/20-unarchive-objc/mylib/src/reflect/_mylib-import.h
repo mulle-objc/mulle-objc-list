@@ -11,15 +11,18 @@
  *
  */
 
-// You can tweak the following #import with these commands.
-// (Use 6FBF8DB5-7427-4417-ABF8-76E47EEB76C6 instead of MulleObjCValueFoundation if there are duplicate entries)
-//    remove #import: : `mulle-sde dependency mark MulleObjCValueFoundation no-header`
-//    rename:              `mulle-sde dependency|library set MulleObjCValueFoundation include whatever.h`
-//    reorder:             `mulle-sde dependency move MulleObjCValueFoundation <up|down>`
-//    toggle #import:     `mulle-sde dependency mark MulleObjCValueFoundation [no-]import`
-//    toggle public:       `mulle-sde dependency mark MulleObjCValueFoundation [no-]public`
-//    toggle optional:     `mulle-sde dependency mark MulleObjCValueFoundation [no-]require`
-//    remove for platform: `mulle-sde dependency mark MulleObjCValueFoundation no-platform-<uname>`
+// To remove the following dependency (headers and library) completely:
+//   `mulle-sde dependency remove MulleObjCValueFoundation`
+// (Use 6FBF8DB5-7427-4417-ABF8-76E47EEB76C6 instead of MulleObjCValueFoundation, if there are duplicate entries)
+//
+// You can tweak the following #import with these commands:
+//    remove #import      : `mulle-sde dependency mark MulleObjCValueFoundation no-header`
+//    rename              : `mulle-sde dependency|library set MulleObjCValueFoundation include whatever.h`
+//    reorder             : `mulle-sde dependency move MulleObjCValueFoundation <up|down>`
+//    toggle #import      : `mulle-sde dependency mark MulleObjCValueFoundation [no-]import`
+//    toggle public       : `mulle-sde dependency mark MulleObjCValueFoundation [no-]public`
+//    toggle optional     : `mulle-sde dependency mark MulleObjCValueFoundation [no-]require`
+//    remove for platform : `mulle-sde dependency mark MulleObjCValueFoundation no-platform-<uname>`
 //        (use `mulle-sourcetree-to-c --unames` to list known values)
 #import <MulleObjCValueFoundation/MulleObjCValueFoundation.h>   // MulleObjCValueFoundation
 

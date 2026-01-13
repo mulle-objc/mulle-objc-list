@@ -1,3 +1,8 @@
+### 0.22.2
+
+
+* test runner scripts now consistently named run-test
+
 ### 0.22.1
 
 Various small improvements

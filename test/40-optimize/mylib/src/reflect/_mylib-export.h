@@ -9,6 +9,13 @@
  *
  *      mulle-sde environment set MULLE_MATCH_TO_C_RUN DISABLE
  */
+#ifndef _mylib__export_h__
+#define _mylib__export_h__
+
+
 #import "Bar.h"
 #import "Foo.h"
 #import "MulleObjCLoader+mylib.h"
+
+
+#endif

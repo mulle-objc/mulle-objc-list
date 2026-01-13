@@ -139,8 +139,6 @@ Can be useful to find mixed-in old .o files
 |   Requirement         | Release Version  | Description
 |-----------------------|------------------|---------------
 | [mulle-objc-runtime](https://github.com/mulle-objc/mulle-objc-runtime) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-objc/mulle-objc-runtime.svg) [![Build Status](https://github.com/mulle-objc/mulle-objc-runtime/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-objc/mulle-objc-runtime/actions/workflows/mulle-sde-ci.yml) | ⏩ A fast, portable Objective-C runtime written 100% in C11
-| [mulle-atinit](https://github.com/mulle-core/mulle-atinit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atinit.svg) [![Build Status](https://github.com/mulle-core/mulle-atinit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atinit/actions/workflows/mulle-sde-ci.yml) | 🤱🏼 Compatibility library for deterministic initializers
-| [mulle-atexit](https://github.com/mulle-core/mulle-atexit) | ![Mulle kybernetiK tag](https://img.shields.io/github/tag/mulle-core/mulle-atexit.svg) [![Build Status](https://github.com/mulle-core/mulle-atexit/workflows/CI/badge.svg?branch=release)](https://github.com/mulle-core/mulle-atexit/actions/workflows/mulle-sde-ci.yml) | 👼 Compatibility library to fix atexit
 
 
 ## Quickstart
@@ -151,6 +149,7 @@ mulle-sde init -d my-project -m mulle-objc/objc-developer executable
 cd my-project
 mulle-sde vibecoding on
 mulle-sde run
+mulle-sde dependency toc mulle-objc/mulle-objc-list
 ```
 
 You are done, skip the following "Add" step.
@@ -194,15 +193,24 @@ file).
 ### Add as subproject with cmake and git
 
 ``` bash
+git submodule add -f --name "mulle-core" \
+                            "https://github.com/mulle-core/mulle-core.git" \
+                            "stash/mulle-core"
+git submodule add -f --name "libbacktrace" \
+                            "https://github.com/mulle-core/libbacktrace.git" \
+                            "stash/libbacktrace"
+git submodule add -f --name "mulle-allocator" \
+                            "https://github.com/mulle-c/mulle-allocator.git" \
+                            "stash/mulle-allocator"
+git submodule add -f --name "mulle-thread" \
+                            "https://github.com/mulle-concurrent/mulle-thread.git" \
+                            "stash/mulle-thread"
+git submodule add -f --name "mulle-core-all-load" \
+                            "https://github.com/mulle-core/mulle-core-all-load.git" \
+                            "stash/mulle-core-all-load"
 git submodule add -f --name "mulle-objc-runtime" \
                             "https://github.com/mulle-objc/mulle-objc-runtime.git" \
                             "stash/mulle-objc-runtime"
-git submodule add -f --name "mulle-atinit" \
-                            "https://github.com/mulle-core/mulle-atinit.git" \
-                            "stash/mulle-atinit"
-git submodule add -f --name "mulle-atexit" \
-                            "https://github.com/mulle-core/mulle-atexit.git" \
-                            "stash/mulle-atexit"
 git submodule add -f --name "mulle-objc-list" \
                             "https://github.com/mulle-objc/mulle-objc-list" \
                             "stash/mulle-objc-list"
@@ -211,14 +219,20 @@ git submodule update --init --recursive
 
 ``` cmake
 add_subdirectory( stash/mulle-objc-list)
-add_subdirectory( stash/mulle-atexit)
-add_subdirectory( stash/mulle-atinit)
 add_subdirectory( stash/mulle-objc-runtime)
+add_subdirectory( stash/mulle-core-all-load)
+add_subdirectory( stash/mulle-thread)
+add_subdirectory( stash/mulle-allocator)
+add_subdirectory( stash/libbacktrace)
+add_subdirectory( stash/mulle-core)
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-objc-list)
-target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-atexit)
-target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-atinit)
 target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-objc-runtime)
+target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-core-all-load)
+target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-thread)
+target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-allocator)
+target_link_libraries( ${PROJECT_NAME} PUBLIC libbacktrace)
+target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-core)
 ```
 
 
@@ -241,8 +255,6 @@ Install all requirements
 | Requirements                                 | Description
 |----------------------------------------------|-----------------------
 | [mulle-objc-runtime](https://github.com/mulle-objc/mulle-objc-runtime)             | ⏩ A fast, portable Objective-C runtime written 100% in C11
-| [mulle-atinit](https://github.com/mulle-core/mulle-atinit)             | 🤱🏼 Compatibility library for deterministic initializers
-| [mulle-atexit](https://github.com/mulle-core/mulle-atexit)             | 👼 Compatibility library to fix atexit
 
 #### Download & Install
 

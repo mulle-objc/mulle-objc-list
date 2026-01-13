@@ -22,7 +22,8 @@ if( IDE_SUPPORT)
          #
          # If there is (likely) a sourcetree, we need to build dependencies now
          # because otherwise the include( DEPENDENCIES) fails.
-         #
+         # IDE support in subdirectoy makes no sense (IMO) therefore
+         # not CMAKE_CURRENT_SOURCE_DIR
          if( IS_DIRECTORY "${PROJECT_SOURCE_DIR}/.mulle/etc/sourcetree" OR
              IS_DIRECTORY "${PROJECT_SOURCE_DIR}/.mulle/share/sourcetree")
             #
@@ -54,16 +55,23 @@ if( IDE_SUPPORT)
          )
          set_target_properties( mulle_sde_reflect PROPERTIES EXCLUDE_FROM_ALL ON)
 
+         add_custom_target( mulle_sde_clean_target
+            COMMENT "Clean a specific target and then craft dependency folder"
+            COMMAND "${MULLE_SDE}" clean --gui && "${MULLE_SDE}" craft
+            VERBATIM
+         )
+         set_target_properties( mulle_sde_clean_target PROPERTIES EXCLUDE_FROM_ALL ON)
+
          add_custom_target( mulle_sde_clean_all
-            COMMENT "Clean dependency folder"
-            COMMAND "${MULLE_SDE}" clean all
+            COMMENT "Clean all and craft dependency folder"
+            COMMAND "${MULLE_SDE}" craft -C
             VERBATIM
          )
          set_target_properties( mulle_sde_clean_all PROPERTIES EXCLUDE_FROM_ALL ON)
 
          add_custom_target( mulle_sde_clean_tidy
-            COMMENT "Clean stash and dependency folder"
-            COMMAND "${MULLE_SDE}" clean tidy
+            COMMENT "Clean stash and craft dependency folder"
+            COMMAND "${MULLE_SDE}" craft -g
             VERBATIM
          )
          set_target_properties( mulle_sde_clean_tidy PROPERTIES EXCLUDE_FROM_ALL ON)

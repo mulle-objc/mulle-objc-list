@@ -1,6 +1,6 @@
 {
    "name" : "mulle-objc-list",
-   "version" : "0.21.1",
+   "version" : "0.22.2",
    "description" : "📒 Lists mulle-objc runtime information contained in executables.",
    "keywords" : [],
    "license" : "BSD-3-Clause",
@@ -15,8 +15,6 @@
       "src/reflect/_mulle-objc-list-include.h"
    ],
    "dependencies" : {
-      "mulle-objc/mulle-objc-runtime": "*",
-      "mulle-core/mulle-atinit": "*",
-      "mulle-core/mulle-atexit": "*"
+      "mulle-objc/mulle-objc-runtime": "*"
    }
 }

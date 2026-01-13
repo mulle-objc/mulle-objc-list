@@ -38,10 +38,10 @@ ln;required
 login
 ls;required
 make
+meson
 mkdir;required
 mknod
 more
-more;required
 mount
 mulle-column
 mv;required
@@ -67,6 +67,7 @@ tail;required
 tee;required
 test;required
 touch;required
+tree
 tr;required
 true;required
 tty
