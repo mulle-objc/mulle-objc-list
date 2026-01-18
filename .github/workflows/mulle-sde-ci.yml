@@ -52,4 +52,4 @@ jobs:
 
     - name: Mulle-SDE Test
       run: |
-        [ ! -d test ] || mulle-sde -vvv test --serial
+        [ ! -d test ] || ( mulle-sde test craft && mulle-sde --vvv test run --serial )
