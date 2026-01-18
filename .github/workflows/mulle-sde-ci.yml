@@ -52,4 +52,4 @@ jobs:
 
     - name: Mulle-SDE Test
       run: |
-        [ ! -d test ] || ( mulle-sde test craft && mulle-sde -vvv test run test/50-uncovered/50-uncovered )
+        [ ! -d test ] || ( mulle-sde test craft && mulle-sde -vvv test run test/50-uncovered )
