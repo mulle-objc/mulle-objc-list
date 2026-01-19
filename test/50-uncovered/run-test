@@ -7,8 +7,8 @@ produce_output()
 
    MULLE_VIRTUAL_ROOT=
    rexekutor cd mylib &&
-   exekutor mulle-sde craft --clean-all --release &&
-   rexekutor mulle-sde product --release
+   exekutor mulle-sde craft --clean-all --release >&2 &&
+   rexekutor mulle-sde product --release | tail -1  # fing voodoo
 )
 
 main()
@@ -46,6 +46,9 @@ main()
    produce_output > "output.txt" || fail "Could not get mylib output"
 
    output="`cat "output.txt" `" || fail "Could not read output.txt"
+
+   [ -z "${output}" ] && fail "output.txt is empty, build may have failed"
+   [ ! -f "${output}" ] && fail "Library file does not exist: ${output}"
 
    redirect_exekutor method-list.csv mulle-objc-lista -t "${output}" || fail "mulle-objc-lista failed"
 

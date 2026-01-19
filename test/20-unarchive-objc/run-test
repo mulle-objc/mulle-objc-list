@@ -43,7 +43,7 @@ main()
                -DMULLE_SOURCETREE_SYMLINK=YES \
              install \
                --prefix "${tmp}" \
-               mylib || fail "Install failed"
+               mylib >&2 || fail "Install failed"
 
    # why ? for mulle-objc-unarchive to be in path
 
