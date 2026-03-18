@@ -54,7 +54,7 @@ src/generic/include.h
 # contents selected with patternfile ??-header--public-headers
 #
 set( PUBLIC_HEADERS
-src/generic/MulleObjCLoader+mylib.h
+src/generic/MulleObjCDeps+mylib.h
 src/mylib.h
 )
 

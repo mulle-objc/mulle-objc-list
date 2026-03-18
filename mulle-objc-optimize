@@ -364,12 +364,12 @@ _optimize_folder()
       if [ "${OPTION_REUSE_INFO_DIR}" != 'YES' ]
       then
          redirect_exekutor "${opti_info}/objc_files" \
-            grep -E -v "^MulleObjCLoader" "${opti_info}/all_files"
+            grep -E -v "^MulleObjCDeps" "${opti_info}/all_files"
 
          (
             rexekutor cd "${folder}" &&
             redirect_append_exekutor "${opti_info}/objc_files" \
-               ls -1 MulleObjCLoader*.o
+               ls -1 MulleObjCDeps*.o
          )
       fi
    fi
@@ -401,9 +401,9 @@ _optimize_folder()
       log_fluff "As \"${name}\" is unoptimizable, we are done here"
       if [ "${OPTION_REUSE_INFO_DIR}" != 'YES' ]
       then
-         redirect_exekutor "${opti_info}/class-objc-loader.inc" \
+         redirect_exekutor "${opti_info}/class-objc-deps.inc" \
             echo "// not optimizable"
-         redirect_exekutor "${opti_info}/category-objc-loader.inc" \
+         redirect_exekutor "${opti_info}/category-objc-deps.inc" \
             echo "// not optimizable"
       fi
       return 0
@@ -426,7 +426,7 @@ _optimize_folder()
    # now re-build the loader for non optimizable
    # use ${opti_info}/used_method_db.csv and "${opti_info}/used_class_db.csv"
    #
-   loadername="MulleObjCLoader+${name}"
+   loadername="MulleObjCDeps+${name}"
    srcfile="${folder}/${loadername}.m"
    ofile="${opti}/${loadername}.m.o"  # cmake compatible
 
@@ -434,10 +434,10 @@ _optimize_folder()
 
    if [ "${OPTION_REUSE_INFO_DIR}" != 'YES' ]
    then
-      redirect_exekutor "${opti_info}/class-objc-loader.inc" \
+      redirect_exekutor "${opti_info}/class-objc-deps.inc" \
          create_class_objc_loader "${opti_info}/used_class_db.csv"
 
-      redirect_exekutor "${opti_info}/category-objc-loader.inc"  \
+      redirect_exekutor "${opti_info}/category-objc-deps.inc"  \
          create_category_objc_loader "${opti_info}/used_method_db.csv"
    fi
 

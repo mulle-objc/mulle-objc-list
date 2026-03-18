@@ -56,7 +56,7 @@ src/generic/include.h
 set( PUBLIC_HEADERS
 src/Bar.h
 src/Foo.h
-src/generic/MulleObjCLoader+mylib.h
+src/generic/MulleObjCDeps+mylib.h
 src/mylib.h
 )
 

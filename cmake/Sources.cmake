@@ -6,10 +6,10 @@ set( SOURCES
 )
 
 set( SCRIPTS
+   mulle-objc-deps-tool
    mulle-objc-encode
    mulle-objc-lista
    mulle-objc-leaks
-   mulle-objc-loader-tool
    mulle-objc-optimize
    mulle-objc-printline
    mulle-objc-searchid
@@ -20,9 +20,9 @@ set( SCRIPTS
 if( MSVC)
    set( SCRIPTS
       ${SCRIPTS}
-      mulle-objc-loader-tool-mingw.bat
+      mulle-objc-deps-tool-mingw.bat
+      mulle-objc-deps-tool.bat
       mulle-objc-list-mingw.bat
-      mulle-objc-loader-tool.bat
       mulle-objc-list.bat
    )
 endif()

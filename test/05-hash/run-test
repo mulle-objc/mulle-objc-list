@@ -26,7 +26,7 @@ main()
    done
 
    # hardcoded hash values in scripts
-   rexekutor mulle-objc-uniqueid MulleObjCLoader
+   rexekutor mulle-objc-uniqueid MulleObjCDeps
    rexekutor mulle-objc-uniqueid load
    rexekutor mulle-objc-uniqueid dependencies
 }

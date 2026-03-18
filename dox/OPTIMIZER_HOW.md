@@ -79,8 +79,8 @@ The generated loader will look like this:
    static struct _mulle_objc_dependency   dependencies[] =
    {
 #include "loader-objc-loader.inc"
-#include "class-objc-loader.inc"
-#include "category-objc-loader.inc"
+#include "class-objc-deps.inc"
+#include "category-objc-deps.inc"
       { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }
    };
 
@@ -120,12 +120,12 @@ The result of this pass are two new files in the `Foo.d` folder:
 
 File                        | Description
 ----------------------------|-----------------------------------
-`class-objc-loader.inc`    | C file that contains the classes of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
-`category-objc-loader.inc` | C file that contains the categories of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
+`class-objc-deps.inc`    | C file that contains the classes of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
+`category-objc-deps.inc` | C file that contains the categories of libFoo.a that will be member of the unoptimizable library (`lib_ObjC.a`)
 
 A new `MulleObjCLoader+Foo.o` is now compiled. It contains only the dependencies for those classes and categories, that have been referenced by the coverage files.
 
-Assume the generated coverage uses class `Foo.o` but does not include any methods contained in `Foo+Bar.o`. Then `class-objc-loader.inc` would reference `Foo.o`, but `category-objc-loader.inc` would be empty.
+Assume the generated coverage uses class `Foo.o` but does not include any methods contained in `Foo+Bar.o`. Then `class-objc-deps.inc` would reference `Foo.o`, but `category-objc-deps.inc` would be empty.
 
 ### 4. mulle-objc-optimize creates new libraries
 

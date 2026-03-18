@@ -1,0 +1,536 @@
+#! /usr/bin/env mulle-bash
+#
+# shellcheck shell=bash
+# shellcheck disable=SC2236
+# shellcheck disable=SC2120
+# shellcheck disable=SC2166
+# shellcheck disable=SC2034
+# shellcheck disable=SC2006
+# shellcheck disable=SC1090
+# shellcheck disable=SC1091
+#
+#   Copyright (c) 2017 Nat! - Mulle kybernetiK
+#   All rights reserved.
+#
+#   Redistribution and use in source and binary forms, with or without
+#   modification, are permitted provided that the following conditions are met:
+#
+#   Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+#
+#   Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+#
+#   Neither the name of Mulle kybernetiK nor the names of its contributors
+#   may be used to endorse or promote products derived from this software
+#   without specific prior written permission.
+#
+#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#   POSSIBILITY OF SUCH DAMAGE.
+#
+[ "${TRACE}" = "YES" -o "${MULLE_OBJC_LOADER_TOOL_TRACE}" = "YES" ] && set -x && : "$0" "$@"
+
+MULLE_EXECUTABLE_VERSION=0.9.1
+
+
+usage()
+{
+   cat <<EOF >&2
+usage:
+   ${MULLE_USAGE_NAME} [options] <name> [dependencies]
+
+   Produces the "objc-deps.inc" file, that declares the dependencies of
+   a library.
+
+   Name is the name of the library without prefix or extension and without a
+   "Standalone" suffix. Dependencies are the Objective-C dependencies
+   of this library.
+
+   Options:
+      -f        : force write output
+      -n        : don't actually do anything
+      -o <file> : write output to file
+EOF
+   exit 1
+}
+
+
+#
+# For each dependency, emit the necessary dependency on the loader
+# except for MulleObjC of the form. The input can either be the
+# name (like MulleObjCStandardFoundation) or the location of the
+# objc-deps.inc file (in this case of MulleObjCStandardFoundation). Or it
+# can be combination of both, separated by ':' (historical ?)
+#
+# { @selector( MulleObjCDeps), @selector( <name>) }
+#
+# This tool is mulle-sde agnostic, otherwise we could do this:
+#
+# mulle-sourcetree -e list \
+#   --format "      { @selector( MulleObjCDeps), @selector( %a) },\n" \
+#    --marks all-load --output-raw --output-no-header
+#
+_dump_loader_dependencies()
+{
+   log_entry "_dump_loader_dependencies" "$@"
+
+   local depfile
+   local depname
+   local categoryid
+   local filename
+
+   while [ $# -ne 0 ]
+   do
+      filename="$1"
+      if [ "${OPTION_WSL}" = 'YES' ]
+      then
+         case "${filename}" in
+            *\\*)
+               filename="`wslpath -u "${filename}"`" || exit 1
+            ;;
+         esac
+      fi
+
+      case "${filename}" in
+         "")
+            log_warning "Empty dependency"
+            continue
+         ;;
+
+         # new way
+         *'/MulleObjCDeps+'*'.h')
+            depfile="${filename}"
+            r_basename "${depfile}"
+            depname="${RVAL#MulleObjCDeps+}"
+            depname="${depname%.h}"
+         ;;
+
+         # old  way
+         *'/MulleObjCLoader+'*'.h')
+            depfile="${filename}"
+            r_basename "${depfile}"
+            depname="${RVAL#MulleObjCLoader+}"
+            depname="${depname%.h}"
+         ;;
+
+         # very old way
+         *'/objc-loader.inc')
+            depfile="${filename}"
+            r_dirname "${depfile}"
+            r_basename "${RVAL}"
+            depname="${RVAL}"
+         ;;
+
+         *:*)
+            depfile="${filename#:*}"
+            depname="${filename%%*:}"
+         ;;
+
+         *)
+            depfile="${DEPENDENCY_DIR}/include/${filename}/objc-deps.inc"
+            depname="${filename}"
+         ;;
+      esac
+
+      if [ ! -f "${depfile}" ]
+      then
+         log_warning "\"${depfile}\" not found"
+      fi
+
+      if [ -z "${depname}" ]
+      then
+         fail "No name given or found for dependency \"${filename}\""
+      fi
+
+      case "${depname}" in
+         MulleObjC)
+            depname=""
+         ;;
+      esac
+
+      if [ ! -z "${depname}" ]
+      then
+         categoryid="`${MULLE_OBJC_UNIQUEID} "${depname}" | tail -1`"
+         exekutor echo "      { @selector( MulleObjCDeps), \
+@selector( ${depname}) },      // ${MULLE_OBJC_LOADER_CLASSID};MulleObjCDeps;$categoryid;${depname}";
+      fi
+
+      shift
+   done
+}
+
+
+_do_dump_static_dependencies()
+{
+   log_entry "_do_dump_static_dependencies" "$@"
+
+   local filename
+   local directory
+
+   r_basename "${LIBRARYFILE}"
+   filename="${RVAL}"
+   r_dirname "${LIBRARYFILE}"
+   directory="${RVAL}"
+
+   local options
+
+   options=""
+   if [ "${OPTION_WSL}" = 'YES' ]
+   then
+      options="--wsl"
+   fi
+
+   (
+      exekutor cd "${directory}" &&
+      exekutor "${MULLE_OBJC_LISTA}" ${MULLE_TECHNICAL_FLAGS} \
+                                     ${MULLE_OBJC_LISTA_FLAGS} \
+                                     ${options} \
+                                     --configuration "${OPTION_CONFIGURATION}" \
+                                     -d "${filename}"
+
+   ) || fail "mulle-objc-lista failed"
+}
+
+
+_dump_dependencies()
+{
+   log_entry "_dump_dependencies" "$@"
+
+   [ -z "${DEPENDENCY_DIR}" ] && internal_fail "DEPENDENCY_DIR not set"
+
+   local rval
+
+   set -o pipefail
+
+   _dump_loader_dependencies "$@" | LC_ALL=C sort | LC_ALL=C sort -u
+   [ $? -ne 0 ] && return 1
+
+   if [ ! -z "${LIBRARYFILE}" ]
+   then
+      _do_dump_static_dependencies | LC_ALL=C sort | LC_ALL=C sort -u
+      [ $? -ne 0 ] && return 1
+   fi
+
+   return 0
+}
+
+
+dump_dependencies()
+{
+   log_entry "dump_dependencies" "$@"
+
+   log_fluff "PWD          : $PWD"
+   log_fluff "ARGV         : $*"
+   log_fluff "BUILDPATH    : ${BUILDPATH}"
+
+   local tmp
+
+   tmp="`_dump_dependencies "$@"`" || exit 1
+
+   fgrep -v '{ @selector( MulleObjCDeps), MULLE_OBJC_NO_CATEGORYID }' <<< "${tmp}"
+   return 0
+}
+
+
+#
+# parameters are dependencies
+#
+main()
+{
+   local BUILDPATH="${BUILDPATH:-.}"
+   local OPTION_REMOVE_TMP="YES"
+   local OPTION_FORCE="NO"
+   local OPTION_CONFIGURATION="Release"
+   local OPTION_SDK="Default"
+   local OPTION_PLATFORM="Default"
+   local OPTION_FORCE="NO"
+   local OPTION_WSL="NO"
+
+   local OUTPUT
+
+   while [ $# -ne 0 ]
+   do
+      if options_technical_flags "$1"
+      then
+         shift
+         continue
+      fi
+
+      case "$1" in
+         -h|--help|help)
+            usage
+         ;;
+
+         -b|--build-path)
+            [ $# -eq 1 ] && usage
+            shift
+
+            BUILDPATH="$1"
+         ;;
+
+         -c|--configuration)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OPTION_CONFIGURATION="$1"
+         ;;
+
+         -f|--force)
+            OPTION_FORCE="YES"
+         ;;
+
+         --no-remove)
+            OPTION_REMOVE_TMP="NO"
+         ;;
+
+         -o|--output)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OUTPUT="$1"
+         ;;
+
+         -p)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            # this is supposed to be a PATH argument for mingw 
+            # ignore, taken care of by the booter already (what booter ?)
+         ;;
+
+         --platform)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OPTION_PLATFORM="$1"
+         ;;
+
+         -s|--sdk)
+            [ $# -eq 1 ] && echo "missing argument to $1"
+            shift
+
+            OPTION_SDK="$1"
+         ;;
+
+         --wsl)
+            OPTION_WSL='YES'
+         ;;
+
+         -|--)
+            break
+         ;;
+
+         -*)
+            log_error "unknown option \"$1\""
+            usage
+         ;;
+
+         *)
+            break
+         ;;
+      esac
+
+      shift
+   done
+
+   options_setup_trace "${MULLE_TRACE}" && set -x
+
+   MULLE_PLATFORM="${MULLE_PLATFORM:-"`command -v 'mulle-platform'`"}"
+   if [ -z "${MULLE_PLATFORM}" ]
+   then
+      _fail "mulle-platform of mulle-sde needs to be installed for mulle-objc-deps-tool.
+${C_INFO}Tip: In standard cmake configurations, you can avoid running
+mulle-objc-deps-tool by setting CREATE_OBJC_DEPS_INC to OFF explicitly.
+You would then maintain \"src\reflect\objc-deps.inc\" manually"
+   fi
+
+   MULLE_SDE="${MULLE_SDE:-"`command -v mulle-sde`"}"
+   if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   then
+      if [ ! -z "${MULLE_SDE}" ]
+      then
+         MULLE_VIRTUAL_ROOT="`${MULLE_SDE} project-dir`"
+      fi
+      [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+   fi
+
+   local MULLE_PLATFORM_FRAMEWORK_PATH_LDFLAG
+   local MULLE_PLATFORM_FRAMEWORK_PREFIX
+   local MULLE_PLATFORM_FRAMEWORK_SUFFIX
+   local MULLE_PLATFORM_LIBRARY_LDFLAG
+   local MULLE_PLATFORM_LIBRARY_PATH_LDFLAG
+   local MULLE_PLATFORM_LIBRARY_PREFIX
+   local MULLE_PLATFORM_LIBRARY_SUFFIX_STATIC
+   local MULLE_PLATFORM_LIBRARY_SUFFIX_DYNAMIC
+   local MULLE_PLATFORM_LINK_MODE
+   local MULLE_PLATFORM_RPATH_LDFLAG
+   local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_DEFAULT
+   local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_STATIC
+
+   if [ "${OPTION_PLATFORM}" = 'Default' ]
+   then
+      OPTION_PLATFORM="${MULLE_UNAME}"
+   fi
+
+   eval_rexekutor `"${MULLE_PLATFORM}" environment --platform "${OPTION_PLATFORM}"`
+
+   if [ -z "${DEPENDENCY_DIR}" ]
+   then
+      if [ ! -z "${MULLE_SDE}" ]
+      then
+         DEPENDENCY_DIR="`${MULLE_SDE} dependency-dir`"
+      fi
+   fi
+   DEPENDENCY_DIR="${DEPENDENCY_DIR:-"${MULLE_VIRTUAL_ROOT}/dependency"}"
+
+   if [ "${OPTION_WSL}" = 'YES' ]
+   then
+      if [ ! -z "${BUILDPATH}" ]
+      then
+         BUILDPATH="`wslpath -u "${BUILDPATH}"`" || exit 1
+      fi
+
+      if [ ! -z "${OUTPUT}" ]
+      then
+         OUTPUT="`wslpath -u "${OUTPUT}"`" || exit 1
+      fi
+   fi
+
+   #
+   # for windows
+   #
+   PATH="${PATH}:${DEPENDENCY_DIR}/bin"
+
+   local name
+
+   name="$1"
+
+   [ -z "${name}" ] && usage
+   shift
+
+   case "${name}" in
+      ""|"-")
+      ;;
+
+      *)
+         if [ "${OPTION_WSL}" = 'YES' ]
+         then
+            case "${name}" in
+               *\\*|*:*)
+                  name="`wslpath -u "${name}"`" || exit 1
+               ;;
+            esac
+         fi
+
+         if [ -f "${name}" ]
+         then
+            LIBRARYFILE="${name}" # assume
+         else
+            LIBRARYFILE="${BUILDPATH}/${MULLE_PLATFORM_LIBRARY_PREFIX}${name}${MULLE_PLATFORM_LIBRARY_SUFFIX_STATIC}"
+         fi
+      ;;
+   esac
+
+   # windows...
+
+   FGREP="`command -v "fgrep"`"
+   if [ -z  "${FGREP}" ]
+   then
+      fail "fgrep not found in PATH ($PATH)"
+   fi
+
+   # MEMO: we don't use this at all, its probably just an early check
+   # prefer sibling mulle-objc-list
+   if [ -z "${MULLE_OBJC_LIST}" ]
+   then
+      MULLE_OBJC_LIST="${0%/*}/mulle-objc-list${MULLE_EXE_EXTENSION}"
+      if [ ! -x "${MULLE_OBJC_LIST}" ]
+      then
+         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list${MULLE_EXE_EXTENSION}`}"
+         [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
+      fi
+   fi
+
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_LISTA}" ]
+   then
+      MULLE_OBJC_LISTA="${0%/*}/mulle-objc-lista"
+      if [ ! -x "${MULLE_OBJC_LISTA}" ]
+      then
+         MULLE_OBJC_LISTA="`command -v mulle-objc-lista`"
+         [ -z "${MULLE_OBJC_LISTA}" ] && fail "mulle-objc-lista not in PATH"
+      fi
+   fi
+
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
+   then
+      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid${MULLE_EXE_EXTENSION}"
+      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
+      then
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid${MULLE_EXE_EXTENSION}`"
+         [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+      fi
+   fi
+
+   MULLE_OBJC_LOADER_CLASSID="`${MULLE_OBJC_UNIQUEID} MulleObjCDeps | tail -1`"
+
+   #
+   # could build it dynamically --
+   #
+   if [ ! -z "${LIBRARYFILE}" -a ! -f "${LIBRARYFILE}" ]
+   then
+      fail "\"${LIBRARYFILE}\" not found. \
+Craft it first or specify build directory with -b"
+   fi
+
+   local result
+
+   result="`dump_dependencies "$@"`" || exit  1
+
+   if [ -z "${result}" ]
+   then
+      _log_warning "Did not find any dependencies. \
+Is whole archive load working on this platform ?"
+   fi
+
+   if [ -z "${OUTPUT}" ]
+   then
+      log_info "Done"
+
+      exekutor printf "%s\n" "${result}"
+      return 0
+   fi
+
+   if [ "${OPTION_FORCE}" = "NO" ] && [ -f "${OUTPUT}" ]
+   then
+      local before
+
+      before="`cat "${OUTPUT}"`"
+      if [ "${result}" = "${before}" ]
+      then
+         log_info "Contents of \"`basename -- ${OUTPUT}`\" are already up to date"
+         return 0
+      fi
+   fi
+
+   local directory
+
+   r_mkdir_parent_if_missing "${OUTPUT}" || exit 1
+   redirect_exekutor "${OUTPUT}" echo "${result}" || exit 1
+   log_info "Wrote \"${OUTPUT}\""
+}
+
+
+main "$@"
+

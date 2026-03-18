@@ -1,10 +1,8 @@
 Build libraries
 Unpack libraries
-## dependencies_objc-loader.inc:
-      { @selector( MulleObjCLoader), @selector( MulleObjCValueFoundation) },      // 47a9beb6;MulleObjCLoader;535d5103;MulleObjCValueFoundation
+## dependencies_objc-deps.inc:
 
 ## dependencies_db.csv:
-47a9beb6;MulleObjCLoader;535d5103;MulleObjCValueFoundation
 bbc7dbad;Bar;;
 c7e16770;Foo;;
 0db9d6aa;mylib;;

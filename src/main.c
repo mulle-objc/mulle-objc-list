@@ -35,13 +35,6 @@
 #pragma clang diagnostic ignored "-Wparentheses"
 #pragma clang diagnostic ignored "-Wswitch"
 
-// need this to get proper export for win. STANDALONE_MULLE_OBJC is some
-// legacy unused shared library scheme
-#ifndef STANDALONE_MULLE_OBJC
-# define MULLE_OBJC_DEFINE__register_mulle_objc_universe
-#endif
-
-
 #include <mulle-c11/mulle-c11.h>
 #include <stdint.h>
 
@@ -61,6 +54,8 @@ typedef uint32_t   mulle_objc_universeid_t;
 #define __MULLE_OBJC_NO_TPS__ 1
 #define __MULLE_OBJC_NO_FCS__ 1
 #define __MULLE_OBJC_NO_TAO__ 1
+
+#define MULLE_OBJC_DEFINE_REGISTER_UNIVERSE
 
 #include <mulle-objc-runtime/mulle-objc-runtime.h>
 #include <mulle-dlfcn/mulle-dlfcn.h>
@@ -129,7 +124,7 @@ static void   log_printf( char *format, ...)
 
 static void   _usage( void)
 {
-   fprintf( stderr,
+   mulle_fprintf( stderr,
             "Options:\n"
             "   -a      : ignore empty filter arguments \n"
             "   -e      : emit dependencies sentinel field\n"
@@ -143,8 +138,8 @@ static void   _usage( void)
             "Commands:\n"
             "   -C      : list classes with their superclass\n"
             "   -c      : list classes and categories\n"
-            "   -d      : list classes and categories as +dependencies. Skips MulleObjCLoaders\n"
-            "   -L      : list MulleObjCLoader dependencies\n"
+            "   -d      : list classes and categories as +dependencies. Skips MulleObjCDeps\n"
+            "   -L      : list MulleObjCDeps dependencies\n"
             "   -R      : list also root -methods as +methods\n"
             "   -T      : terse list methods with root -methods as +methods\n"
             "   -i      : dump loadinfo version information\n"
@@ -161,7 +156,7 @@ static void   _usage( void)
 
 static void   usage( void)
 {
-   fprintf( stderr,
+   mulle_fprintf( stderr,
             "usage: mulle-objc-list [options] [command] [libraries] <binary>\n"
             "\n"
             "   Lists Objective-C symbols of a binary. Preceeding libraries are\n"
@@ -494,7 +489,7 @@ static void   print_pointer( char *type, char *methodname, char *fragment)
 
    if( mulle_objc_signature_supply_typeinfo( ++type, NULL, &typeinfo))
    {
-      // fprintf( stderr, ">>> %s: %.1s\n",  fragment ? fragment : methodname, typeinfo.type);
+      // mulle_fprintf( stderr, ">>> %s: %.1s\n",  fragment ? fragment : methodname, typeinfo.type);
       switch( *typeinfo.type)
       {
       case 'i' :
@@ -1189,7 +1184,7 @@ int  main( int argc, char *argv[])
    //
    // struct _mulle_objc_universe   *universe;
    // universe = __register_mulle_objc_universe();
-   // universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;
+   // universe->callback.should_load_loadinfo = __mulle_objc_loadinfo_callback;
    // but
    /*
     * This method can fail in an interesting way.
@@ -1217,7 +1212,7 @@ int  main( int argc, char *argv[])
          switch( argv[ i][ 2])
          {
          case 'v' :
-            fprintf( stderr, "%u.%u.%u\n",
+            mulle_fprintf( stderr, "%u.%u.%u\n",
                     (unsigned int) (MULLE_OBJC_LIST_VERSION >> 20),
                     (unsigned int) ((MULLE_OBJC_LIST_VERSION >> 8) & 0xFFF),
                     (unsigned int) (MULLE_OBJC_LIST_VERSION & 0xFF));
@@ -1241,7 +1236,7 @@ int  main( int argc, char *argv[])
          filter_classid = strtol( argv[ i], NULL, 16);
          if( ! filter_classid && ! ignore_empty_args)
          {
-            fprintf( stderr, "Could not parse \"%s\" as classid\n", argv[ i]);
+            mulle_fprintf( stderr, "Could not parse \"%s\" as classid\n", argv[ i]);
             exit( 1);
          }
          break;
@@ -1254,7 +1249,7 @@ int  main( int argc, char *argv[])
          filter_categoryid = strtol( argv[ i], NULL, 16);
          if( ! filter_categoryid && ! ignore_empty_args)
          {
-            fprintf( stderr, "Could not parse \"%s\" as categoryid\n", argv[ i]);
+            mulle_fprintf( stderr, "Could not parse \"%s\" as categoryid\n", argv[ i]);
             exit( 1);
          }
          break;
@@ -1267,7 +1262,7 @@ int  main( int argc, char *argv[])
          filter_methodid = strtol( argv[ i], NULL, 16);
          if( ! filter_methodid && ! ignore_empty_args)
          {
-            fprintf( stderr, "Could not parse \"%s\" as methodid\n", argv[ i]);
+            mulle_fprintf( stderr, "Could not parse \"%s\" as methodid\n", argv[ i]);
             exit( 1);
          }
          break;
@@ -1372,7 +1367,7 @@ int  main( int argc, char *argv[])
          break;
 
       default :
-         fprintf( stderr, "Unknown command or option \"%s\"\n", argv[ i]);
+         mulle_fprintf( stderr, "Unknown command or option \"%s\"\n", argv[ i]);
          usage();
       }
    }
@@ -1392,7 +1387,7 @@ int  main( int argc, char *argv[])
 
       path = argv[ i];
       if( verbose)
-         fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
+         mulle_fprintf( stderr, "Loading \"%s\"...\n", argv[ i]);
 
       switch( argv[ i][ 0])
       {
@@ -1410,7 +1405,7 @@ int  main( int argc, char *argv[])
          char   *pwd;
 
          pwd = getenv( "PWD");
-         fprintf( stderr, "mulle-objc-list error: failed to open \"%s\" (%s) %s\n",
+         mulle_fprintf( stderr, "mulle-objc-list error: failed to open \"%s\" (%s) %s\n",
                      argv[ i],
                      pwd ? pwd : "???",
                      dlerror());
@@ -1427,13 +1422,13 @@ int  main( int argc, char *argv[])
       }
       else
          if( verbose)
-            fprintf( stderr, "Did not find \"mulle_objc_global_register_universe\" in \"%s\"\n", path);
+            mulle_fprintf( stderr, "Did not find \"mulle_objc_global_register_universe\" in \"%s\"\n", path);
 
       if( path != argv[ i])
          free( path);
 
       if( verbose && universe)
-         fprintf( stderr, "Loaded \"%s\". (universe: \"%s\" %x (%p), dlmode: %d)\n",
+         mulle_fprintf( stderr, "Loaded \"%s\". (universe: \"%s\" %x (%p), dlmode: %d)\n",
                argv[ i],
                universe->universename ? universe->universename : "*default*",
                universe ? universe->universeid : 0,
@@ -1455,16 +1450,12 @@ int  main( int argc, char *argv[])
       // and don't access it otherwise
       //
       universe = __mulle_objc_global_get_universe( universeid, universename);
-      fprintf( stderr, "The mulle-objc-list universe is at %p\n", universe);
+      mulle_fprintf( stderr, "The mulle-objc-list universe is at %p\n", universe);
    }
 
    return( 0);
 }
 
-
-
-
-#ifndef STANDALONE_MULLE_OBJC
 
 struct _mulle_objc_universe  *
    __register_mulle_objc_universe( mulle_objc_universeid_t universeid,
@@ -1477,7 +1468,7 @@ struct _mulle_objc_universe  *
    {
       _mulle_objc_universe_bang( universe, 0, NULL, NULL);
       universe->config.skip_consistency_checks = 1;
-      universe->callbacks.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
+      universe->callback.should_load_loadinfo = __mulle_objc_loadinfo_callback;  // lazy but we are not multithreaded
    }
    return( universe);
 }
@@ -1490,9 +1481,8 @@ __attribute__((visibility("hidden")))
 void __eprintf( const char* format, const char* file,
                unsigned line, const char *expr)
 {
-   fprintf( stderr, format, file, line, expr);
+   mulle_fprintf( stderr, format, file, line, expr);
    abort();
 }
 # endif
 
-#endif

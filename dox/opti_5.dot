@@ -28,12 +28,12 @@ digraph optimizer {
    "optimize" -> "Foo2.d"
 
    "Foo2.d" [ label="Foo.d", shape="folder" ]
-   "Foo2.d" -> "class-objc-loader.inc"
+   "Foo2.d" -> "class-objc-deps.inc"
    "Foo2.d" -> "method-objc-loader.inc"
    "Foo2.d" -> "MulleObjCLoader+Foo.o"
 
    "MulleObjCLoader+Foo.o" [ penwidth=2, color="blue" ]
 
-   "class-objc-loader.inc"    [ penwidth=2, color="goldenrod"]
+   "class-objc-deps.inc"    [ penwidth=2, color="goldenrod"]
    "method-objc-loader.inc"   [ penwidth=2, color="goldenrod" ]
 }

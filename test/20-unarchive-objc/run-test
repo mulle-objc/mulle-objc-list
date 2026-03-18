@@ -55,8 +55,8 @@ main()
                --library-path "${tmp}/lib" \
                --unarchive-dir "db"  || fail "Unarchive failed"
 
-   echo "## dependencies_objc-loader.inc:"
-   cat "db/mylib.d/dependencies-objc-loader.inc" || exit 1
+   echo "## dependencies_objc-deps.inc:"
+   cat "db/mylib.d/dependencies-objc-deps.inc" || exit 1
    echo
    echo "## dependencies_db.csv:"
    cat "db/mylib.d/dependencies_db.csv"  || exit 1

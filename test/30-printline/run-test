@@ -32,9 +32,9 @@ main()
    options_setup_trace "${MULLE_TRACE}" && set -x
 
    rexekutor mulle-objc-printline mylib
-   rexekutor mulle-objc-printline --category mylib MulleObjCLoader
+   rexekutor mulle-objc-printline --category mylib MulleObjCDeps
    rexekutor mulle-objc-printline --method -uncoverMe mylib
-   rexekutor mulle-objc-printline --method +dependencies --category mylib MulleObjCLoader
+   rexekutor mulle-objc-printline --method +dependencies --category mylib MulleObjCDeps
 }
 
 main ${MULLE_TECHNICAL_FLAGS} "$@"

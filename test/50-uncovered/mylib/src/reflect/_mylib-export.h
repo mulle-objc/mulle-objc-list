@@ -13,7 +13,7 @@
 #define _mylib__export_h__
 
 
-#import "MulleObjCLoader+mylib.h"
+#import "MulleObjCDeps+mylib.h"
 
 
 #endif

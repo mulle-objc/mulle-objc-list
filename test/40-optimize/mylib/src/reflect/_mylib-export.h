@@ -15,7 +15,7 @@
 
 #import "Bar.h"
 #import "Foo.h"
-#import "MulleObjCLoader+mylib.h"
+#import "MulleObjCDeps+mylib.h"
 
 
 #endif

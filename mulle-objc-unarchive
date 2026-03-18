@@ -596,7 +596,7 @@ create_shlibs()
          # can happen in non-optimizable case, where we still produce
          # method-db.csv and class-db.csv
          #
-         "${folder}/MulleObjCLoader"*)
+         "${folder}/MulleObjCDeps"*)
             continue
          ;;
       esac
@@ -668,15 +668,15 @@ emit_loader_source()
 #include <MulleObjC/MulleObjC.h>
 
 
-@implementation MulleObjCLoader( ${name})
+@implementation MulleObjCDeps( ${name})
 
 + (struct _mulle_objc_dependency *) dependencies
 {
    static struct _mulle_objc_dependency   dependencies[] =
    {
-#include "dependencies-objc-loader.inc"
-#include "class-objc-loader.inc"
-#include "category-objc-loader.inc"
+#include "dependencies-objc-deps.inc"
+#include "class-objc-deps.inc"
+#include "category-objc-deps.inc"
       { MULLE_OBJC_NO_CLASSID, MULLE_OBJC_NO_CATEGORYID }
    };
 
@@ -716,9 +716,9 @@ prepare_for_optimizer()
    local has_objc
    local loaderinc
 
-   loaderinc="${includedir}/objc-loader.inc"
+   loaderinc="${includedir}/objc-deps.inc"
 
-   count="`ls -1 "${folder}/MulleObjCLoader"*.o 2> /dev/null | wc -l | awk '{ print $1 }'`"
+   count="`ls -1 "${folder}/MulleObjCDeps"*.o 2> /dev/null | wc -l | awk '{ print $1 }'`"
    case "${count}" in
       1)
          if [ ! -f "${loaderinc}" ]
@@ -740,7 +740,7 @@ prepare_for_optimizer()
             log_fluff "\"${name}\" has been deemed C only"
             exekutor touch "${infofolder}/.c_only" || exit 1
          else
-            log_warning "\"${name}\" is not optimizable as it contains no MulleObjCLoader category .o file"
+            log_warning "\"${name}\" is not optimizable as it contains no MulleObjCDeps category .o file"
             exekutor touch "${infofolder}/.unoptimizable" || exit 1
          fi
 
@@ -748,7 +748,7 @@ prepare_for_optimizer()
       ;;
 
       *)
-         log_warning "\"${name}\" is not optimizable as it contains multiple MulleObjCLoader category .o files"
+         log_warning "\"${name}\" is not optimizable as it contains multiple MulleObjCDeps category .o files"
          exekutor touch "${infofolder}/.unoptimizable" || exit 1
 
          return
@@ -760,37 +760,37 @@ prepare_for_optimizer()
    local loadername
    local categoryname
 
-   loader="`ls -1 "${folder}/MulleObjCLoader"*.o`"
+   loader="`ls -1 "${folder}/MulleObjCDeps"*.o`"
    r_basename "${loader}"
    filename="${RVAL}"
    loadername="${filename%%.*}"
-   categoryname="${loadername/MulleObjCLoader[ _+-]/}"
+   categoryname="${loadername/MulleObjCDeps[ _+-]/}"
 
    if [ -z "${categoryname}" ]
    then
-      log_info "\"${name}\" is not optimizable as it contains the MulleObjCLoader class .o file"
+      log_info "\"${name}\" is not optimizable as it contains the MulleObjCDeps class .o file"
       exekutor touch "${infofolder}/.unoptimizable" || exit 1
       return
    fi
 
    if [ "${categoryname}" != "${name}" ]
    then
-      log_warning "\"${name}\" is not optimizable as it contains \"${filename}\", but expected \"MulleObjCLoader+${name}.o\""
+      log_warning "\"${name}\" is not optimizable as it contains \"${filename}\", but expected \"MulleObjCDeps+${name}.o\""
       exekutor touch "${infofolder}/.unoptimizable" || exit 1
       return 1
    fi
 
-   log_fluff "Loader \"${filename}\" and \"objc-loader.inc\" found"
+   log_fluff "Loader \"${filename}\" and \"objc-deps.inc\" found"
 
    # keep comments only
    redirect_exekutor "${folder}/dependencies_db.csv" \
       sed 's|^.*// *||' "${loaderinc}"
 
-   # Grab MulleObjCLoader statements (47a9beb6->MulleObjCLoader)
+   # Grab MulleObjCDeps statements (47a9beb6->MulleObjCDeps)
    exekutor egrep '// *47a9beb6;' "${loaderinc}" \
-   | redirect_exekutor "${infofolder}/dependencies-objc-loader.inc" fgrep -v ';;'
+   | redirect_exekutor "${infofolder}/dependencies-objc-deps.inc" fgrep -v ';;'
 
-   redirect_exekutor "${folder}/MulleObjCLoader+${name}.m" \
+   redirect_exekutor "${folder}/MulleObjCDeps+${name}.m" \
       emit_loader_source "${name}"
 
    #
