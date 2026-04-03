@@ -45,6 +45,11 @@ MULLE_EXECUTABLE_VERSION=0.9.1
 
 usage()
 {
+   if [ $# -gt 0 ]
+   then
+      log_error "error: $*"
+   fi
+
    cat <<EOF >&2
 usage:
    ${MULLE_USAGE_NAME} [options] <name> [dependencies]
@@ -56,10 +61,24 @@ usage:
    "Standalone" suffix. Dependencies are the Objective-C dependencies
    of this library.
 
+   Example:
+      config="Debug" ; \\
+      mulle-sde exec ${MULLE_USAGE_NAME} \\
+                  -b \$(mulle-craft --configuration \"\${config}\" kitchen-dir) \\
+                  -c \"\${config}\"
+
    Options:
-      -f        : force write output
-      -n        : don't actually do anything
-      -o <file> : write output to file
+      -h, --help, help            : show this help
+      -b, --build-path <path>     : set build directory (default: .)
+      -c, --configuration <name>  : build configuration (default: Release)
+      -f, --force                 : force write output
+      --no-remove                 : do not remove temporary files
+      -o, --output <file>         : write output to file
+      -p                          : (mingw) path argument (ignored)
+      --platform <platform>       : target platform (default: host)
+      -s, --sdk <sdk>             : SDK to use (default: Default)
+      --wsl                       : treat paths as WSL (Windows Linux Subsystem)
+
 EOF
    exit 1
 }
@@ -147,23 +166,23 @@ _dump_loader_dependencies()
          log_warning "\"${depfile}\" not found"
       fi
 
-      if [ -z "${depname}" ]
-      then
-         fail "No name given or found for dependency \"${filename}\""
-      fi
-
       case "${depname}" in
          MulleObjC)
-            depname=""
+            exekutor echo "      { @selector( MulleObjCDeps), \
+MULLE_OBJC_NO_CATEGORYID },      // ${MULLE_OBJC_DEPS_CLASSID};MulleObjCDeps;;"
          ;;
-      esac
 
-      if [ ! -z "${depname}" ]
-      then
-         categoryid="`${MULLE_OBJC_UNIQUEID} "${depname}" | tail -1`"
-         exekutor echo "      { @selector( MulleObjCDeps), \
-@selector( ${depname}) },      // ${MULLE_OBJC_LOADER_CLASSID};MulleObjCDeps;$categoryid;${depname}";
-      fi
+
+         "")
+            fail "No name given or found for dependency \"${filename}\""
+         ;;
+
+         *)
+            categoryid="$( "${MULLE_OBJC_UNIQUEID}" "${depname}" | tail -1)"
+
+            exekutor echo "      { @selector( MulleObjCDeps), \
+@selector( ${depname}) },      // ${MULLE_OBJC_DEPS_CLASSID};MulleObjCDeps;$categoryid;${depname}";
+      esac
 
       shift
    done
@@ -229,9 +248,10 @@ dump_dependencies()
 {
    log_entry "dump_dependencies" "$@"
 
-   log_fluff "PWD          : $PWD"
-   log_fluff "ARGV         : $*"
-   log_fluff "BUILDPATH    : ${BUILDPATH}"
+   log_setting "PWD            : $PWD"
+   log_setting "ARGV           : $*"
+   log_setting "BUILDPATH      : ${BUILDPATH}"
+   log_setting "DEPENDENCY_DIR : ${BUILDPATH}"
 
    local tmp
 
@@ -239,6 +259,79 @@ dump_dependencies()
 
    fgrep -v '{ @selector( MulleObjCDeps), MULLE_OBJC_NO_CATEGORYID }' <<< "${tmp}"
    return 0
+}
+
+
+check_tools()
+{
+   log_entry "check_tools" "$@"
+
+   local exe="$1"
+
+   # ---
+
+   MULLE_PLATFORM="${MULLE_PLATFORM:-"`command -v 'mulle-platform'`"}"
+   if [ -z "${MULLE_PLATFORM}" ]
+   then
+      _fail "mulle-platform of mulle-sde needs to be installed for mulle-objc-deps-tool.
+${C_INFO}Tip: In standard cmake configurations, you can avoid running
+mulle-objc-deps-tool by setting CREATE_OBJC_DEPS_INC to OFF explicitly.
+You would then maintain \"src\reflect\objc-deps.inc\" manually"
+   fi
+
+   # MULLE_SDE="${MULLE_SDE:-"`command -v mulle-sde`"}"
+   # if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   # then
+   #    if [ ! -z "${MULLE_SDE}" ]
+   #    then
+   #       MULLE_VIRTUAL_ROOT="`${MULLE_SDE} project-dir`"
+   #    fi
+   #    [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+   # fi
+
+   # windows...
+
+   FGREP="`command -v "fgrep"`"
+   if [ -z  "${FGREP}" ]
+   then
+      fail "fgrep not found in PATH ($PATH)"
+   fi
+
+   # MEMO: we don't use this at all, its probably just an early check
+   # prefer sibling mulle-objc-list
+   if [ -z "${MULLE_OBJC_LIST}" ]
+   then
+      MULLE_OBJC_LIST="${exe%/*}/mulle-objc-list${MULLE_EXE_EXTENSION}"
+      if [ ! -x "${MULLE_OBJC_LIST}" ]
+      then
+         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list${MULLE_EXE_EXTENSION}`}"
+         [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
+      fi
+   fi
+
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_LISTA}" ]
+   then
+      MULLE_OBJC_LISTA="${exe%/*}/mulle-objc-lista"
+      if [ ! -x "${MULLE_OBJC_LISTA}" ]
+      then
+         MULLE_OBJC_LISTA="`command -v mulle-objc-lista`"
+         [ -z "${MULLE_OBJC_LISTA}" ] && fail "mulle-objc-lista not in PATH"
+      fi
+   fi
+
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
+   then
+      MULLE_OBJC_UNIQUEID="${exe%/*}/mulle-objc-uniqueid${MULLE_EXE_EXTENSION}"
+      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
+      then
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid${MULLE_EXE_EXTENSION}`"
+         [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+      fi
+   fi
+
+   # ---
 }
 
 
@@ -271,15 +364,15 @@ main()
             usage
          ;;
 
-         -b|--build-path)
-            [ $# -eq 1 ] && usage
+         -b|--build-path|--kitchen-dir)
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             BUILDPATH="$1"
          ;;
 
          -c|--configuration)
-            [ $# -eq 1 ] && echo "missing argument to $1"
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             OPTION_CONFIGURATION="$1"
@@ -294,14 +387,14 @@ main()
          ;;
 
          -o|--output)
-            [ $# -eq 1 ] && echo "missing argument to $1"
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             OUTPUT="$1"
          ;;
 
          -p)
-            [ $# -eq 1 ] && echo "missing argument to $1"
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             # this is supposed to be a PATH argument for mingw 
@@ -309,14 +402,14 @@ main()
          ;;
 
          --platform)
-            [ $# -eq 1 ] && echo "missing argument to $1"
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             OPTION_PLATFORM="$1"
          ;;
 
          -s|--sdk)
-            [ $# -eq 1 ] && echo "missing argument to $1"
+            [ $# -eq 1 ] && usage "missing argument to $1"
             shift
 
             OPTION_SDK="$1"
@@ -331,8 +424,7 @@ main()
          ;;
 
          -*)
-            log_error "unknown option \"$1\""
-            usage
+            usage "unknown option \"$1\""
          ;;
 
          *)
@@ -345,23 +437,20 @@ main()
 
    options_setup_trace "${MULLE_TRACE}" && set -x
 
-   MULLE_PLATFORM="${MULLE_PLATFORM:-"`command -v 'mulle-platform'`"}"
-   if [ -z "${MULLE_PLATFORM}" ]
-   then
-      _fail "mulle-platform of mulle-sde needs to be installed for mulle-objc-deps-tool.
-${C_INFO}Tip: In standard cmake configurations, you can avoid running
-mulle-objc-deps-tool by setting CREATE_OBJC_DEPS_INC to OFF explicitly.
-You would then maintain \"src\reflect\objc-deps.inc\" manually"
-   fi
 
-   MULLE_SDE="${MULLE_SDE:-"`command -v mulle-sde`"}"
-   if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   check_tools "$0"
+
+   if [ "${OPTION_WSL}" = 'YES' ]
    then
-      if [ ! -z "${MULLE_SDE}" ]
+      if [ ! -z "${BUILDPATH}" ]
       then
-         MULLE_VIRTUAL_ROOT="`${MULLE_SDE} project-dir`"
+         BUILDPATH="`wslpath -u "${BUILDPATH}"`" || exit 1
       fi
-      [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+
+      if [ ! -z "${OUTPUT}" ]
+      then
+         OUTPUT="`wslpath -u "${OUTPUT}"`" || exit 1
+      fi
    fi
 
    local MULLE_PLATFORM_FRAMEWORK_PATH_LDFLAG
@@ -382,29 +471,14 @@ You would then maintain \"src\reflect\objc-deps.inc\" manually"
       OPTION_PLATFORM="${MULLE_UNAME}"
    fi
 
-   eval_rexekutor `"${MULLE_PLATFORM}" environment --platform "${OPTION_PLATFORM}"`
+   eval_rexekutor "$("${MULLE_PLATFORM}" environment --platform "${OPTION_PLATFORM}")"
 
-   if [ -z "${DEPENDENCY_DIR}" ]
-   then
-      if [ ! -z "${MULLE_SDE}" ]
-      then
-         DEPENDENCY_DIR="`${MULLE_SDE} dependency-dir`"
-      fi
-   fi
-   DEPENDENCY_DIR="${DEPENDENCY_DIR:-"${MULLE_VIRTUAL_ROOT}/dependency"}"
+   DEPENDENCY_DIR="$(mulle-sde exec mulle-craft --sdk "${OPTION_SDK}" \
+                                                --platform "${OPTION_PLATFORM}" \
+                                                --configuration "${OPTION_CONFIGURATION}" \
+                                                dependency-dir)" || exit 1
 
-   if [ "${OPTION_WSL}" = 'YES' ]
-   then
-      if [ ! -z "${BUILDPATH}" ]
-      then
-         BUILDPATH="`wslpath -u "${BUILDPATH}"`" || exit 1
-      fi
-
-      if [ ! -z "${OUTPUT}" ]
-      then
-         OUTPUT="`wslpath -u "${OUTPUT}"`" || exit 1
-      fi
-   fi
+   MULLE_OBJC_DEPS_CLASSID="$( "${MULLE_OBJC_UNIQUEID}" MulleObjCDeps | tail -1)" || exit 1
 
    #
    # for windows
@@ -415,7 +489,7 @@ You would then maintain \"src\reflect\objc-deps.inc\" manually"
 
    name="$1"
 
-   [ -z "${name}" ] && usage
+   [ -z "${name}" ] && usage "missing argument"
    shift
 
    case "${name}" in
@@ -441,50 +515,6 @@ You would then maintain \"src\reflect\objc-deps.inc\" manually"
       ;;
    esac
 
-   # windows...
-
-   FGREP="`command -v "fgrep"`"
-   if [ -z  "${FGREP}" ]
-   then
-      fail "fgrep not found in PATH ($PATH)"
-   fi
-
-   # MEMO: we don't use this at all, its probably just an early check
-   # prefer sibling mulle-objc-list
-   if [ -z "${MULLE_OBJC_LIST}" ]
-   then
-      MULLE_OBJC_LIST="${0%/*}/mulle-objc-list${MULLE_EXE_EXTENSION}"
-      if [ ! -x "${MULLE_OBJC_LIST}" ]
-      then
-         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list${MULLE_EXE_EXTENSION}`}"
-         [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
-      fi
-   fi
-
-   # prefer sibling mulle-objc-lista
-   if [ -z "${MULLE_OBJC_LISTA}" ]
-   then
-      MULLE_OBJC_LISTA="${0%/*}/mulle-objc-lista"
-      if [ ! -x "${MULLE_OBJC_LISTA}" ]
-      then
-         MULLE_OBJC_LISTA="`command -v mulle-objc-lista`"
-         [ -z "${MULLE_OBJC_LISTA}" ] && fail "mulle-objc-lista not in PATH"
-      fi
-   fi
-
-   # prefer sibling mulle-objc-lista
-   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
-   then
-      MULLE_OBJC_UNIQUEID="${0%/*}/mulle-objc-uniqueid${MULLE_EXE_EXTENSION}"
-      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
-      then
-         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid${MULLE_EXE_EXTENSION}`"
-         [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
-      fi
-   fi
-
-   MULLE_OBJC_LOADER_CLASSID="`${MULLE_OBJC_UNIQUEID} MulleObjCDeps | tail -1`"
-
    #
    # could build it dynamically --
    #
@@ -493,6 +523,7 @@ You would then maintain \"src\reflect\objc-deps.inc\" manually"
       fail "\"${LIBRARYFILE}\" not found. \
 Craft it first or specify build directory with -b"
    fi
+
 
    local result
 

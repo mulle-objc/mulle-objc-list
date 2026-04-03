@@ -80,3 +80,8 @@ build-xcode.d/
 mulle-objc-cat-coverage
 mulle-objc-sort-objects
 mulle-objc-sort-objects-actual-files.experiment
+log.zip
+workflow.log
+workflow-new.log
+.roam
+.graveyard
