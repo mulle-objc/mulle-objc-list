@@ -1,11 +1,12 @@
 {
    "name" : "mulle-objc-list",
-   "version" : "0.22.2",
+   "version" : "0.23.0",
    "description" : "📒 Lists mulle-objc runtime information contained in executables.",
    "keywords" : [],
    "license" : "BSD-3-Clause",
    "repo" : "mulle-objc/mulle-objc-list",
    "src" : [
+      "asset/dox/TOC.md",
       "src/generic/include-private.h",
       "src/generic/include.h",
       "src/main.c",

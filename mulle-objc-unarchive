@@ -786,8 +786,8 @@ prepare_for_optimizer()
    redirect_exekutor "${folder}/dependencies_db.csv" \
       sed 's|^.*// *||' "${loaderinc}"
 
-   # Grab MulleObjCDeps statements (47a9beb6->MulleObjCDeps)
-   exekutor egrep '// *47a9beb6;' "${loaderinc}" \
+   # Grab MulleObjCDeps statements
+   exekutor egrep "// *${MULLE_OBJC_DEPS_CLASSID};" "${loaderinc}" \
    | redirect_exekutor "${infofolder}/dependencies-objc-deps.inc" fgrep -v ';;'
 
    redirect_exekutor "${folder}/MulleObjCDeps+${name}.m" \
@@ -1117,6 +1117,79 @@ unarchive()
 }
 
 
+check_tools()
+{
+   log_entry "check_tools" "$@"
+
+   local exe="$1"
+
+   # ---
+
+   MULLE_PLATFORM="${MULLE_PLATFORM:-"`command -v 'mulle-platform'`"}"
+   if [ -z "${MULLE_PLATFORM}" ]
+   then
+      _fail "mulle-platform of mulle-sde needs to be installed for mulle-objc-deps-tool.
+${C_INFO}Tip: In standard cmake configurations, you can avoid running
+mulle-objc-deps-tool by setting CREATE_OBJC_DEPS_INC to OFF explicitly.
+You would then maintain \"src\reflect\objc-deps.inc\" manually"
+   fi
+
+   # MULLE_SDE="${MULLE_SDE:-"`command -v mulle-sde`"}"
+   # if [ -z "${MULLE_VIRTUAL_ROOT}" ]
+   # then
+   #    if [ ! -z "${MULLE_SDE}" ]
+   #    then
+   #       MULLE_VIRTUAL_ROOT="`${MULLE_SDE} project-dir`"
+   #    fi
+   #    [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
+   # fi
+
+   # windows...
+
+   FGREP="`command -v "fgrep"`"
+   if [ -z  "${FGREP}" ]
+   then
+      fail "fgrep not found in PATH ($PATH)"
+   fi
+
+   # MEMO: we don't use this at all, its probably just an early check
+   # prefer sibling mulle-objc-list
+   if [ -z "${MULLE_OBJC_LIST}" ]
+   then
+      MULLE_OBJC_LIST="${exe%/*}/mulle-objc-list${MULLE_EXE_EXTENSION}"
+      if [ ! -x "${MULLE_OBJC_LIST}" ]
+      then
+         MULLE_OBJC_LIST="${MULLE_OBJC_LIST:-`command -v mulle-objc-list${MULLE_EXE_EXTENSION}`}"
+         [ -z "${MULLE_OBJC_LIST}" ] && fail "mulle-objc-list not in PATH"
+      fi
+   fi
+
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_LISTA}" ]
+   then
+      MULLE_OBJC_LISTA="${exe%/*}/mulle-objc-lista"
+      if [ ! -x "${MULLE_OBJC_LISTA}" ]
+      then
+         MULLE_OBJC_LISTA="`command -v mulle-objc-lista`"
+         [ -z "${MULLE_OBJC_LISTA}" ] && fail "mulle-objc-lista not in PATH"
+      fi
+   fi
+
+   # prefer sibling mulle-objc-lista
+   if [ -z "${MULLE_OBJC_UNIQUEID}" ]
+   then
+      MULLE_OBJC_UNIQUEID="${exe%/*}/mulle-objc-uniqueid${MULLE_EXE_EXTENSION}"
+      if [ ! -x "${MULLE_OBJC_UNIQUEID}" ]
+      then
+         MULLE_OBJC_UNIQUEID="`command -v mulle-objc-uniqueid${MULLE_EXE_EXTENSION}`"
+         [ -z "${MULLE_OBJC_UNIQUEID}" ] && fail "mulle-objc-uniqueid not in PATH"
+      fi
+   fi
+
+   # ---
+}
+
+
 main()
 {
    local UNARCHIVE_PREFIX=""
@@ -1201,6 +1274,8 @@ main()
       [ -z "${MULLE_VIRTUAL_ROOT}" ] && fail "MULLE_VIRTUAL_ROOT can not be determined"
    fi
 
+   check_tools
+
    DEPENDENCY_DIR="${DEPENDENCY_DIR:-`mulle-sde dependency-dir`}"
    DEPENDENCY_DIR="${DEPENDENCY_DIR:-"${MULLE_VIRTUAL_ROOT}/dependency"}"
 
@@ -1227,11 +1302,13 @@ main()
    local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_DEFAULT
    local MULLE_PLATFORM_WHOLE_ARCHIVE_LDFLAG_STATIC
 
-   eval_rexekutor `mulle-platform environment`
+   eval_rexekutor `"${MULLE_PLATFORM}" environment`
 
    log_setting "LIBRARY_DIR=${LIBRARY_DIR}"
    log_setting "UNARCHIVE_PREFIX=${UNARCHIVE_PREFIX}"
    log_setting "UNARCHIVE_INFO_PREFIX=${UNARCHIVE_INFO_PREFIX}"
+
+   MULLE_OBJC_DEPS_CLASSID="$( "${MULLE_OBJC_UNIQUEID}" MulleObjCDeps | tail -1)" || exit 1
 
    local libraries
 

@@ -85,3 +85,4 @@ workflow.log
 workflow-new.log
 .roam
 .graveyard
+*.tmp.*

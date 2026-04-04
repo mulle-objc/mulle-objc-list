@@ -199,12 +199,6 @@ git submodule add -f --name "mulle-core" \
 git submodule add -f --name "libbacktrace" \
                             "https://github.com/mulle-core/libbacktrace.git" \
                             "stash/libbacktrace"
-git submodule add -f --name "mulle-allocator" \
-                            "https://github.com/mulle-c/mulle-allocator.git" \
-                            "stash/mulle-allocator"
-git submodule add -f --name "mulle-thread" \
-                            "https://github.com/mulle-concurrent/mulle-thread.git" \
-                            "stash/mulle-thread"
 git submodule add -f --name "mulle-core-all-load" \
                             "https://github.com/mulle-core/mulle-core-all-load.git" \
                             "stash/mulle-core-all-load"
@@ -221,16 +215,12 @@ git submodule update --init --recursive
 add_subdirectory( stash/mulle-objc-list)
 add_subdirectory( stash/mulle-objc-runtime)
 add_subdirectory( stash/mulle-core-all-load)
-add_subdirectory( stash/mulle-thread)
-add_subdirectory( stash/mulle-allocator)
 add_subdirectory( stash/libbacktrace)
 add_subdirectory( stash/mulle-core)
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-objc-list)
 target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-objc-runtime)
 target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-core-all-load)
-target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-thread)
-target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-allocator)
 target_link_libraries( ${PROJECT_NAME} PUBLIC libbacktrace)
 target_link_libraries( ${PROJECT_NAME} PUBLIC mulle-core)
 ```

@@ -71,7 +71,7 @@ typedef uint32_t   mulle_objc_universeid_t;
 #include "mulle-objc-list-version.h"
 
 
-#define MULLE_OBJC_LOADER_CLASSID  0x47a9beb6
+#define MULLE_OBJC_DEPS_CLASSID  0x3c20656f
 
 // #define STANDALONE_MULLE_OBJC
 
@@ -84,7 +84,7 @@ static int       dump;
 static int       emit_sentinel;
 static int       ignore_empty_args;
 static int       raw_types;
-static uint32_t  loader_classid = MULLE_OBJC_LOADER_CLASSID;
+static uint32_t  loader_classid = MULLE_OBJC_DEPS_CLASSID;
 
 
 static mulle_objc_classid_t      filter_classid;
@@ -1481,7 +1481,7 @@ __attribute__((visibility("hidden")))
 void __eprintf( const char* format, const char* file,
                unsigned line, const char *expr)
 {
-   mulle_fprintf( stderr, format, file, line, expr);
+   mulle_fprintf( stderr, (char *) format, file, line, expr);
    abort();
 }
 # endif
