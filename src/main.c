@@ -699,10 +699,11 @@ static void   method_dump( struct _mulle_objc_method *method,
 
 
 
-static void   method_loadclass_dump( struct _mulle_objc_method *method,
-                                     int type,
-                                     struct _mulle_objc_loadclass *p,
-                                     struct _mulle_objc_loadinfo *info)
+static void   method_loadclassbase_dump( struct _mulle_objc_method *method,
+                                         int type,
+                                         struct _mulle_objc_loadclassbase *p,
+                                         mulle_objc_classid_t superclassid,
+                                         struct _mulle_objc_loadinfo *info)
 {
    if( filter_methodid && method->descriptor.methodid != filter_methodid)
       return;
@@ -716,8 +717,8 @@ static void   method_loadclass_dump( struct _mulle_objc_method *method,
    printf( "\n");
 
    if( mode == dump_callable_methods || mode == dump_callable_coverage)
-      if( type == '-' && p->superclassid == MULLE_OBJC_NO_CLASSID)
-         method_loadclass_dump( method, '+', p, info);
+      if( type == '-' && superclassid == MULLE_OBJC_NO_CLASSID)
+         method_loadclassbase_dump( method, '+', p, superclassid, info);
 }
 
 
@@ -748,10 +749,11 @@ static void   method_loadcategory_dump( struct _mulle_objc_method *method,
 }
 
 
-static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
-                                         int type,
-                                         struct _mulle_objc_loadclass *p,
-                                         struct _mulle_objc_loadinfo *info)
+static void   methodlist_loadclassbase_dump( struct _mulle_objc_methodlist *list,
+                                             int type,
+                                             struct _mulle_objc_loadclassbase *p,
+                                             mulle_objc_classid_t superclassid,
+                                             struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_method   *method;
    struct _mulle_objc_method   *sentinel;
@@ -763,7 +765,7 @@ static void   methodlist_loadclass_dump( struct _mulle_objc_methodlist *list,
    sentinel = &method[ list->n_methods];
    while( method < sentinel)
    {
-      method_loadclass_dump( method, type, p, info);
+      method_loadclassbase_dump( method, type, p, superclassid, info);
       ++method;
    }
 }
@@ -801,8 +803,8 @@ static void   property_dump( struct _mulle_objc_property *property)
 }
 
 
-static void   property_loadclass_dump( struct _mulle_objc_property *property,
-                                       struct _mulle_objc_loadclass *p)
+static void   property_loadclassbase_dump( struct _mulle_objc_property *property,
+                                           struct _mulle_objc_loadclassbase *p)
 {
    printf( "%08lx", (unsigned long) p->classid);
    printf( ";%s",  p->classname);
@@ -824,7 +826,7 @@ static void   property_loadcategory_dump( struct _mulle_objc_property *property,
 
 
 static void   propertylist_loadclass_dump( struct _mulle_objc_propertylist *list,
-                                           struct _mulle_objc_loadclass *p,
+                                           struct _mulle_objc_loadclassbase *p,
                                            struct _mulle_objc_loadinfo *info)
 {
    struct _mulle_objc_property   *property;
@@ -837,7 +839,7 @@ static void   propertylist_loadclass_dump( struct _mulle_objc_propertylist *list
    sentinel = &property[ list->n_properties];
    while( property < sentinel)
    {
-      property_loadclass_dump( property, p);
+      property_loadclassbase_dump( property, p);
       ++property;
    }
 }
@@ -893,8 +895,8 @@ static void   ivar_dump( struct _mulle_objc_ivar *ivar)
 static void   ivar_loadclass_dump( struct _mulle_objc_ivar *ivar,
                                    struct _mulle_objc_loadclass *p)
 {
-   printf( "%08lx", (unsigned long) p->classid);
-   printf( ";%s",  p->classname);
+   printf( "%08lx", (unsigned long) p->base.classid);
+   printf( ";%s",  p->base.classname);
 
    ivar_dump( ivar);
 
@@ -928,20 +930,20 @@ static void   ivarlist_loadclass_dump( struct _mulle_objc_ivarlist *list,
 static void   loadclass_walk( struct _mulle_objc_loadclass *p,
                               struct _mulle_objc_loadinfo *info)
 {
-   if( filter_classid && p->classid != filter_classid)
+   if( filter_classid && p->base.classid != filter_classid)
       return;
 
-   log_printf( "Dumping class %s ...\n", p->classname);
+   log_printf( "Dumping class %s ...\n", p->base.classname);
 
    switch( mode)
    {
    case dump_classes_categories :
    case dump_search :
-      printf( "%08lx;%s\n", (unsigned long) p->classid, p->classname);
+      printf( "%08lx;%s\n", (unsigned long) p->base.classid, p->base.classname);
       break;
 
    case dump_classes :
-      printf( "%08lx;%s;", (unsigned long) p->classid, p->classname);
+      printf( "%08lx;%s;", (unsigned long) p->base.classid, p->base.classname);
       if( p->superclassid == MULLE_OBJC_NO_CLASSID)
          printf( "MULLE_OBJC_NO_CLASSID;\n");
       else
@@ -949,12 +951,12 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
       break;
 
    case dump_dependencies :
-      if( p->classid != loader_classid)
+      if( p->base.classid != loader_classid)
          printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
                 "      // %08lx;%s;;\n",
-                p->classname,
-                (unsigned long) p->classid,
-                p->classname);
+                p->base.classname,
+                (unsigned long) p->base.classid,
+                p->base.classname);
    default:
       break;
    }
@@ -963,7 +965,7 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    switch( mode)
    {
    case dump_properties :
-      propertylist_loadclass_dump( p->properties, p, info);
+      propertylist_loadclass_dump( p->base.properties, &p->base, info);
       break;
 
    case dump_ivars :
@@ -974,8 +976,63 @@ static void   loadclass_walk( struct _mulle_objc_loadclass *p,
    case dump_search :
    case dump_methods :
    case dump_coverage :
-      methodlist_loadclass_dump( p->classmethods, '+', p, info);
-      methodlist_loadclass_dump( p->instancemethods, '-', p, info);
+      methodlist_loadclassbase_dump( p->base.classmethods, '+', &p->base, p->superclassid, info);
+      methodlist_loadclassbase_dump( p->base.instancemethods, '-', &p->base, p->superclassid, info);
+   default:
+      break;
+   }
+}
+
+
+/*
+ *
+ */
+static void   loadmixin_walk( struct _mulle_objc_loadmixin *p,
+                                      struct _mulle_objc_loadinfo *info)
+{
+   if( filter_classid && p->base.classid != filter_classid)
+      return;
+
+   log_printf( "Dumping mixin %s ...\n", p->base.classname);
+
+   switch( mode)
+   {
+   case dump_classes_categories :
+   case dump_search :
+      printf( "%08lx;%s\n", (unsigned long) p->base.classid, p->base.classname);
+      break;
+
+   case dump_classes :
+      printf( "%08lx;%s;MULLE_OBJC_NO_CLASSID;\n", (unsigned long) p->base.classid, p->base.classname);
+      break;
+
+   case dump_dependencies :
+      if( p->base.classid != loader_classid)
+         printf( "      { @selector( %s), MULLE_OBJC_NO_CATEGORYID },"
+                "      // %08lx;%s;;\n",
+                p->base.classname,
+                (unsigned long) p->base.classid,
+                p->base.classname);
+   default:
+      break;
+   }
+
+
+   switch( mode)
+   {
+   case dump_properties :
+      propertylist_loadclass_dump( p->base.properties, &p->base, info);
+      break;
+
+   case dump_ivars :
+      break;
+
+   case dump_callable_coverage :
+   case dump_search :
+   case dump_methods :
+   case dump_coverage :
+      methodlist_loadclassbase_dump( p->base.classmethods, '+', &p->base, MULLE_OBJC_NO_CLASSID, info);
+      methodlist_loadclassbase_dump( p->base.instancemethods, '-', &p->base, MULLE_OBJC_NO_CLASSID, info);
    default:
       break;
    }
@@ -1056,6 +1113,21 @@ static void   loadclasslist_walk( struct _mulle_objc_loadclasslist *list,
       loadclass_walk( *p++, info);
 }
 
+static void   loadmixinlist_walk( struct _mulle_objc_loadmixinlist *list,
+                                          struct _mulle_objc_loadinfo *info)
+{
+   struct _mulle_objc_loadmixin   **p;
+   struct _mulle_objc_loadmixin   **sentinel;
+
+   if( ! list)
+      return;
+
+   p        = list->loadmixins;
+   sentinel = &p[ list->n_loadmixins];
+   while( p < sentinel)
+      loadmixin_walk( *p++, info);
+}
+
 
 static void   loadcategorylist_walk( struct _mulle_objc_loadcategorylist *list,
                                      struct _mulle_objc_loadinfo *info)
@@ -1100,6 +1172,7 @@ int  __mulle_objc_list_callback( struct _mulle_objc_loadinfo *info)
       }
 
       loadclasslist_walk( info->loadclasslist, info);
+      loadmixinlist_walk( info->loadmixinlist, info);
       loadcategorylist_walk( info->loadcategorylist, info);
    }
    return(0);
