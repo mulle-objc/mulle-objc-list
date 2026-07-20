@@ -86,3 +86,5 @@ workflow-new.log
 .roam
 .graveyard
 *.tmp.*
+*.test.*
+.idea
