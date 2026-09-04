@@ -15,6 +15,11 @@ or categories. The output is as [CSV, euro-style](//en.wikipedia.org/wiki/Comma-
 
 
 
+
+## Documentation & Guides
+
+* [API Summary](asset/dox/api/toc)
+
 ## Usage
 
 ```

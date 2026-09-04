@@ -2,9 +2,10 @@
 //  main.c
 //  mulle-objc-list
 //
-//  Created by Nat! on 29.04.17.
-//  Copyright © 2017 Mulle kybernetiK. All rights reserved.
-//  Copyright © 2017 Codeon GmbH. All rights reserved.
+//  Copyright (c) 2017 Nat! - Mulle kybernetiK.
+//  Copyright (c) 2017 Codeon GmbH.
+//  All rights reserved.
+//
 //
 //  Redistribution and use in source and binary forms, with or without
 //  modification, are permitted provided that the following conditions are met:

@@ -49,9 +49,21 @@ r_shlib_cflags()
 
 r_shlib_ldflags()
 {
+   local sdkpath
+
    case "${MULLE_UNAME}" in
       darwin)
          RVAL="-dynamiclib -all_load -Os -flat_namespace -undefined suppress"
+         #
+         # On modern macOS SDKs libSystem lives inside the SDK, not on disk,
+         # so the dynamic link needs an explicit sysroot or ld fails with
+         # "library 'System' not found". mulle-platform knows the SDK path.
+         #
+         sdkpath="`"${MULLE_PLATFORM:-mulle-platform}" sdkpath 2>/dev/null`"
+         if [ ! -z "${sdkpath}" ]
+         then
+            RVAL="${RVAL} -isysroot ${sdkpath}"
+         fi
       ;;
 
       *)

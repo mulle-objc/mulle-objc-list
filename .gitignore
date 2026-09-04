@@ -88,3 +88,6 @@ workflow-new.log
 *.tmp.*
 *.test.*
 .idea
+.kiro/
+TODO.md
+REVIEW.md
